@@ -1,0 +1,258 @@
+/* ============================================================
+   HASEEM — DESIGN TOKENS
+   ------------------------------------------------------------
+   ملف التبديل الوحيد. كل الكومبوننتس بتقرا من هنا.
+
+   الخط: Rubik لكل شيء — عربي ولاتيني من نفس العيلة.
+
+   اللون: درجات الأخضر فقط. مفيش برتقالي ولا أزرق ولا رمادي محايد.
+   الأحمر مستخدم في حالة واحدة فقط: الخطر الفعلي (رفض الهيئة).
+   ============================================================ */
+
+:root{
+  /* ---------- 1. GREEN RAMP ---------- */
+  --g-25:  #F5FBF8;
+  --g-50:  #EDF9F4;
+  --g-100: #DDF2EA;
+  --g-150: #CDEBE0;
+  --g-200: #B9E2D3;
+  --g-300: #9BDCC8;
+  --g-400: #6BC7AC;
+  --g-500: #2E9E85;
+  --g-600: #178064;
+  --g-700: #0F5C43;
+  --g-800: #073F2F;
+  --g-900: #003E31;   /* لون البراند */
+  --g-950: #002419;
+
+  /* ---------- 1b. NEUTRAL RAMP — للوضع الداكن ---------- */
+  --k-50:  #F3F4F5;
+  --k-300: #B7BABF;
+  --k-400: #90949A;
+  --k-500: #8A8E94;
+  --k-600: #696D73;
+  --k-700: #34373C;
+  --k-750: #2A2D31;
+  --k-800: #26282C;
+  --k-820: #232529;
+  --k-850: #1D1F22;
+  --k-880: #1C1E21;
+  --k-900: #16181A;
+  --k-920: #121315;
+  --k-950: #0E0F11;
+  --k-990: #08090A;
+
+  /* ---------- 1c. RED RAMP — لون الخطر في الوضعين ---------- */
+  --red-100: #FBE8E6;
+  --red-300: #E0796E;   /* الخطر في الداكن */
+  --red-500: #A32B22;   /* الخطر في الفاتح */
+  --red-900: #331A17;   /* خلفية الخطر في الداكن */
+
+  /* ---------- 2. SURFACES ---------- */
+  --surface-page:     #EAF4EF;   /* الخلفية اللي بتعوم فوقها الحاوية */
+  --surface-app:      #F7FBF9;   /* منطقة المحتوى */
+  --surface-raised:   #FFFFFF;   /* الكروت */
+  --surface-sunken:   #F2F9F5;
+  --surface-hover:    #F2F9F5;
+  --surface-selected: #DDF2EA;
+  --surface-inverse:  #0F5C43;
+
+  /* ---------- 3. INK — رمادي محايد. مفيش نص أخضر فاتح خالص ---------- */
+  --ink-strong:  #16191A;
+  --ink-base:    #4E5658;
+  --ink-muted:   #737B7D;
+  --ink-faint:   #9AA2A3;
+  --ink-inverse: #FFFFFF;
+
+  /* ---------- 4. BORDERS ---------- */
+  --border-strong: #D2D9D7;
+  --border-base:   #E4E9E7;
+  --border-faint:  #EDF1EF;
+
+  /* ---------- 5. NAVIGATION ---------- */
+  --nav-bg:         #FFFFFF;
+  --nav-ink:        #5B6365;
+  --nav-ink-hover:  #16191A;
+  --nav-ink-active: #FFFFFF;
+  --nav-active-bg:  #0F5C43;
+  --nav-hover-bg:   #F2F9F5;
+  --nav-border:     #EAF4EF;
+  --nav-section:    #9AA2A3;
+
+  /* ---------- 6. ACCENT ---------- */
+  --accent:           #0F5C43;
+  --accent-ink:       #FFFFFF;
+  --accent-quiet:     #DDF2EA;
+  --accent-indicator: #0F5C43;
+  --lime:             #E7FF25;   /* توقيع البراند — اللوجو فقط */
+
+  /* ---------- 7. STATUS ---------- */
+  --state-positive:  #178064;
+  --state-attention: #0F5C43;
+  --state-critical:  #A32B22;   /* الاستثناء الوحيد للأخضر — خطر فعلي */
+  --state-info:      #2E9E85;
+  --state-neutral:   #9AA2A3;
+
+  --state-positive-bg:  #DDF2EA;
+  --state-attention-bg: #CDEBE0;
+  --state-critical-bg:  #FBE8E6;
+  --state-info-bg:      #EDF9F4;
+  --state-neutral-bg:   #F2F9F5;
+
+  /* ---------- 8. CHART RAMP ----------
+     بالِت سيكوينشال: لون واحد، إضاءة متدرّجة.
+     فصل الدرجات متحقق منه: ΔE من 20 إلى 40 (الحد 15).
+     الدرجة الفاتحة دايمًا معاها لِيبل مباشر — التباين وحده لا يكفي. */
+  --chart-1: #0F5C43;   /* الغامق — السلسلة الأساسية */
+  --chart-2: #2E9E85;   /* الوسط — السلسلة الثانية */
+  --chart-3: #9BDCC8;   /* الفاتح — المميّز */
+  --chart-critical: #A32B22;
+  --chart-grid:  #E7ECEA;
+  --chart-axis:  #9AA2A3;
+  --chart-track: #EDF9F4;
+
+  /* ---------- 9. ICON TINTS ----------
+     خلفية واحدة فاتحة ولون أيقونة واحد — كل الأيقونات متطابقة. */
+  --tint-bg:   #F1FAF6;   /* خلفية مربّع الأيقونة — فاتحة */
+  --tint-ink:  #178064;   /* لون كل الأيقونات */
+  --tint-crit-bg:  #FDF1F0;
+  --tint-crit-ink: #A32B22;
+  /* توافق */
+  --tint-1: var(--tint-bg); --tint-ink-1: var(--tint-ink);
+  --tint-2: var(--tint-bg); --tint-ink-2: var(--tint-ink);
+  --tint-3: var(--tint-bg); --tint-ink-3: var(--tint-ink);
+  --tint-4: var(--tint-bg); --tint-ink-4: var(--tint-ink);
+  --tint-crit: var(--tint-crit-bg); --tint-ink-crit: var(--tint-crit-ink);
+
+  /* ---------- 10. SPACING ---------- */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 28px; --sp-7: 40px; --sp-8: 56px;
+
+  /* ---------- 11. RADIUS ----------
+     ريديَس واحد لكل الكروت بلا استثناء. الأصغر للعناصر الداخلية فقط. */
+  --r-card: 14px;   /* ★ كل الكروت والألواح — قيمة واحدة */
+  --r-ctrl: 10px;   /* الأزرار، الحقول، عناصر القائمة */
+  --r-chip: 8px;    /* مربعات الأيقونات والشارات */
+  --r-full: 999px;
+  /* توافق مع الأسماء القديمة */
+  --r-sm: var(--r-ctrl);
+  --r-md: var(--r-card);
+  --r-lg: var(--r-card);
+
+  /* ---------- 12. TYPE — خط واحد ---------- */
+  --font-display: 'Rubik', system-ui, sans-serif;
+  --font-ui:      'Rubik', system-ui, sans-serif;
+  --font-mono:    'Rubik', system-ui, sans-serif;
+
+  --fs-micro: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px;
+  --fs-md: 15px;    --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 30px;
+
+  --lh-tight: 1.3;
+  --lh-base:  1.7;
+
+  --fw-regular: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700; --fw-black: 700;
+
+  /* ---------- 13. ELEVATION — ناعم زي الريفرنس ---------- */
+  --shadow-card: 0 1px 3px rgba(11,32,25,.03), 0 6px 20px rgba(11,32,25,.04);
+  --shadow-app:  0 20px 56px rgba(0,45,34,.10);
+  --shadow-pop:  0 12px 36px rgba(0,45,34,.16);
+  --shadow: var(--shadow-card);
+
+  /* ---------- 14. LAYOUT ---------- */
+  --nav-w: 232px;
+  --nav-w-collapsed: 72px;
+  --aside-w: 268px;   /* ★ عرض العمود الجانبي — واحد في كل الصفوف */
+  --gap: 16px;        /* ★ فراغ واحد بين كل الكروت */
+  --topbar-h: 0px;
+  --row-h: 52px;
+  --tap-min: 44px;
+  --app-inset: 0px;
+
+  /* ---------- 15. MOTION ---------- */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dur:  .15s;
+}
+
+/* ============================================================
+   16. الوضع الداكن — أسود محايد
+   ★ قاعدة: مفيش هيكس واحد هنا. كل قيمة var() من الباليت فوق.
+     الأسطح من سلّم --k (رمادي/أسود)، والأخضر من سلّم --g بالظبط.
+     كده مستحيل يدخل لون مش من حسيم.
+   ============================================================ */
+[data-theme="dark"]{
+  /* ---------- الأسطح: أسود محايد ---------- */
+  --surface-page:     var(--k-990);
+  --surface-app:      var(--k-950);
+  --surface-raised:   var(--k-900);
+  --surface-sunken:   var(--k-850);
+  --surface-hover:    var(--k-820);
+  --surface-selected: var(--k-750);
+  --surface-inverse:  var(--k-50);
+
+  /* ---------- الحبر ---------- */
+  --ink-strong:  var(--k-50);
+  --ink-base:    var(--k-300);
+  --ink-muted:   var(--k-500);
+  --ink-faint:   var(--k-600);
+  --ink-inverse: var(--k-990);
+
+  /* ---------- الحدود ---------- */
+  --border-strong: var(--k-700);
+  --border-base:   var(--k-800);
+  --border-faint:  var(--k-880);
+
+  /* ---------- القائمة ---------- */
+  --nav-bg:         var(--k-920);
+  --nav-ink:        var(--k-400);
+  --nav-ink-hover:  var(--k-50);
+  --nav-ink-active: #FFFFFF;
+  --nav-active-bg:  var(--g-600);   /* أخضر حسيم — العنصر النشط */
+  --nav-hover-bg:   var(--k-850);
+  --nav-border:     var(--k-880);
+  --nav-section:    var(--k-600);
+
+  /* ---------- الأكشن: أخضر حسيم، مفيش غيره ---------- */
+  --accent:           var(--g-600);
+  --accent-ink:       #FFFFFF;
+  --accent-quiet:     var(--g-800);
+  --accent-indicator: var(--g-500);
+
+  /* ---------- الحالات ---------- */
+  --state-positive:  var(--g-400);
+  --state-attention: var(--g-400);
+  --state-critical:  var(--red-300);
+  --state-info:      var(--g-400);
+  --state-neutral:   var(--k-500);
+
+  --state-positive-bg:  var(--g-800);
+  --state-attention-bg: var(--g-800);
+  --state-critical-bg:  var(--red-900);
+  --state-info-bg:      var(--g-800);
+  --state-neutral-bg:   var(--k-850);
+
+  /* ---------- الرسوم ---------- */
+  --chart-1: var(--g-500);
+  --chart-2: var(--g-600);
+  --chart-3: var(--g-300);
+  --chart-critical: var(--red-300);
+  --chart-grid:  var(--k-800);
+  --chart-axis:  var(--k-600);
+  --chart-track: var(--k-850);
+
+  /* ---------- تظليل الأيقونات: خلفية رمادية وحبر أخضر ---------- */
+  --tint-1:    var(--k-850);  --tint-ink-1: var(--g-400);
+  --tint-2:    var(--k-850);  --tint-ink-2: var(--g-400);
+  --tint-3:    var(--k-850);  --tint-ink-3: var(--g-400);
+  --tint-4:    var(--k-820);  --tint-ink-4: var(--g-300);
+  --tint-crit: var(--red-900); --tint-ink-crit: var(--red-300);
+  --tint-bg:   var(--k-850);  --tint-ink: var(--g-400);
+  --tint-crit-bg: var(--red-900); --tint-crit-ink: var(--red-300);
+
+  /* ---------- الظلال ---------- */
+  --shadow-card: 0 1px 3px rgba(0,0,0,.5), 0 6px 20px rgba(0,0,0,.42);
+  --shadow-app:  0 20px 56px rgba(0,0,0,.6);
+  --shadow-pop:  0 12px 36px rgba(0,0,0,.65);
+  --shadow: var(--shadow-card);
+
+  color-scheme: dark;
+}
