@@ -12,9 +12,8 @@
       /* الثيم بيتطبّق قبل أول رسم عشان مفيش ومضة بيضا */
       (function () {
         try {
-          var t = localStorage.getItem('haseem-theme');
-          if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-          document.documentElement.dataset.theme = t;
+          /* الافتراضي فاتح دايمًا — الداكن اختيار صريح من المستخدم */
+          document.documentElement.dataset.theme = localStorage.getItem('haseem-theme') || 'light';
         } catch (e) { document.documentElement.dataset.theme = 'light' }
       })();
     </script>

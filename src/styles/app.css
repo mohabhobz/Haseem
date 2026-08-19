@@ -1582,3 +1582,15 @@ body{background:var(--surface-page)}
 /* اللوجو والعنوان في النص على كل شاشات الدخول */
 .auth__logo{margin-inline:auto}
 .auth__title{text-align:center}
+
+/* ★ إصلاح السكرول على الموبايل
+   الشِل كان height:100vh + overflow:hidden، فالصفحة مكنش ينفع تطول.
+   على الديسكتوب .content هو اللي بيسكرول، وعلى الموبايل الصفحة نفسها. */
+@media (max-width: 900px){
+  html,body{height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  .shell{height:auto;min-height:100dvh;overflow:visible}
+  .main{overflow:visible;height:auto}
+  .content{overflow:visible;height:auto}
+  /* لما القائمة الجانبية تكون مفتوحة، الخلفية ما تسكرولش */
+  .shell.navopen{overflow:hidden;height:100dvh}
+}
