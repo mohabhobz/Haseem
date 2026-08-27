@@ -1,11 +1,13 @@
-import { fmtDate, fmtMoney, relDate, STATUS } from '../lib/format.js'
 import { Riyal } from './icons.jsx'
+import { fmtDate, fmtMoney, relDate, STATUS } from '../lib/format.js'
 
 /* رقم مالي — مونوسبيس، خانتان عشريتان، محاذاة ثابتة */
-export function Money({ value, muted = false, cur = 'SAR' }) {
+/* العملة مش بتتكتب جنب كل رقم — معلنة مرة واحدة فوق الصفحة (CurrencyNote).
+   في واجهة عربية «SAR» نص لاتيني مالوش لازمة، وتكراره ٢٠ مرة ضوضاء. */
+export function Money({ value, muted = false }) {
   return (
     <span data-component="Money" className={`cell-money${muted ? ' muted' : ''}`}>
-      <span className="num">{fmtMoney(value)}</span><span className="cur">{cur}</span>
+      <span className="num">{fmtMoney(value)}</span>
     </span>
   )
 }
@@ -30,12 +32,17 @@ export function PartyCell({ party }) {
   )
 }
 
+/* الهيئة: بتظهر بس لما يبقى فيه حاجة تتقال. «مقبولة» هي الوضع الطبيعي — سكوت. */
 export function ZatcaBadge({ state, reason }) {
-  if (!state) return null
-  const cls = state === 'bad' ? ' zatca--bad' : state === 'pending' ? ' zatca--pending' : ''
-  const title = state === 'bad' ? (reason || 'مرفوضة من الهيئة')
-    : state === 'pending' ? 'قيد الإرسال للهيئة' : 'مقبولة من هيئة الزكاة والضريبة'
-  return <span data-component="ZatcaBadge" className={`zatca${cls}`} title={title}>ZATCA</span>
+  if (!state || state === 'ok') return null
+  const bad = state === 'bad'
+  return (
+    <span data-component="ZatcaBadge"
+      className={`zatca${bad ? ' zatca--bad' : ' zatca--pending'}`}
+      title={bad ? (reason || 'مرفوضة من الهيئة') : 'قيد الإرسال للهيئة'}>
+      {bad ? 'رفض الهيئة' : 'عند الهيئة'}
+    </span>
+  )
 }
 
 /* الحالة ثنائية البُعد: حالة المستند عالية + حالة الهيئة هادية (إصلاح A3) */

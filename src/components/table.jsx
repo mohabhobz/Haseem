@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Ico } from './icons.jsx'
 import { Checkbox, IconButton, Button } from './primitives.jsx'
 
 /* جدول حقيقي برؤوس أعمدة ومحاذاة رقمية — الإصلاح الأساسي لملاحظة A1 */
@@ -22,13 +23,14 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
                 {c.sortable && <span className="sort">{c.sorted === 'desc' ? '▼' : '▲'}</span>}
               </th>
             ))}
-            <th className="actcell" />
+            <th className="actcell">{rows.some((r) => r.action) ? 'الأمر التالي' : ''}</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, ri) => (
             <tr key={r.key ?? ri} data-component="DataRow"
-              className={selected?.has(r.key ?? ri) ? 'selected' : ''}>
+              className={`${selected?.has(r.key ?? ri) ? 'selected' : ''}${r.onOpen ? ' is-open' : ''}`}
+              onClick={r.onOpen ? (e) => { if (!e.target.closest('button,input,label')) r.onOpen() } : undefined}>
               {selectable && (
                 <td className="checkcell">
                   <Checkbox checked={selected.has(r.key ?? ri)} onChange={() => onSelect(r.key ?? ri)} />
@@ -38,7 +40,16 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
                 <td key={ci} className={columns[ci]?.num ? 'n' : ''}>{cell}</td>
               ))}
               <td className="actcell">
-                <div className="rowacts"><IconButton icon="⋯" title="خيارات" /></div>
+                <div className="rowacts">
+                  {r.action && (
+                    <button className={`act act--${r.action.tone || 'go'}`}
+                      onClick={(e) => { e.stopPropagation(); r.action.onClick?.() }}>
+                      {r.action.label}
+                    </button>
+                  )}
+                  <button className="dots" aria-label={`خيارات ${r.key ?? ''}`}
+                    onClick={(e) => e.stopPropagation()}><Ico.more size={16} /></button>
+                </div>
               </td>
             </tr>
           ))}

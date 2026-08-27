@@ -6,3 +6,9 @@ dist
 .env.*
 .vercel
 *.log
+
+_to_delete/
+
+# ملفات مؤقتة بيولدها فايت مع كل بيلد
+vite.config.js.timestamp-*
+vite.local.config.js.timestamp-*

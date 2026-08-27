@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AppShell, PageHeader, Tabs, FilterBar, Panel, SummaryStrip, StateSwitcher } from '../components/layout.jsx'
+import { AppShell, PageHeader, Tabs, FilterBar, Panel, SummaryStrip, CurrencyNote } from '../components/layout.jsx'
 import { DataTable, BulkActionBar, Pagination, EmptyState, SkeletonRows, useSelection } from '../components/table.jsx'
 import { Button, SearchField } from '../components/primitives.jsx'
 
@@ -27,7 +27,8 @@ export default function DocumentList({
 
   return (
     <AppShell search={searchPlaceholder}>
-      <PageHeader title={title} sub={sub}
+      <PageHeader title={title}
+        sub={<>{sub}<CurrencyNote /></>}
         actions={<>{secondaryAction}{primaryAction}</>} />
       {note}
       {summary && <SummaryStrip {...summary} />}
@@ -35,7 +36,6 @@ export default function DocumentList({
       <FilterBar filters={filters} extra={<SearchField placeholder={searchPlaceholder} width={250} />} />
       <Panel flush>{body}</Panel>
       <BulkActionBar count={selected.size} actions={bulkActions} onClear={clear} />
-      <StateSwitcher value={state} onChange={setState} />
     </AppShell>
   )
 }

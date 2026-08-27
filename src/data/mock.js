@@ -5,10 +5,21 @@
     nameAr: 'ويب سكويدز',
     nameEn: 'Web Squids LLC',
     branch: 'فرع الرياض، العليا',
+    address: 'طريق الملك فهد، مبنى ١٢، حي العليا، الرياض ١٢٢١٤',
     vat: '399999999900003',
     cr: '1029239333',
-    zatca: 'متصل ببيئة المحاكاة'
+    zatca: 'مربوط بمنصة فاتورة',
+    zatcaOk: true,
+    zatcaSync: 'آخر مزامنة اليوم ٩:١٤ ص',
+    logo: '/tenant-logo.svg',
+    initials: 'وس'
   };
+
+  /* المنشآت اللي الحساب ده داخل عليها — مبدّل المنشأة */
+  export const orgs = [
+    { id:'o1', nameAr:'ويب سكويدز',                initials:'وس', logo:'/tenant-logo.svg', current:true  },
+    { id:'o2', nameAr:'شركة الخط المستقيم للمقاولات', initials:'خم', logo:null,             current:false },
+  ];
 
   export const user = { nameAr: 'مهاب هاني', initials: 'مه', role: 'مدير الحساب', photo: '/user.jpg' };
   /* photo: حطّ مسار صورة في public/ زي '/me.jpg' وهتظهر بدل الحروف */
@@ -88,3 +99,119 @@
     { level:'warn',     text:'عروض أسعار تنتهي صلاحيتها خلال أسبوع',   count:3, amount: 46000.00, go:'quotations.html' },
     { level:'warn',     text:'مسودات لم تُصدَر منذ أكثر من 14 يوم',     count:2, amount: 54915.75, go:'invoices.html' }
   ];
+
+/* ============================================================
+   بنود الفواتير وسجل الحركة — بتتولّد من رقم المستند عشان
+   تفضل ثابتة بين كل تحميل، ومطابقة لإجمالي الفاتورة بالضبط.
+   ============================================================ */
+export const catalog = [
+  { code:'SRV-011', ar:'تصميم واجهات وتجربة استخدام', unit:'ساعة', price:  320 },
+  { code:'SRV-024', ar:'تطوير واجهة أمامية',           unit:'ساعة', price:  280 },
+  { code:'SRV-031', ar:'استضافة ودعم فني — شهري',      unit:'شهر',  price: 1500 },
+  { code:'PRD-104', ar:'رخصة نظام — مستخدم',           unit:'رخصة', price:  850 },
+  { code:'SRV-052', ar:'تدريب فريق العميل',            unit:'جلسة', price: 2400 },
+  { code:'PRD-088', ar:'تكامل مع منصة فاتورة',         unit:'خدمة', price: 6500 },
+]
+
+const seedOf = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7)
+
+/* بنود بأسعار وحدة واقعية، ومجموعها بيطابق صافي الفاتورة بالظبط
+   (الإجمالي ÷ ١٫١٥). آخر بند بياخد فرق التقريب. */
+export function linesOf(doc) {
+  const seed = seedOf(doc.no)
+  const n = 2 + (seed % 3)
+  const net = +(doc.total / 1.15).toFixed(2)
+  const w = Array.from({ length: n }, (_, i) => ((seed >> (i * 3)) % 7) + 2)
+  const sum = w.reduce((a, b) => a + b, 0)
+
+  const out = []
+  let left = net
+  for (let i = 0; i < n; i++) {
+    const item = catalog[(seed + i * 5) % catalog.length]
+    if (i === n - 1) {
+      const qty = Math.max(1, Math.round(left / item.price))
+      out.push({ ...item, qty, price: +(left / qty).toFixed(2), total: +left.toFixed(2) })
+    } else {
+      const share = (net * w[i]) / sum
+      const qty = Math.max(1, Math.round(share / item.price))
+      const total = +(qty * item.price).toFixed(2)
+      left -= total
+      out.push({ ...item, qty, total })
+    }
+  }
+  return out
+}
+
+export function paymentsOf(doc) {
+  if (!doc.paid) return []
+  const seed = seedOf(doc.no)
+  const full = doc.paid >= doc.total
+  if (full) return [{ date: doc.due || doc.date, amount: doc.paid, way: 'تحويل بنكي', ref: `TRX-${9000 + (seed % 900)}` }]
+  return [{ date: doc.date, amount: doc.paid, way: 'تحويل بنكي', ref: `TRX-${9000 + (seed % 900)}` }]
+}
+
+/* سجل الحركة — بيتبني من حالة المستند نفسها، مفيش أحداث متخيّلة */
+export function timelineOf(doc) {
+  const t = [{ k: 'created', ar: 'اتعملت مسودة', date: doc.date, who: user.nameAr }]
+  if (doc.status !== 'draft') {
+    t.push({ k: 'issued', ar: 'اتصدرت واترسلت للعميل', date: doc.date, who: user.nameAr })
+    if (doc.zatca === 'ok')      t.push({ k: 'zatca', ar: 'الهيئة قبلتها', date: doc.date, who: 'منصة فاتورة' })
+    if (doc.zatca === 'pending') t.push({ k: 'wait',  ar: 'في انتظار رد الهيئة', date: doc.date, who: 'منصة فاتورة' })
+    if (doc.zatca === 'bad')     t.push({ k: 'bad',   ar: `الهيئة رفضتها — ${doc.zatcaReason || 'سبب غير محدد'}`, date: doc.date, who: 'منصة فاتورة' })
+  }
+  paymentsOf(doc).forEach((p) =>
+    t.push({ k: 'paid', ar: `اتسجّلت دفعة ${p.way}`, date: p.date, who: user.nameAr, amount: p.amount }))
+  if (doc.status === 'cancelled') t.push({ k: 'void', ar: 'اتلغت', date: doc.due || doc.date, who: user.nameAr })
+  return t
+}
+
+export const findInvoice = (no) => invoices.find((v) => v.no === no)
+
+/* ---------- بيانات الفورم: فروع · مستودعات · مندوبين · بنوك ---------- */
+export const branches = [
+  { id: 'BR-01', ar: 'الفرع الرئيسي — الرياض، العليا' },
+  { id: 'BR-02', ar: 'فرع جدة' },
+  { id: 'BR-03', ar: 'فرع الدمام' },
+]
+export const warehouses = [
+  { id: 'WH-01', ar: 'المستودع الرئيسي' },
+  { id: 'WH-02', ar: 'مستودع جدة' },
+]
+export const reps = [
+  { id: 'SP-01', ar: 'مهاب هاني' },
+  { id: 'SP-02', ar: 'سعد الحربي' },
+  { id: 'SP-03', ar: 'نورة العتيبي' },
+]
+export const banks = [
+  { id: 'BK-01', ar: 'البنك الأهلي السعودي', iban: 'SA03 8000 0000 6080 1016 7519', holder: 'Web Squids LLC' },
+  { id: 'BK-02', ar: 'مصرف الراجحي',        iban: 'SA44 2000 0001 2345 6789 1234', holder: 'Web Squids LLC' },
+]
+export const costCenters = [
+  { id: 'CC-01', ar: 'مشروع برج النخيل' },
+  { id: 'CC-02', ar: 'عقد الصيانة السنوي' },
+  { id: 'CC-03', ar: 'تشغيل عام' },
+]
+/* الفئات الضريبية المعتمدة من الهيئة */
+/* فئات الضريبة زي ما هي في السيستم — أكواد الهيئة (S · Z · E · O).
+   الفرق بين صفري ومعفي وغير خاضع مش شكلي: بيتكتب في XML الفاتورة. */
+export const taxRates = [
+  { id: 'S',   ar: 'خاضع للضريبة ١٥٪',                  rate: 15 },
+  { id: 'ZX',  ar: 'صادرات (Export — ٠٪)',              rate: 0  },
+  { id: 'Z',   ar: 'توريدات بنسبة صفر — أخرى (Z — ٠٪)', rate: 0  },
+  { id: 'E',   ar: 'معفي من الضريبة (E — ٠٪)',          rate: 0  },
+  { id: 'O',   ar: 'غير خاضع للضريبة (O — ٠٪)',         rate: 0  },
+]
+export const rateOf = (id) => taxRates.find((t) => t.id === id)?.rate ?? 0
+
+/* حسابات دليل الحسابات اللي البند بيترحّل عليها */
+export const accounts = [
+  { id: '4101', ar: '٤١٠١ — إيرادات الخدمات' },
+  { id: '4102', ar: '٤١٠٢ — إيرادات المبيعات' },
+  { id: '4201', ar: '٤٢٠١ — إيرادات أخرى' },
+]
+/* قوالب الطباعة */
+export const printTemplates = [
+  { id: 'default', ar: 'القالب الافتراضي' },
+  { id: 'compact', ar: 'قالب مختصر' },
+  { id: 'letter',  ar: 'قالب بورق الشركة' },
+]

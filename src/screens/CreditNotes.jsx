@@ -1,17 +1,86 @@
-import DocumentList from './DocumentList.jsx'
-import NoteBanner from './_NoteBanner.jsx'
-import { Button } from '../components/primitives.jsx'
+import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { AppShell, PageHeader, CurrencyNote } from '../components/layout.jsx'
+import { DataTable, BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
+import { Button, SearchField } from '../components/primitives.jsx'
 import { Money, DateCell, PartyCell, StatusCell, DocNo } from '../components/data.jsx'
+import { ViewToggle } from '../components/doclist.jsx'
+import { NGROUPS, ngroupOf, NGroup, NMoneyHead } from '../components/notelist.jsx'
+import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod } from '../components/pagefilter.jsx'
+import { TODAY } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 
+const REASONS = [...new Set(DATA.creditNotes.map((n) => n.reason).filter(Boolean))]
+const CITIES  = [...new Set(DATA.creditNotes.map((n) => n.c?.city).filter(Boolean))]
+
+const FGROUPS = [
+  {
+    id: 'state', label: 'الحالة',
+    options: [
+      { id: 'all',    label: 'الكل' },
+      { id: 'act',    label: 'محتاج تصرّف', test: (n) => ngroupOf(n) === 0 },
+      { id: 'issued', label: 'صادرة',       test: (n) => n.status === 'issued' },
+      { id: 'draft',  label: 'مسودات',      test: (n) => n.status === 'draft' },
+      { id: 'closed', label: 'ملغاة',       test: (n) => ['void', 'cancelled'].includes(n.status) },
+    ],
+  },
+  {
+    id: 'zatca', label: 'الهيئة',
+    options: [
+      { id: 'all',     label: 'الكل' },
+      { id: 'ok',      label: 'مقبولة',     test: (n) => n.zatca === 'ok' },
+      { id: 'bad',     label: 'مرفوضة',     test: (n) => n.zatca === 'bad' },
+      { id: 'pending', label: 'عند الهيئة', test: (n) => n.zatca === 'pending' },
+      { id: 'none',    label: 'ما اتصدرتش', test: (n) => !n.zatca },
+    ],
+  },
+  {
+    id: 'reason', label: 'السبب',
+    options: [
+      { id: 'all', label: 'الكل' },
+      ...REASONS.map((r) => ({ id: r, label: r, test: (n) => n.reason === r })),
+    ],
+  },
+  {
+    id: 'city', label: 'المدينة',
+    options: [
+      { id: 'all', label: 'الكل' },
+      ...CITIES.map((c) => ({ id: c, label: c, test: (n) => n.c?.city === c })),
+    ],
+  },
+]
+
 export default function CreditNotes() {
-  const rows = DATA.creditNotes.map((n) => ({
+  const nav = useNavigate()
+  const [view, setView] = useState('list')
+  const [period, setPeriod] = useState({ id: 'y' })
+  const [filter, setFilter] = useState(() => emptyFilter(FGROUPS))
+  const [q, setQ] = useState('')
+  const { selected, toggle, selectAll, clear } = useSelection()
+
+  const inRange = useMemo(
+    () => DATA.creditNotes.filter((n) => inPeriod(n, period, TODAY)), [period])
+
+  /* المبيعات في نفس الفترة — عشان نسبة الإشعارات تبقى ليها معنى */
+  const salesInRange = useMemo(
+    () => DATA.invoices.filter((v) => inPeriod(v, period, TODAY) && v.status !== 'draft'), [period])
+
+  const rows = useMemo(
+    () => applyFilter(inRange, FGROUPS, filter, q), [inRange, filter, q])
+
+  const grouped = useMemo(() => {
+    const g = NGROUPS.map(() => [])
+    rows.forEach((n) => g[ngroupOf(n)].push(n))
+    return g
+  }, [rows])
+
+  const tableRows = rows.map((n) => ({
     key: n.no,
     cells: [
       <DocNo value={n.no} />,
       <PartyCell party={n.c} />,
       <DocNo value={n.src} href="#/sales/invoices" />,
-      <span style={{ fontSize: 'var(--fs-sm)' }}>{n.reason}</span>,
+      <span className="cell-reason">{n.reason}</span>,
       <DateCell value={n.date} />,
       <StatusCell status={n.status} zatca={n.zatca} zatcaReason={n.zatcaReason} />,
       <Money value={n.total} muted={n.status === 'void'} />,
@@ -19,38 +88,67 @@ export default function CreditNotes() {
   }))
 
   return (
-    <DocumentList
-      title="إشعارات دائنة"
-      sub="تقليل مبلغ مستحق على عميل — مرتجعات وخصومات لاحقة"
-      primaryAction={<Button label="إشعار دائن جديد" variant="primary" icon="＋" />}
-      secondaryAction={<Button label="تصدير" variant="ghost" />}
-      note={<NoteBanner
-        strong="الإشعار الدائن يقلّل ما على العميل."
-        text="تستخدمه لما ترجع بضاعة أو تعطي خصم بعد إصدار الفاتورة. يُرسل للهيئة مرتبطًا بالفاتورة الأصلية."
-        link={<a className="link" href="#/sales/debit-notes">الإشعار المدين يعمل العكس ←</a>} />}
-      filters={[
-        { label: 'الحالة', value: 'الكل' },
-        { label: 'العميل', value: 'الكل' },
-        { label: 'الفترة', value: '2026', on: true },
-      ]}
-      searchPlaceholder="ابحث برقم الإشعار أو الفاتورة الأصلية…"
-      columns={[
-        { label: 'رقم الإشعار', width: '130px', sortable: true },
-        { label: 'العميل' },
-        { label: 'الفاتورة الأصلية', width: '140px' },
-        { label: 'السبب', width: '150px' },
-        { label: 'التاريخ', width: '135px', sortable: true, sorted: 'desc' },
-        { label: 'الحالة', width: '175px' },
-        { label: 'المبلغ المخصوم', num: true, width: '165px', sortable: true },
-      ]}
-      rows={rows}
-      bulkActions={['تحميل PDF', 'إرسال بالبريد', 'تصدير CSV']}
-      pagination={{ from: 1, to: 6, total: 24 }}
-      empty={{
-        title: 'ما فيه إشعارات دائنة',
-        text: 'الإشعار الدائن يقلّل المبلغ المستحق على العميل — مثل مرتجع بضاعة أو خصم لاحق.',
-        action: <Button label="إنشاء إشعار دائن" variant="primary" />,
-      }}
-    />
+    <AppShell>
+      <div className="tophead">
+        <PageHeader title="إشعارات دائنة"
+          sub={<>تقليل مبلغ مستحق على عميل — مرتجعات وخصومات لاحقة<CurrencyNote /></>} />
+        <div className="tophead__ctrl">
+          <DateRange value={period} onChange={setPeriod} today={TODAY} />
+          <Button label="إشعار دائن جديد" variant="primary" icon="＋"
+            onClick={() => nav('/sales/credit-notes/new')} />
+        </div>
+      </div>
+
+      <NMoneyHead rows={inRange} sales={salesInRange} kind="credit" />
+
+      <section className="sect" data-component="CreditNoteTable">
+        <header className="sect__h">
+          <h2 className="sect__t">الإشعارات<span className="sect__n">{rows.length}</span></h2>
+          <div className="sect__ctrl">
+            <SearchField placeholder="ابحث برقم الإشعار أو الفاتورة الأصلية…" width={260}
+              value={q} onChange={setQ} />
+            <PageFilter groups={FGROUPS} value={filter} onChange={setFilter} />
+            <ViewToggle value={view} onChange={setView} />
+          </div>
+        </header>
+
+        <FilterChips groups={FGROUPS} value={filter} onChange={setFilter}
+          q={q} onQ={setQ} shown={rows.length} total={inRange.length} />
+
+        {rows.length === 0 ? (
+          <div className="sect__empty">
+            <b>ما فيه إشعارات بالفلترة دي</b>
+            <span>جرّب توسّع الفلترة أو تمسحها، أو غيّر الفترة من فوق.</span>
+          </div>
+        ) : view === 'list' ? (
+          <div className="dlist dlist--note" data-component="NoteList">
+            {NGROUPS.map((g, i) => (
+              <NGroup key={g.id} group={g} rows={grouped[i]} kind="credit"
+                selected={selected} onSelect={toggle} />
+            ))}
+          </div>
+        ) : (
+          <>
+            <DataTable
+              columns={[
+                { label: 'رقم الإشعار', width: '118px', sortable: true },
+                { label: 'العميل' },
+                { label: 'الفاتورة الأصلية', width: '128px' },
+                { label: 'السبب', width: '150px' },
+                { label: 'التاريخ', width: '116px', sortable: true, sorted: 'desc' },
+                { label: 'الحالة', width: '210px' },
+                { label: 'المبلغ المخصوم', num: true, width: '140px', sortable: true },
+              ]}
+              rows={tableRows} selected={selected} onSelect={toggle}
+              onSelectAll={(on) => selectAll(on, rows.map((n) => n.no))}
+            />
+            <Pagination from={1} to={rows.length} total={rows.length} />
+          </>
+        )}
+      </section>
+
+      <BulkActionBar count={selected.size} onClear={clear}
+        actions={['تنزيل PDF', 'إرسال بالبريد', 'إعادة الإرسال للهيئة', 'تصدير CSV']} />
+    </AppShell>
   )
 }

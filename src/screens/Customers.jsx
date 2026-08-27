@@ -1,9 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import DocumentList from './DocumentList.jsx'
 import { Button } from '../components/primitives.jsx'
 import { Money, PartyCell } from '../components/data.jsx'
 import * as DATA from '../data/mock.js'
 
 export default function Customers() {
+  const nav = useNavigate()
   const rows = DATA.customers.map((c) => ({
     key: c.id,
     cells: [
@@ -20,7 +22,8 @@ export default function Customers() {
     <DocumentList
       title="العملاء"
       sub="بيانات العملاء وأرصدتهم"
-      primaryAction={<Button label="عميل جديد" variant="primary" icon="＋" />}
+      primaryAction={<Button label="عميل جديد" variant="primary" icon="＋"
+        onClick={() => nav('/sales/customers/new')} />}
       secondaryAction={<Button label="استيراد" variant="ghost" />}
       summary={{
         label: 'إجمالي أرصدة العملاء',
@@ -58,7 +61,8 @@ export default function Customers() {
       empty={{
         title: 'ما فيه عملاء بعد',
         text: 'أضف أول عميل وتقدر تصدر له فواتير وعروض أسعار مباشرة.',
-        action: <Button label="إضافة عميل" variant="primary" />,
+        action: <Button label="إضافة عميل" variant="primary"
+          onClick={() => nav('/sales/customers/new')} />,
       }}
     />
   )

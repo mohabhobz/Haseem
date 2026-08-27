@@ -49,55 +49,62 @@
   --red-900: #331A17;   /* خلفية الخطر في الداكن */
 
   /* ---------- 2. SURFACES ---------- */
-  --surface-page:     #EAF4EF;   /* الخلفية اللي بتعوم فوقها الحاوية */
-  --surface-app:      #F7FBF9;   /* منطقة المحتوى */
+  --surface-page:     #EFF0F2;   /* الخلفية اللي بتعوم فوقها الحاوية — رمادي محايد */
+  --surface-app:      #EDEEF1;   /* منطقة المحتوى */
   --surface-raised:   #FFFFFF;   /* الكروت */
-  --surface-sunken:   #F2F9F5;
-  --surface-hover:    #F2F9F5;
-  --surface-selected: #DDF2EA;
+  --surface-sunken:   #F2F3F6;
+  --surface-hover:    #F4F5F8;
+  --surface-selected: #EBF2EF;   /* المكان الوحيد اللي الأخضر بيلمس فيه سطح */
   --surface-inverse:  #0F5C43;
 
   /* ---------- 3. INK — رمادي محايد. مفيش نص أخضر فاتح خالص ---------- */
-  --ink-strong:  #16191A;
-  --ink-base:    #4E5658;
-  --ink-muted:   #737B7D;
-  --ink-faint:   #9AA2A3;
+  --ink-strong:  #17191C;
+  --ink-base:    #4A4F55;
+  --ink-muted:   #6E747C;
+  --ink-faint:   #9AA0A8;
   --ink-inverse: #FFFFFF;
 
   /* ---------- 4. BORDERS ---------- */
-  --border-strong: #D2D9D7;
-  --border-base:   #E4E9E7;
-  --border-faint:  #EDF1EF;
+  --border-strong: #D3D6DB;
+  --border-base:   #E3E5E9;
+  --border-faint:  #ECEEF1;
 
   /* ---------- 5. NAVIGATION ---------- */
   --nav-bg:         #FFFFFF;
-  --nav-ink:        #5B6365;
-  --nav-ink-hover:  #16191A;
+  --nav-ink:        #565C63;
+  --nav-ink-hover:  #17191C;
   --nav-ink-active: #FFFFFF;
   --nav-active-bg:  #0F5C43;
-  --nav-hover-bg:   #F2F9F5;
-  --nav-border:     #EAF4EF;
-  --nav-section:    #9AA2A3;
+  --nav-hover-bg:   #F3F4F6;
+  --nav-border:     #E8EAED;
+  --nav-section:    #9AA0A8;
 
   /* ---------- 6. ACCENT ---------- */
   --accent:           #0F5C43;
   --accent-ink:       #FFFFFF;
-  --accent-quiet:     #DDF2EA;
+  --accent-quiet:     #EBF2EF;
   --accent-indicator: #0F5C43;
   --lime:             #E7FF25;   /* توقيع البراند — اللوجو فقط */
 
   /* ---------- 7. STATUS ---------- */
-  --state-positive:  #178064;
-  --state-attention: #0F5C43;
-  --state-critical:  #A32B22;   /* الاستثناء الوحيد للأخضر — خطر فعلي */
-  --state-info:      #2E9E85;
-  --state-neutral:   #9AA2A3;
+  --state-positive:  #0D8A64;   /* محصّلة — أخضر أزهى */
+  --state-attention: #A96E12;   /* متأخرة أو قربت — تنبيه مش تخويف */
+  --state-critical:  #B4453A;   /* الخطأ الحقيقي بس: رفض الهيئة */
+  --state-info:      #5C636B;   /* صادرة وماشية — رمادي، مش لون */
 
-  --state-positive-bg:  #DDF2EA;
-  --state-attention-bg: #CDEBE0;
-  --state-critical-bg:  #FBE8E6;
-  --state-info-bg:      #EDF9F4;
-  --state-neutral-bg:   #F2F9F5;
+  /* ألوان الرسم — أزهى، للأشرطة والنقط. مش للنص. */
+  --viz-positive:  #12B981;
+  --viz-attention: #E0A33C;
+  --viz-info:      #5B8DEF;
+  --viz-neutral:   #C7CBD2;
+  --viz-faint:     #E4E7EB;
+  --state-neutral:   #9AA0A8;
+
+  --state-positive-bg:  #E4F5EE;
+  --state-attention-bg: #FBF3E3;
+  --state-critical-bg:  #FAEEEC;
+  --state-info-bg:      #F1F2F4;
+  --state-neutral-bg:   #F3F4F6;
 
   /* ---------- 8. CHART RAMP ----------
      بالِت سيكوينشال: لون واحد، إضاءة متدرّجة.
@@ -107,7 +114,7 @@
   --chart-2: #2E9E85;   /* الوسط — السلسلة الثانية */
   --chart-3: #9BDCC8;   /* الفاتح — المميّز */
   --chart-critical: #A32B22;
-  --chart-grid:  #E7ECEA;
+  --chart-grid:  #E8EAED;
   --chart-axis:  #9AA2A3;
   --chart-track: #EDF9F4;
 
@@ -130,14 +137,14 @@
 
   /* ---------- 11. RADIUS ----------
      ريديَس واحد لكل الكروت بلا استثناء. الأصغر للعناصر الداخلية فقط. */
-  --r-card: 14px;   /* ★ كل الكروت والألواح — قيمة واحدة */
-  --r-ctrl: 10px;   /* الأزرار، الحقول، عناصر القائمة */
-  --r-chip: 8px;    /* مربعات الأيقونات والشارات */
+  --r-card: 20px;   /* ★ كل الكروت والألواح */
+  --r-ctrl: 12px;   /* الأزرار، الحقول، عناصر القائمة */
+  --r-chip: 10px;   /* مربعات الأيقونات والشارات */
   --r-full: 999px;
   /* توافق مع الأسماء القديمة */
-  --r-sm: var(--r-ctrl);
-  --r-md: var(--r-card);
-  --r-lg: var(--r-card);
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 24px;
 
   /* ---------- 12. TYPE — خط واحد ---------- */
   --font-display: 'Rubik', system-ui, sans-serif;
@@ -153,7 +160,8 @@
   --fw-regular: 400; --fw-medium: 500; --fw-semi: 600; --fw-bold: 700; --fw-black: 700;
 
   /* ---------- 13. ELEVATION — ناعم زي الريفرنس ---------- */
-  --shadow-card: 0 1px 3px rgba(11,32,25,.03), 0 6px 20px rgba(11,32,25,.04);
+  --shadow-card: none;                                  /* الكروت مسطّحة — الأرضية هي اللي بتفصل */
+  --shadow-pill: 0 1px 2px rgba(20,24,28,.09);          /* للعنصر المرفوع جوه مبدّل فقط */
   --shadow-app:  0 20px 56px rgba(0,45,34,.10);
   --shadow-pop:  0 12px 36px rgba(0,45,34,.16);
   --shadow: var(--shadow-card);
@@ -212,22 +220,28 @@
   --nav-section:    var(--k-600);
 
   /* ---------- الأكشن: أخضر حسيم، مفيش غيره ---------- */
-  --accent:           var(--g-600);
+  --accent:           var(--g-600);   /* #178064 */
   --accent-ink:       #FFFFFF;
   --accent-quiet:     var(--g-800);
   --accent-indicator: var(--g-500);
 
   /* ---------- الحالات ---------- */
-  --state-positive:  var(--g-400);
-  --state-attention: var(--g-400);
-  --state-critical:  var(--red-300);
-  --state-info:      var(--g-400);
+  --state-positive:  #34D6A0;
+  --state-attention: #E2AE4E;
+  --state-critical:  #E08B7C;
+
+  --viz-positive:  #24D69C;
+  --viz-attention: #E0A33C;
+  --viz-info:      #6E9BF5;
+  --viz-neutral:   #3C4249;
+  --viz-faint:     #262A2F;
+  --state-info:      #9AA0A8;
   --state-neutral:   var(--k-500);
 
   --state-positive-bg:  var(--g-800);
-  --state-attention-bg: var(--g-800);
+  --state-attention-bg: #2A2210;
   --state-critical-bg:  var(--red-900);
-  --state-info-bg:      var(--g-800);
+  --state-info-bg:      var(--k-820);
   --state-neutral-bg:   var(--k-850);
 
   /* ---------- الرسوم ---------- */
@@ -249,7 +263,8 @@
   --tint-crit-bg: var(--red-900); --tint-crit-ink: var(--red-300);
 
   /* ---------- الظلال ---------- */
-  --shadow-card: 0 1px 3px rgba(0,0,0,.5), 0 6px 20px rgba(0,0,0,.42);
+  --shadow-card: none;
+  --shadow-pill: 0 1px 2px rgba(0,0,0,.5);
   --shadow-app:  0 20px 56px rgba(0,0,0,.6);
   --shadow-pop:  0 12px 36px rgba(0,0,0,.65);
   --shadow: var(--shadow-card);

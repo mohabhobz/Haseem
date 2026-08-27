@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Button, IconButton, SearchField } from './primitives.jsx'
-import { Ico } from './icons.jsx'
+import { Ico, Riyal } from './icons.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { getTheme, setTheme } from '../lib/theme.js'
@@ -36,6 +36,7 @@ export function Sidebar({ collapsed, onToggle }) {
   const { pathname } = useLocation()
   const nav = useNavigate()
   const [menu, setMenu] = useState(false)
+  const [orgMenu, setOrgMenu] = useState(false)
   const [theme, setTh] = useState(getTheme)
   const [open, setOpen] = useState(() => {
     const o = {}
@@ -46,11 +47,13 @@ export function Sidebar({ collapsed, onToggle }) {
   })
 
   useEffect(() => {
-    if (!menu) return
-    const away = () => setMenu(false)
+    if (!menu && !orgMenu) return
+    const away = () => { setMenu(false); setOrgMenu(false) }
+    const esc = (e) => { if (e.key === 'Escape') away() }
     document.addEventListener('click', away)
-    return () => document.removeEventListener('click', away)
-  }, [menu])
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('click', away); document.removeEventListener('keydown', esc) }
+  }, [menu, orgMenu])
 
   const renderItem = (it) => {
     if (it.children) {
@@ -59,7 +62,7 @@ export function Sidebar({ collapsed, onToggle }) {
           <button className="nav__item" onClick={() => setOpen((p) => ({ ...p, [it.label]: !p[it.label] }))}>
             <span className="ico"><it.Ic size={18} /></span>
             <span className="label">{it.label}</span>
-            <Ico.chevron size={15} className="chev" />
+            <Ico.chevron size={16} className="chev" />
           </button>
           <div className="nav__sub">
             {it.children.map((c) => (
@@ -88,9 +91,53 @@ export function Sidebar({ collapsed, onToggle }) {
 
   return (
     <nav data-component="Sidebar" className="nav">
-      <div className="nav__brand">
-        <img className="nav__logo nav__logo--light" src="/haseem-logo-ar.svg" alt="حسيم" />
-        <img className="nav__logo nav__logo--dark" src="/haseem-logo-ar-dark.svg" alt="" aria-hidden="true" />
+      {/* ★ رأس القائمة = هوية المنشأة نفسها. ده منتج SaaS —
+          العميل بيشوف شركته هو فوق، مش شعار حسيم. */}
+      <div className="orgtop" data-component="OrgSwitcher">
+        <span className="orgtop__id">
+          <span className="orgtop__av">
+            {DATA.org.logo
+              ? <img src={DATA.org.logo} alt="" />
+              : <b>{DATA.org.initials}</b>}
+          </span>
+          <span className="orgtop__n" title={DATA.org.nameAr}>{DATA.org.nameAr}</span>
+        </span>
+
+        <button className={`orgtop__btn${orgMenu ? ' is-open' : ''}`}
+          aria-label="خيارات المنشأة" aria-expanded={orgMenu}
+          onClick={(e) => { e.stopPropagation(); setOrgMenu((v) => !v) }}>
+          <Ico.chevron size={16} />
+        </button>
+
+        {orgMenu && (
+          <div className="omenu" data-component="OrgMenu" onClick={(e) => e.stopPropagation()}>
+            <div className={`omenu__zatca${DATA.org.zatcaOk ? ' is-ok' : ''}`}>
+              <i className="omenu__dot" />
+              <span className="omenu__zt">{DATA.org.zatca}</span>
+              <span className="omenu__zs">{DATA.org.zatcaSync}</span>
+            </div>
+
+            <div className="omenu__sep" />
+            <div className="omenu__lbl">تبديل المنشأة</div>
+            {DATA.orgs.map((o) => (
+              <button key={o.id} className={`omenu__org${o.current ? ' is-on' : ''}`}>
+                <span className="omenu__oav">
+                  {o.logo ? <img src={o.logo} alt="" /> : <b>{o.initials}</b>}
+                </span>
+                <span className="omenu__on">{o.nameAr}</span>
+                {o.current && <Ico.check size={15} className="omenu__ok" />}
+              </button>
+            ))}
+
+            <div className="omenu__sep" />
+            <button className="omenu__i">
+              <span className="omenu__ic"><Ico.settings size={16} /></span>إعدادات المنشأة
+            </button>
+            <button className="omenu__i">
+              <span className="omenu__ic"><Ico.plus size={16} /></span>إضافة منشأة
+            </button>
+          </div>
+        )}
       </div>
       <div className="nav__scroll">
         {NAV.map(renderItem)}
@@ -132,22 +179,23 @@ export function Sidebar({ collapsed, onToggle }) {
 
         <button className={`navprofile${menu ? ' is-open' : ''}`} data-component="NavProfile"
           onClick={(e) => { e.stopPropagation(); setMenu((v) => !v) }}>
-          <span className="avstack" data-component="AvatarStack">
-            <span className="avstack__a avstack__a--org" title={DATA.org.nameAr}>
-              <img src="/haseem-mark.svg" alt="" />
-            </span>
-            <span className="avstack__a avstack__a--user" title={DATA.user.nameAr}>
-              {DATA.user.photo
-                ? <img src={DATA.user.photo} alt="" />
-                : <b>{DATA.user.initials}</b>}
-            </span>
+          <span className="uav" title={DATA.user.nameAr}>
+            {DATA.user.photo
+              ? <img src={DATA.user.photo} alt="" />
+              : <b>{DATA.user.initials}</b>}
           </span>
           <span className="navprofile__t">
-            <span className="navprofile__n">{DATA.org.nameAr}</span>
-            <span className="navprofile__h">{DATA.user.nameAr}</span>
+            <span className="navprofile__n">{DATA.user.nameAr}</span>
+            <span className="navprofile__h">{DATA.user.role}</span>
           </span>
           <Ico.chevron size={16} className="navprofile__chev" />
         </button>
+
+        {/* توقيع المنتج — أصغر عنصر في الشاشة */}
+        <div className="navsig">
+          <img className="navsig__mark" src="/haseem-mark.svg" alt="" aria-hidden="true" />
+          <span className="navsig__t">مدعوم بمنصة <b>حسيم</b></span>
+        </div>
       </div>
     </nav>
   )
@@ -204,6 +252,15 @@ export function AppShell({ children, search }) {
         <div className="content">{children}</div>
       </main>
     </div>
+  )
+}
+
+/* إعلان العملة — مرة واحدة فوق، بدل ما «SAR» تتكرر جنب كل رقم في الجدول */
+export function CurrencyNote() {
+  return (
+    <p className="curnote" data-component="CurrencyNote">
+      <Riyal />كل المبالغ بالريال السعودي
+    </p>
   )
 }
 
@@ -264,7 +321,7 @@ export function SummaryStrip({ label, value, note, items = [] }) {
     <div data-component="SummaryStrip" className="summary">
       <div className="summary__lead">
         <div className="summary__label">{label}</div>
-        <div className="summary__value"><span className="num">{fmtMoney(value)}</span><span className="cur">SAR</span></div>
+        <div className="summary__value"><span className="num">{fmtMoney(value)}</span><Riyal /></div>
         {note && <div className="summary__note">{note}</div>}
       </div>
       <div className="summary__rest">

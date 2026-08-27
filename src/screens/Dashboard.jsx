@@ -113,7 +113,7 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <Button label="عرض الكل" variant="primary" className="panel__foot" onClick={() => setAttn(true)} />
+          <Button label="عرض الكل" variant="outline" className="panel__foot" onClick={() => setAttn(true)} />
         </Panel>
       </div>
 
@@ -133,7 +133,7 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <Button label="متابعة التحصيل" variant="primary" className="panel__foot" />
+          <Button label="متابعة التحصيل" variant="outline" className="panel__foot" />
         </Panel>
 
         <Panel title="آخر المستندات" action={<Ico.more size={18} className="dots" />}>
@@ -150,7 +150,7 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <Button label="كل المستندات" variant="primary" className="panel__foot" />
+          <Button label="كل المستندات" variant="outline" className="panel__foot" />
         </Panel>
 
         <Panel title="ضريبة القيمة المضافة"
@@ -173,7 +173,7 @@ export default function Dashboard() {
               </span>
             </div>
 
-            <Button label="مراجعة الإقرار" variant="primary" className="panel__foot" />
+            <Button label="مراجعة الإقرار" variant="outline" className="panel__foot" />
           </div>
         </Panel>
       </div>

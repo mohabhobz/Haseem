@@ -43,12 +43,19 @@ export function Field({ label, type = 'text', placeholder, hint, error, extra, .
   )
 }
 
-export function SearchField({ placeholder = 'ابحث…', width }) {
+export function SearchField({ placeholder = 'ابحث…', width, value, onChange }) {
+  const live = typeof onChange === 'function'
   return (
     <div data-component="SearchField" className="search" style={width ? { minWidth: width } : undefined}>
       <Ico.search size={17} />
-      <input placeholder={placeholder} />
-      <kbd>⌘K</kbd>
+      <input placeholder={placeholder}
+        value={live ? value ?? '' : undefined}
+        onChange={live ? (e) => onChange(e.target.value) : undefined} />
+      {live && value
+        ? <button className="search__x" aria-label="مسح البحث" onClick={() => onChange('')}>
+            <Ico.close size={14} />
+          </button>
+        : <kbd>⌘K</kbd>}
     </div>
   )
 }
