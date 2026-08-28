@@ -55,8 +55,9 @@ const TERMS = [
 ]
 
 const digits = (s) => (s || '').replace(/\D/g, '')
-/* قاعدة الهيئة زي ما هي في البورد بالحرف: ١٥ رقمًا تبدأ بـ٣ */
-const vatOk = (v) => /^3\d{14}$/.test(digits(v))
+/* قاعدة الهيئة زي ما هي مكتوبة في شاشة إعدادات المنشأة في السيستم:
+   ١٥ رقمًا تبدأ بـ٣ **وتنتهي بـ٣**. البورد كان كاتب النص الأول بس. */
+const vatOk = (v) => /^3\d{13}3$/.test(digits(v))
 
 const countAr = (n) => (n === 1 ? 'حقل واحد' : n === 2 ? 'حقلان' : `${n} حقول`)
 
@@ -107,7 +108,7 @@ export default function CustomerNew() {
 
   const errs = {}
   if (!ar.trim()) errs.ar = kind === 'biz' ? 'اسم الشركة مطلوب' : 'اسم العميل مطلوب'
-  if (vatReg && !vatOk(vat)) errs.vat = 'الرقم الضريبي يجب أن يتكوّن من ١٥ رقمًا ويبدأ بالرقم ٣'
+  if (vatReg && !vatOk(vat)) errs.vat = 'الرقم الضريبي يجب أن يتكوّن من ١٥ رقمًا يبدأ بالرقم ٣ وينتهي به'
   if (!hasReach) errs.reach = 'أدخل وسيلة تواصل واحدة على الأقل — بريد أو هاتف'
   if (idType && !idNo.trim()) errs.idNo = 'أدخل رقم الهوية أو أعد النوع إلى «بدون»'
 
@@ -226,12 +227,12 @@ export default function CustomerNew() {
                   <div className="fld">
                     <span className="fld__l">الرقم الضريبي <em className="req">مطلوب</em></span>
                     <input className={`fld__i ltr${show('vat') ? ' is-bad' : ''}`} value={vat} inputMode="numeric"
-                      maxLength={15} placeholder="3XXXXXXXXXXXXXX"
+                      maxLength={15} placeholder="3XXXXXXXXXXXXX3"
                       onChange={(e) => setVat(digits(e.target.value).slice(0, 15))} />
                     {show('vat')
                       ? <em className="fld__e">{errs.vat}</em>
                       : <em className="fld__h">
-                          ١٥ رقمًا تبدأ بالرقم ٣ · <b className="num">{vatLen}/15</b>
+                          ١٥ رقمًا تبدأ بـ٣ وتنتهي بـ٣ · <b className="num">{vatLen}/15</b>
                         </em>}
                   </div>
                   <label className="fld">

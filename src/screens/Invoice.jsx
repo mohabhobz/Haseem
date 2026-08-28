@@ -4,6 +4,7 @@ import { Ico, Riyal } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
 import { STATUS, fmtMoney, fmtDate, daysFrom } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { getBrand } from '../lib/brand.js'
 
 /* ============================================================
    الفاتورة — المستند نفسه على الشمال، وكل الأوامر المتعلقة بيه
@@ -136,7 +137,7 @@ export default function Invoice() {
         <article className="paper" data-component="InvoicePaper">
           <header className="paper__h">
             <div className="paper__org">
-              <img className="paper__logo" src={DATA.org.logo} alt="" />
+              <img className="paper__logo" src={getBrand().logo || DATA.org.logo} alt="" />
               <div>
                 <b>{DATA.org.nameAr}</b>
                 <span>{DATA.org.nameEn}</span>

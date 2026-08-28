@@ -12,6 +12,7 @@ import CreditNotes from './screens/CreditNotes.jsx'
 import DebitNotes from './screens/DebitNotes.jsx'
 import Customers from './screens/Customers.jsx'
 import CustomerNew from './screens/CustomerNew.jsx'
+import OrgSettings from './screens/OrgSettings.jsx'
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
       <Route path="/sales/debit-notes/new" element={<DebitNoteNew />} />
       <Route path="/sales/customers" element={<Customers />} />
       <Route path="/sales/customers/new" element={<CustomerNew />} />
+      <Route path="/settings/organization" element={<OrgSettings />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )

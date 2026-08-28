@@ -311,10 +311,11 @@ export default function CreditNoteNew() {
                   <span className="fld__l">طريقة الدفع <em className="fld__opt">حقل الهيئة</em></span>
                   <select className="fld__i" value={pay} onChange={(e) => setPay(e.target.value)}>
                     <option value="">غير محدد</option>
-                    <option value="cash">نقدًا</option>
-                    <option value="card">بطاقة</option>
-                    <option value="bank">تحويل بنكي</option>
-                    <option value="credit">آجل</option>
+                    {/* القيم زي ما هي في السيستم — حقل الهيئة مش مكان اجتهاد */}
+                    <option value="cash">نقداً</option>
+                    <option value="transfer">تحويل بنكي</option>
+                    <option value="account">حساب بنكي</option>
+                    <option value="card">بطاقة بنكية</option>
                   </select>
                 </label>
               </div>

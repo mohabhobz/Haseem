@@ -5,6 +5,7 @@ import { Ico, Riyal } from './icons.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { getTheme, setTheme } from '../lib/theme.js'
+import { getBrand } from '../lib/brand.js'
 
 /* خريطة التنقل — قائمة واحدة متصلة، من غير تقسيمات */
 const NAV = [
@@ -21,7 +22,9 @@ const NAV = [
   { Ic: Ico.purchases, label: 'المشتريات والمصروفات', to: '#' },
   { Ic: Ico.bank, label: 'النقد والبنوك', to: '#' },
   { Ic: Ico.ledger, label: 'المحاسبة', to: '#' },
-  { Ic: Ico.settings, label: 'الإعدادات', to: '#' },
+  { Ic: Ico.settings, label: 'الإعدادات', children: [
+      { label: 'إعدادات المنشأة', to: '/settings/organization' },
+  ]},
   { Ic: Ico.projects, label: 'المشاريع', to: '#' },
   { Ic: Ico.help, label: 'المساعدة', to: '#' },
 ]
@@ -38,6 +41,13 @@ export function Sidebar({ collapsed, onToggle }) {
   const [menu, setMenu] = useState(false)
   const [orgMenu, setOrgMenu] = useState(false)
   const [theme, setTh] = useState(getTheme)
+  /* شعار المنشأة بيتقرا من الهوية، وبيتحدّث لحظيًا لما تتغيّر */
+  const [brand, setBrand] = useState(getBrand)
+  useEffect(() => {
+    const on = (e) => setBrand(e.detail || getBrand())
+    window.addEventListener('haseem:brand', on)
+    return () => window.removeEventListener('haseem:brand', on)
+  }, [])
   const [open, setOpen] = useState(() => {
     const o = {}
     NAV.forEach((it) => {
@@ -96,8 +106,8 @@ export function Sidebar({ collapsed, onToggle }) {
       <div className="orgtop" data-component="OrgSwitcher">
         <span className="orgtop__id">
           <span className="orgtop__av">
-            {DATA.org.logo
-              ? <img src={DATA.org.logo} alt="" />
+            {brand.logo
+              ? <img src={brand.logo} alt="" />
               : <b>{DATA.org.initials}</b>}
           </span>
           <span className="orgtop__n" title={DATA.org.nameAr}>{DATA.org.nameAr}</span>
@@ -130,7 +140,8 @@ export function Sidebar({ collapsed, onToggle }) {
             ))}
 
             <div className="omenu__sep" />
-            <button className="omenu__i">
+            <button className="omenu__i"
+              onClick={() => { setOrgMenu(false); nav('/settings/organization') }}>
               <span className="omenu__ic"><Ico.settings size={16} /></span>إعدادات المنشأة
             </button>
             <button className="omenu__i">

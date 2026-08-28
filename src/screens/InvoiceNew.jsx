@@ -224,13 +224,20 @@ export default function InvoiceNew() {
         <CurrencyNote />
         <div className="dochead__row">
           <div className="dochead__id">
-            <h1 className="dochead__no dochead__no--ar">مستند جديد</h1>
-            <div className="segs" role="group" aria-label="نوع المستند">
-              {KINDS.map((k) => (
-                <button key={k.id} className={kind === k.id ? 'on' : ''}
-                  aria-pressed={kind === k.id} onClick={() => switchKind(k.id)}>{k.label}</button>
-              ))}
-            </div>
+            <h1 className="dochead__no dochead__no--ar">
+              {kind === 'inv' ? 'فاتورة مبيعات جديدة' : 'مستند جديد'}
+            </h1>
+            {/* زي السيستم بالظبط: شاشة الفاتورة مالهاش مبدّل نوع.
+                المبدّل بين عرض السعر والفاتورة المبدئية عايش في موديول
+                عروض الأسعار — والفاتورة ليها موديولها. */}
+            {kind !== 'inv' && (
+              <div className="segs" role="group" aria-label="نوع المستند">
+                {KINDS.filter((k) => k.id !== 'inv').map((k) => (
+                  <button key={k.id} className={kind === k.id ? 'on' : ''}
+                    aria-pressed={kind === k.id} onClick={() => switchKind(k.id)}>{k.label}</button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="dochead__act">
             <button className="btn btn--soft" onClick={() => setPreview(true)}>

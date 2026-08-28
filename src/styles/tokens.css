@@ -147,9 +147,14 @@
   --r-lg: 24px;
 
   /* ---------- 12. TYPE — خط واحد ---------- */
-  --font-display: 'Rubik', system-ui, sans-serif;
-  --font-ui:      'Rubik', system-ui, sans-serif;
-  --font-mono:    'Rubik', system-ui, sans-serif;
+  /* الافتراضي — وبيتبدّل من «هوية المنشأة» في الإعدادات.
+     اللاتيني الأول في الـstack عشان الأرقام تيجي منه،
+     والعربي بعده بياخد الحروف العربية تلقائيًا. */
+  --font-ar: 'IBM Plex Sans Arabic';
+  --font-en: 'Inter';
+  --font-display: var(--font-en), var(--font-ar), system-ui, sans-serif;
+  --font-ui:      var(--font-en), var(--font-ar), system-ui, sans-serif;
+  --font-mono:    var(--font-en), system-ui, sans-serif;
 
   --fs-micro: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px;
   --fs-md: 15px;    --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 30px;
