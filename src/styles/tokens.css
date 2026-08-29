@@ -55,7 +55,7 @@
   --surface-sunken:   #F2F3F6;
   --surface-hover:    #F4F5F8;
   --surface-selected: #EBF2EF;   /* المكان الوحيد اللي الأخضر بيلمس فيه سطح */
-  --surface-inverse:  #0F5C43;
+  --surface-inverse:  #0F5C43;   /* التلميحات — مشتق من لون المنشأة */
 
   /* ---------- 3. INK — رمادي محايد. مفيش نص أخضر فاتح خالص ---------- */
   --ink-strong:  #17191C;
@@ -84,13 +84,25 @@
   --accent-ink:       #FFFFFF;
   --accent-quiet:     #EBF2EF;
   --accent-indicator: #0F5C43;
+  /* درجتين أغمق من اللون الأساسي — للتلميحات وخلفيات شاشة الدخول */
+  --accent-deep:      #073F2F;
+  --accent-deeper:    #00291F;
+  /* الهالة حوالين النقطة النشطة — نفس اللون بشفافية */
+  --accent-glow:      rgba(15,92,67,.16);
   --lime:             #E7FF25;   /* توقيع البراند — اللوجو فقط */
+
+  /* ---------- 6b. حبر ثابت لا يتبع الهوية ولا الوضع ----------
+     دي القيم الوحيدة اللي مش بتتغيّر لا مع لون المنشأة ولا مع
+     الوضع الداكن، لأنها فوق حاجة لونها ثابت أصلًا. */
+  --on-critical: #FFFFFF;   /* حبر فوق الأحمر */
+  --on-media:    #FFFFFF;   /* حبر وأسطح فوق الصور */
 
   /* ---------- 7. STATUS ---------- */
   --state-positive:  #0D8A64;   /* محصّلة — أخضر أزهى */
-  --state-attention: #A96E12;   /* متأخرة أو قربت — تنبيه مش تخويف */
+  --state-attention: #C2410C;   /* تنبيه — بادچات بس، مش لون كتابة */
   --state-critical:  #B4453A;   /* الخطأ الحقيقي بس: رفض الهيئة */
   --state-info:      #5C636B;   /* صادرة وماشية — رمادي، مش لون */
+  --ink-info:        #2A5FC4;   /* ★ لون الكتابة التالت — للمعلومة بس */
 
   /* ألوان الرسم — أزهى، للأشرطة والنقط. مش للنص. */
   --viz-positive:  #12B981;
@@ -98,10 +110,15 @@
   --viz-info:      #5B8DEF;
   --viz-neutral:   #C7CBD2;
   --viz-faint:     #E4E7EB;
+  /* ألوان سلاسل الرسوم — خطوة لكل وضع، متحقّق منها بمدقّق اللوحة:
+     نطاق الإضاءة · أرضية التشبّع · فصل عمى الألوان · التباين. */
+  --series-1:      #5B8DEF;   /* السلسلة الوحيدة — كل الأعمدة بلون واحد */
+  --series-2:      #B5791A;   /* فئة مختلفة فعلًا (المرسمل)، مش ترتيب */
+  --series-track:  #F1F2F5;   /* مسار العمود — خافت، مرجع محاذاة بس */
   --state-neutral:   #9AA0A8;
 
   --state-positive-bg:  #E4F5EE;
-  --state-attention-bg: #FBF3E3;
+  --state-attention-bg: #FBEDE7;
   --state-critical-bg:  #FAEEEC;
   --state-info-bg:      #F1F2F4;
   --state-neutral-bg:   #F3F4F6;
@@ -130,6 +147,21 @@
   --tint-3: var(--tint-bg); --tint-ink-3: var(--tint-ink);
   --tint-4: var(--tint-bg); --tint-ink-4: var(--tint-ink);
   --tint-crit: var(--tint-crit-bg); --tint-ink-crit: var(--tint-crit-ink);
+
+  /* ---------- 9b. ورق الطباعة ----------
+     معاينة الطباعة لازم تبان زي اللي هيخرج من الطابعة: ورق أبيض
+     وحبر أسود — حتى والسيستم في الوضع الداكن، وحتى لو المنشأة
+     اختارت لون هوية تاني. عشان كده السلّم ده ثابت في الوضعين. */
+  --paper-bg:     #FFFFFF;
+  --paper-ink:    #17191C;
+  --paper-mute:   #6E747C;
+  --paper-faint:  #9AA0A8;
+  --paper-line:   #E3E5E9;
+  --paper-rule:   #D3D6DB;
+  --paper-soft:   #C9CDD3;
+  --paper-hair:   #EFF0F2;
+  --paper-sunken: #F5F6F8;
+  --paper-crit:   #B4453A;
 
   /* ---------- 10. SPACING ---------- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
@@ -167,12 +199,14 @@
   /* ---------- 13. ELEVATION — ناعم زي الريفرنس ---------- */
   --shadow-card: none;                                  /* الكروت مسطّحة — الأرضية هي اللي بتفصل */
   --shadow-pill: 0 1px 2px rgba(20,24,28,.09);          /* للعنصر المرفوع جوه مبدّل فقط */
-  --shadow-app:  0 20px 56px rgba(0,45,34,.10);
-  --shadow-pop:  0 12px 36px rgba(0,45,34,.16);
+  /* الظل محايد مش مخضّر — الظل مش جزء من الهوية، وأي ميل لوني
+     فيه بيضرب مع لون منشأة مختلف. */
+  --shadow-app:  0 20px 56px rgba(14,18,22,.10);
+  --shadow-pop:  0 12px 36px rgba(14,18,22,.16);
   --shadow: var(--shadow-card);
 
   /* ---------- 14. LAYOUT ---------- */
-  --nav-w: 232px;
+  --nav-w: 252px;   /* يستوعب أطول عنصر «المشتريات والمصروفات» في سطر واحد */
   --nav-w-collapsed: 72px;
   --aside-w: 268px;   /* ★ عرض العمود الجانبي — واحد في كل الصفوف */
   --gap: 16px;        /* ★ فراغ واحد بين كل الكروت */
@@ -229,10 +263,13 @@
   --accent-ink:       #FFFFFF;
   --accent-quiet:     var(--g-800);
   --accent-indicator: var(--g-500);
+  --accent-deep:      var(--g-800);
+  --accent-deeper:    var(--g-950);
+  --accent-glow:      rgba(46,158,133,.22);
 
   /* ---------- الحالات ---------- */
   --state-positive:  #34D6A0;
-  --state-attention: #E2AE4E;
+  --state-attention: #F08B5A;
   --state-critical:  #E08B7C;
 
   --viz-positive:  #24D69C;
@@ -240,11 +277,19 @@
   --viz-info:      #6E9BF5;
   --viz-neutral:   #3C4249;
   --viz-faint:     #262A2F;
+  /* الوضع الداكن خطوات **مختارة** مش مقلوبة — نطاق الإضاءة أضيق
+     على الأسود (0.48–0.67)، فالخطوة الفاتحة بتسقط منه. */
+  --series-1:      #4A7FE0;
+  --series-2:      #B8801F;
+  --series-track:  #262A2F;
   --state-info:      #9AA0A8;
+  --ink-info:        #7FA9F7;
   --state-neutral:   var(--k-500);
 
-  --state-positive-bg:  var(--g-800);
-  --state-attention-bg: #2A2210;
+  /* خلفية «محصّلة» ليها قيمتها الخاصة مش من سلّم البراند —
+     الحالة معنى ثابت، فمينفعش تتحرّك مع هوية المنشأة. */
+  --state-positive-bg:  #0A3527;
+  --state-attention-bg: #2E1A12;
   --state-critical-bg:  var(--red-900);
   --state-info-bg:      var(--k-820);
   --state-neutral-bg:   var(--k-850);

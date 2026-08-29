@@ -60,9 +60,27 @@ export function StatusCell({ status, zatca, zatcaReason, sub }) {
   )
 }
 
-export function DocNo({ value, href }) {
-  if (href) return <a data-component="DocNo" className="cell-doc cell-doc--link" href={href}>{value}</a>
-  return <span data-component="DocNo" className="cell-doc">{value}</span>
+export function DocNo({ value, href, onClick, sub }) {
+  /* رقم المستند بيبقى لينك بس لما يكون فيه فعلًا مكان يروح له.
+     قبل كده كان بيتحط عليه href وهمي (#/...) — شكله لينك ومبيروحش.
+
+     `sub` بيتحط لما الجدول فيه **أكتر من نوع مستند** (زي شاشة
+     العروض والفواتير المبدئية) — ساعتها الرقم لوحده مش كفاية. */
+  const tag = sub ? undefined : 'DocNo'
+  const body = onClick
+    ? <button data-component={tag} className="cell-doc cell-doc--link"
+        onClick={(e) => { e.stopPropagation(); onClick() }}>{value}</button>
+    : href
+      ? <a data-component={tag} className="cell-doc cell-doc--link" href={href}>{value}</a>
+      : <span data-component={tag} className="cell-doc">{value}</span>
+
+  if (!sub) return body
+  return (
+    <span data-component="DocNo" className="docno">
+      {body}
+      <em className="docno__k">{sub}</em>
+    </span>
+  )
 }
 
 /* ============================================================

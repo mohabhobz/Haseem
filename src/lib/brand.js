@@ -72,6 +72,9 @@ export const DEFAULT_BRAND = {
   fontAr: 'plexar',
   fontEn: 'inter',
   logo: '/tenant-logo.svg',
+  /* خلفية صفحة الدخول. `null` = الخلفية المولّدة من لون المنشأة.
+     لو المستخدم رفع صورة بتتحفظ هنا كـdata URL (مصغّرة). */
+  authBg: null,
 }
 
 /* ============================================================
@@ -127,6 +130,21 @@ export function contrast(a, b) {
 /* الحبر فوق اللون: أبيض ولا أسود؟ بالحساب مش بالذوق */
 const inkOn = (hex) => (contrast(hex, '#FFFFFF') >= 4.5 ? '#FFFFFF' : '#17191C')
 
+/* الهالة والظلال محتاجة اللون بشفافية، والـCSS مش بتعرف تعمل كده
+   من متغيّر هيكس — فبنطلّع الـrgba جاهزة من هنا. */
+function rgba(hex, a) {
+  let h = hex.replace('#', '')
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16))
+  return `rgba(${r},${g},${b},${a})`
+}
+
+/* الرمادي الفاتح اللي بيقلب مع الوضع الداكن — نفس قيمة --k-50.
+   لازم يتكتب هنا عشان مجموعة المفاتيح في الوضعين تفضل واحدة:
+   لو مفتاح اتكتب في وضع وما اتكتبش في التاني، بيفضل عالق بقيمته
+   القديمة لما المستخدم يبدّل الوضع. */
+const NEUTRAL_LIGHT = '#F3F4F5'
+
 /* ============================================================
    السلّم الكامل من لون واحد
    ============================================================ */
@@ -142,13 +160,21 @@ export function ramp(hex, dark = false) {
     let base = hex
     while (contrast(base, '#FFFFFF') < 4.5 && L > 12) { L -= 3; base = hslToHex(h, S, L) }
     const ink = inkOn(base)
+    const bl = hexToHsl(base).l
     return {
       '--accent': base,
       '--accent-ink': ink,
       '--accent-quiet': hslToHex(h, clamp(S * 0.42, 12, 40), 94),
       '--accent-indicator': base,
+      '--accent-deep': hslToHex(h, S, clamp(bl - 10, 6, 40)),
+      '--accent-deeper': hslToHex(h, S, clamp(bl - 18, 4, 32)),
+      '--accent-glow': rgba(base, 0.16),
       '--surface-selected': hslToHex(h, clamp(S * 0.42, 12, 40), 94),
+      /* خلفية التلميحات — لون المنشأة غامق، والحبر الأبيض فوقه
+         مضمون لأن base بيتغمّق لحد ما يعدّي حد التباين فوق. */
+      '--surface-inverse': base,
       '--nav-active-bg': base,
+      '--nav-ink-active': ink,
       '--tint-bg': hslToHex(h, clamp(S * 0.35, 10, 34), 96),
       '--tint-ink': hslToHex(h, S, 34),
       '--tint-1': hslToHex(h, clamp(S * 0.35, 10, 34), 96),
@@ -159,9 +185,12 @@ export function ramp(hex, dark = false) {
       '--tint-ink-2': hslToHex(h, S, 34),
       '--tint-ink-3': hslToHex(h, S, 34),
       '--tint-ink-4': hslToHex(h, S, 34),
+      /* السلاسل التلاتة لازم تفضل مفصولة عن بعض مهما كان اللون،
+         فالدرجات بتتحسب **بالنسبة لإضاءة اللون نفسه** مش بقيم ثابتة —
+         اللون الغامق كان بيدّي سلسلتين متشابهتين لما القيم كانت ثابتة. */
       '--chart-1': base,
-      '--chart-2': hslToHex(h, clamp(S * 0.72, 18, 70), 47),
-      '--chart-3': hslToHex(h, clamp(S * 0.5, 16, 55), 74),
+      '--chart-2': hslToHex(h, clamp(S * 0.78, 18, 72), clamp(bl + 19, 38, 58)),
+      '--chart-3': hslToHex(h, clamp(S * 0.55, 16, 58), clamp(bl + 52, 66, 82)),
       '--chart-track': hslToHex(h, clamp(S * 0.3, 8, 28), 95),
     }
   }
@@ -174,7 +203,14 @@ export function ramp(hex, dark = false) {
     '--accent-ink': inkOn(base),
     '--accent-quiet': hslToHex(h, clamp(S * 0.6, 12, 50), 17),
     '--accent-indicator': hslToHex(h, clamp(S * 0.8, 16, 72), 56),
+    '--accent-deep': hslToHex(h, clamp(S * 0.7, 12, 60), 22),
+    '--accent-deeper': hslToHex(h, clamp(S * 0.7, 12, 60), 13),
+    '--accent-glow': rgba(base, 0.22),
+    '--surface-selected': hslToHex(h, clamp(S * 0.3, 6, 26), 19),
+    /* في الداكن التلميحة بتنقلب: سطح فاتح وحبر غامق — زي التوكنز */
+    '--surface-inverse': NEUTRAL_LIGHT,
     '--nav-active-bg': base,
+    '--nav-ink-active': inkOn(base),
     '--tint-bg': hslToHex(h, clamp(S * 0.3, 6, 24), 14),
     '--tint-ink': hslToHex(h, clamp(S * 0.75, 16, 66), 62),
     '--tint-1': hslToHex(h, clamp(S * 0.3, 6, 24), 14),
@@ -240,4 +276,8 @@ export function applyBrand(b = getBrand()) {
   root.style.setProperty('--font-display', stack)
   root.style.setProperty('--font-mono', `${en.css}, system-ui, sans-serif`)
   root.style.setProperty('--brand-logo', `url("${b.logo || DEFAULT_BRAND.logo}")`)
+
+  /* خلفية صفحة الدخول: صورة المستخدم لو رفع واحدة، وإلا `none`
+     فتفضل الخلفية المولّدة من لون المنشأة هي اللي باينة. */
+  root.style.setProperty('--auth-bg', b.authBg ? `url("${b.authBg}")` : 'none')
 }

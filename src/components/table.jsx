@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Ico } from './icons.jsx'
 import { Checkbox, IconButton, Button } from './primitives.jsx'
+import { RowMenu } from './rowmenu.jsx'
 
 /* جدول حقيقي برؤوس أعمدة ومحاذاة رقمية — الإصلاح الأساسي لملاحظة A1 */
 export function DataTable({ columns, rows, selectable = true, selected, onSelect, onSelectAll }) {
@@ -15,14 +16,24 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
                 <Checkbox checked={allOn} onChange={() => onSelectAll(!allOn)} />
               </th>
             )}
-            {columns.map((c, i) => (
-              <th key={i}
-                className={`${c.num ? 'n' : ''} ${c.sortable ? 'sortable' : ''} ${c.sorted ? 'sorted' : ''}`}
-                style={c.width ? { width: c.width } : undefined}>
-                {c.label}
-                {c.sortable && <span className="sort">{c.sorted === 'desc' ? '▼' : '▲'}</span>}
-              </th>
-            ))}
+            {/* العمود بيبقى قابل للترتيب فعلًا بس لما الشاشة تبعت onSort.
+                من غيرها بيفضل رأس عادي — بدل سهم شكله زرار وهو مش زرار. */}
+            {columns.map((c, i) => {
+              const live = c.sortable && typeof c.onSort === 'function'
+              return (
+                <th key={i}
+                  className={`${c.num ? 'n' : ''} ${c.sortable ? 'sortable' : ''} ${c.sorted ? 'sorted' : ''}`}
+                  style={c.width ? { width: c.width } : undefined}
+                  aria-sort={c.sorted ? (c.sorted === 'desc' ? 'descending' : 'ascending') : undefined}
+                  onClick={live ? c.onSort : undefined}
+                  role={live ? 'button' : undefined}
+                  tabIndex={live ? 0 : undefined}
+                  onKeyDown={live ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); c.onSort() } } : undefined}>
+                  {c.label}
+                  {c.sortable && <span className="sort">{c.sorted === 'asc' ? '▲' : '▼'}</span>}
+                </th>
+              )
+            })}
             <th className="actcell">{rows.some((r) => r.action) ? 'الأمر التالي' : ''}</th>
           </tr>
         </thead>
@@ -47,8 +58,11 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
                       {r.action.label}
                     </button>
                   )}
-                  <button className="dots" aria-label={`خيارات ${r.key ?? ''}`}
-                    onClick={(e) => e.stopPropagation()}><Ico.more size={16} /></button>
+                  {/* القايمة بتيجي من الشاشة. لو الشاشة مبعتتش قايمة،
+                      مبنرسمش زرار بيفتح فراغ. */}
+                  {r.menu?.length > 0 && (
+                    <RowMenu label={`خيارات ${r.key ?? ''}`} items={r.menu} />
+                  )}
                 </div>
               </td>
             </tr>
@@ -60,28 +74,43 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
 }
 
 /* شريط الأفعال الجماعية — بديل تكرار 6 أزرار في كل صف (إصلاح A2) */
-export function BulkActionBar({ count, actions, onClear }) {
+export function BulkActionBar({ count, actions, onClear, onAction }) {
   if (!count) return null
   return (
     <div data-component="BulkActionBar" className="bulkbar">
       <span className="bulkbar__count">تم تحديد <span className="num">{count}</span></span>
-      {actions.map((a) => <Button key={a} label={a} variant="ghost" size="sm" />)}
+      {actions.map((a) => (
+        <Button key={a} label={a} variant="ghost" size="sm"
+          onClick={onAction ? () => onAction(a) : undefined} />
+      ))}
       <button className="bulkbar__close" onClick={onClear}>✕</button>
     </div>
   )
 }
 
-export function Pagination({ from, to, total }) {
+/* أزرار الصفحات بتظهر بس لما يبقى فيه أكتر من صفحة فعلًا.
+   قبل كده كانت ١ ٢ ٣ مرسومة دايمًا حتى لو كل النتايج في صفحة
+   واحدة — زرار شكله شغّال وهو مش شغّال. */
+export function Pagination({ from, to, total, page = 1, perPage, onPage }) {
+  const pages = perPage ? Math.max(1, Math.ceil(total / perPage)) : 1
+  const show = pages > 1 && typeof onPage === 'function'
+
   return (
     <div data-component="Pagination" className="pager">
       <div>عرض <span className="num">{from}</span> إلى <span className="num">{to}</span> من <span className="num">{total}</span></div>
-      <div className="pager__pages">
-        <button className="pager__btn">›</button>
-        <button className="pager__btn on">1</button>
-        <button className="pager__btn">2</button>
-        <button className="pager__btn">3</button>
-        <button className="pager__btn">‹</button>
-      </div>
+      {show && (
+        <div className="pager__pages">
+          <button className="pager__btn" disabled={page >= pages}
+            aria-label="الصفحة التالية" onClick={() => onPage(page + 1)}>›</button>
+          {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
+            <button key={n} className={`pager__btn${n === page ? ' on' : ''}`}
+              aria-current={n === page ? 'page' : undefined}
+              onClick={() => onPage(n)}>{n}</button>
+          ))}
+          <button className="pager__btn" disabled={page <= 1}
+            aria-label="الصفحة السابقة" onClick={() => onPage(page - 1)}>‹</button>
+        </div>
+      )}
     </div>
   )
 }

@@ -20,12 +20,15 @@ export function IconButton({ icon, title, onClick, className = '', ...rest }) {
   )
 }
 
-export function Checkbox({ checked = false, onChange }) {
+export function Checkbox({ checked = false, onChange, label }) {
+  /* زرار حقيقي بدور checkbox — عشان يشتغل بالكيبورد ويتقرا صح
+     في قارئ الشاشة. قبل كده كان span، يعني ماوس بس. */
   return (
-    <span data-component="Checkbox" className="cbwrap"
+    <button type="button" data-component="Checkbox" className="cbwrap"
+      role="checkbox" aria-checked={checked} aria-label={label || 'تحديد'}
       onClick={(e) => { e.stopPropagation(); onChange && onChange(!checked) }}>
       <span className={`cb${checked ? ' on' : ''}`} />
-    </span>
+    </button>
   )
 }
 

@@ -2,10 +2,12 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell, CurrencyNote } from '../components/layout.jsx'
 import { Ico } from '../components/icons.jsx'
+import { DateField } from '../components/datefield.jsx'
 import { SAR } from '../components/data.jsx'
 import { fmtMoney, fmtDate, TODAY } from '../lib/format.js'
 import { PrintPreview } from '../components/printpreview.jsx'
 import * as DATA from '../data/mock.js'
+import { toast, confirmAction } from '../components/feedback.jsx'
 
 /* ============================================================
    مستند بيع جديد — فاتورة ضريبية · فاتورة مبدئية · عرض سعر.
@@ -213,7 +215,32 @@ export default function InvoiceNew() {
   ].filter(Boolean).join(' ')
 
   /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك */
-  const submit = () => { setTried(true) }
+  /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك.
+     لو الفورم سليم، الإصدار بيسأل الأول لأنه مالوش رجعة. */
+  const submit = async () => {
+    setTried(true)
+    if (Object.keys(errs).length) return
+    const ok = await confirmAction({
+      title: `إصدار الفاتورة ${no}؟`,
+      body: 'الإصدار مالوش رجعة.',
+      tone: 'primary',
+      confirm: 'إصدار وإرسال للهيئة',
+      consequences: [
+        'المستند بياخد رقمه النهائي ومينفعش يتعدّل بعدها',
+        'بيتبعت لهيئة الزكاة والضريبة والجمارك فورًا',
+        'التعديل بعد كده بيبقى بإشعار دائن أو مدين بس',
+      ],
+    })
+    if (!ok) return
+    toast.ok(`الفاتورة ${no} اتصدرت`, { sub: 'الهيئة قبلتها' })
+    nav('/sales/invoices')
+  }
+
+  /* الحفظ كمسودة ليه رجعة، فبيتنفّذ على طول */
+  const saveDraft = () => {
+    toast.ok(`الفاتورة ${no} اتحفظت كمسودة`, { sub: 'تقدر تكمّلها وتصدرها بعدين' })
+    nav('/sales/invoices')
+  }
 
   return (
     <AppShell>
@@ -279,10 +306,7 @@ export default function InvoiceNew() {
                 )}
                 {show('no') && <em className="fld__e">{errs.no}</em>}
               </div>
-              <label className="fld">
-                <span className="fld__l">تاريخ الإصدار</span>
-                <input className="fld__i" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-              </label>
+              <DateField label="تاريخ الإصدار" value={date} onChange={setDate} />
               <label className="fld">
                 <span className="fld__l">{K.due}</span>
                 <input className="fld__i" type="date" value={due} min={date}
@@ -306,9 +330,11 @@ export default function InvoiceNew() {
             {extra && (
               <div className="frow frow--3 fmore__b">
                 <label className="fld">
-                  <span className="fld__l">الفرع</span>
+                  <span className="fld__l">الفرع <em className="fld__opt">كوده بيروح للهيئة</em></span>
                   <select className="fld__i" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                    {DATA.branches.map((b) => <option key={b.id} value={b.id}>{b.ar}</option>)}
+                    {DATA.branches.map((b) => (
+                      <option key={b.id} value={b.id}>{b.code} — {b.ar}</option>
+                    ))}
                   </select>
                 </label>
                 <label className="fld">
@@ -407,15 +433,32 @@ export default function InvoiceNew() {
                     <input className="fld__i n" type="number" min="0" max="100" step="1" value={l.dpc}
                       onChange={(e) => setLine(l.key, { dpc: e.target.value })} />
                   )}
-                  <select className="fld__i" value={l.tax}
-                    onChange={(e) => setLine(l.key, { tax: e.target.value })}>
-                    {DATA.taxRates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-                  </select>
+                  {/* الفئة وكود الإعفاء في خانة واحدة — الكود بيظهر بس
+                      لما الفئة مش «خاضع». الهيئة بتطلب الاتنين مع بعض
+                      على البند الصفري أو المعفي، ومن غير الكود الفاتورة
+                      بتترفض. كان ناقص عندنا. */}
+                  <span className="taxcell">
+                    <select className="fld__i" value={l.tax}
+                      onChange={(e) => setLine(l.key, { tax: e.target.value, vatex: '' })}>
+                      {DATA.taxRates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
+                    </select>
+                    {DATA.needsVatex(l.tax) && (
+                      <select className={`fld__i taxcell__x${!l.vatex ? ' is-bad' : ''}`}
+                        value={l.vatex || ''}
+                        onChange={(e) => setLine(l.key, { vatex: e.target.value })}
+                        title="كود الإعفاء المطلوب من الهيئة">
+                        <option value="">كود الإعفاء مطلوب…</option>
+                        {DATA.vatexFor(l.tax).map((x) => (
+                          <option key={x.id} value={x.id}>{x.id} — {x.ar}</option>
+                        ))}
+                      </select>
+                    )}
+                  </span>
                   {cols.acct && (
                     <select className="fld__i" value={l.acct}
                       onChange={(e) => setLine(l.key, { acct: e.target.value })}>
                       <option value="">—</option>
-                      {DATA.accounts.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
+                      {DATA.accountsOf('revenue').map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
                     </select>
                   )}
                   {cols.cc && (
@@ -612,9 +655,7 @@ export default function InvoiceNew() {
                 <button className={retBase === 'gross' ? 'on' : ''} onClick={() => setRetBase('gross')}>شامل الضريبة</button>
               </div>
 
-              <label className="fld"><span className="fld__l">تاريخ الإفراج المتوقع</span>
-                <input className="fld__i" type="date" value={retDate}
-                  onChange={(e) => setRetDate(e.target.value)} /></label>
+              <DateField label="تاريخ الإفراج المتوقع" value={retDate} onChange={setRetDate} />
               <label className="fld"><span className="fld__l">شرط الإفراج</span>
                 <input className="fld__i" placeholder="مثال: بعد انتهاء فترة الضمان"
                   value={retCond} onChange={(e) => setRetCond(e.target.value)} /></label>
@@ -659,7 +700,7 @@ export default function InvoiceNew() {
         </span>
         <div className="savebar__b">
           <button className="btn btn--ghost" onClick={() => nav('/sales/invoices')}>إلغاء</button>
-          <button className="btn btn--soft">حفظ كمسودة</button>
+          <button className="btn btn--soft" onClick={saveDraft}>حفظ كمسودة</button>
           <button className="btn btn--primary" onClick={submit}>
             <Ico.send size={16} />{K.go}
           </button>

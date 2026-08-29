@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Ico, Riyal } from '../components/icons.jsx'
+import { toast } from '../components/feedback.jsx'
+import { SilkBackdrop } from './auth.jsx'
 import {
   FONTS_AR, FONTS_EN, SWATCHES, DEFAULT_BRAND,
   getBrand, saveBrand, resetBrand, applyBrand,
@@ -25,12 +27,14 @@ import {
 /* شرائح المعاينة الصغيرة — بتعرض اللون في مواضعه الحقيقية */
 function Preview() {
   return (
-    <div className="bprev">
+    <div className="bprev" aria-hidden="true">
+      {/* دي عيّنات شكل مش أزرار — عشان كده span مش button:
+          الزرار اللي مبيعملش حاجة بيبقى فخ للمستخدم */}
       <div className="bprev__row">
-        <button className="btn btn--primary bprev__btn">إصدار الفاتورة</button>
-        <button className="btn btn--outline bprev__btn">معاينة</button>
+        <span className="btn btn--primary bprev__btn">إصدار الفاتورة</span>
+        <span className="btn btn--outline bprev__btn">معاينة</span>
         <span className="st st--positive">مدفوعة</span>
-        <button className="lnk">عرض المستند</button>
+        <span className="lnk">عرض المستند</span>
       </div>
 
       <div className="bprev__row bprev__row--split">
@@ -112,6 +116,9 @@ export function BrandTab() {
               </div>
             </div>
           </section>
+
+          {/* ---------- خلفية صفحة الدخول ---------- */}
+          <AuthBgCard value={b.authBg} onChange={(v) => setB((x) => ({ ...x, authBg: v }))} />
 
           {/* ---------- اللون الأساسي ---------- */}
           <section className="fcard">
@@ -255,5 +262,105 @@ export function BrandTab() {
         </div>
       </div>
     </>
+  )
+}
+
+/* ============================================================
+   خلفية صفحة الدخول.
+
+   الافتراضي **مش صورة** — هو موجات بتتولّد من لون المنشأة نفسه
+   وبتجري ببطء. ليه؟ لأن الصورة الجاهزة
+   بتبقى مظبوطة مع لون واحد بس؛ أول ما العميل يغيّر لونه، الصورة
+   بتبقى غلط وبتفضل غلط لحد ما حد يصمّم واحدة جديدة.
+
+   والمنشأة تقدر ترفع صورتها. لو شالتها **بترجع المولّدة** —
+   مفيش حالة «مفيش خلفية».
+
+   ★ ملحوظة تنفيذية: الصورة بتتصغّر في المتصفح قبل ما تتحفظ
+   (عرض ١٦٠٠ بكسل، JPEG) — لأن الصورة الأصلية من كاميرا ممكن
+   تبقى ٨ ميجا، وده بيفجّر مساحة التخزين المحلي. في الباك إند
+   دي هترفع كملف عادي والـURL بس اللي بيتخزّن.
+   ============================================================ */
+const BG_MAX_W = 1600
+const BG_MAX_MB = 12
+
+function AuthBgCard({ value, onChange }) {
+  const inp = useRef(null)
+  const [busy, setBusy] = useState(false)
+
+  const take = (file) => {
+    if (!file) return
+    if (!/^image\//.test(file.type)) {
+      toast.bad('ده مش ملف صورة', { sub: 'JPG أو PNG أو WebP' }); return
+    }
+    if (file.size > BG_MAX_MB * 1024 * 1024) {
+      toast.bad('الصورة كبيرة أوي', { sub: `الحد ${BG_MAX_MB} ميجا` }); return
+    }
+    setBusy(true)
+    const fr = new FileReader()
+    fr.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        /* التصغير قبل الحفظ — الصورة بتتعرض في عمود واحد،
+           فأكبر من ١٦٠٠ بكسل مالوش لازمة على الشاشة. */
+        const sc = Math.min(1, BG_MAX_W / img.width)
+        const c = document.createElement('canvas')
+        c.width = Math.round(img.width * sc)
+        c.height = Math.round(img.height * sc)
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height)
+        try {
+          const url = c.toDataURL('image/jpeg', 0.82)
+          onChange(url)
+          toast.ok('الخلفية اتحدّثت', { sub: 'دوس حفظ عشان تثبت' })
+        } catch (e) {
+          toast.bad('ما قدرناش نقرا الصورة')
+        }
+        setBusy(false)
+      }
+      img.onerror = () => { toast.bad('الصورة مش سليمة'); setBusy(false) }
+      img.src = fr.result
+    }
+    fr.onerror = () => { toast.bad('ما قدرناش نقرا الملف'); setBusy(false) }
+    fr.readAsDataURL(file)
+  }
+
+  return (
+    <section className="fcard">
+      <h2 className="fcard__t">
+        خلفية صفحة الدخول <em>العمود اللي جنب الفورم في الدخول وكود التحقق</em>
+      </h2>
+
+      <div className="brow">
+        <button className={`updrop updrop--bg${value ? ' is-set' : ''}`}
+          onClick={() => inp.current?.click()}
+          style={value ? { backgroundImage: `url("${value}")` } : undefined}
+          aria-label="رفع خلفية صفحة الدخول">
+          {/* المعاينة **هي نفسها** خلفية صفحة الدخول — نفس
+              الكمبوننت، مش تقريب ليها */}
+          {value ? null : <span className="updrop__gen" aria-hidden="true"><SilkBackdrop /></span>}
+          <span className="updrop__lbl">
+            {busy ? 'بنجهّز الصورة…' : value ? 'غيّر الصورة' : 'ارفع خلفية'}
+          </span>
+        </button>
+
+        <div className="brow__b">
+          <b>{value ? 'خلفية المنشأة' : 'الخلفية المولّدة من لونك'}</b>
+          <span>
+            {value
+              ? 'الصورة دي بتظهر في صفحة الدخول وصفحة كود التحقق. يُفضَّل صورة عمودية ١٦٠٠×٢٤٠٠ بكسل على الأقل، — الصورة بتغطّي الموجات المولّدة تمامًا.'
+              : 'من غير صورة، الخلفية بتتبني من لونك الأساسي: موجات بتجري ببطء بدرجات لونك. لما تغيّر اللون، الخلفية بتتغيّر معاه لوحدها — من غير ما حد يصمّم صورة جديدة.'}
+          </span>
+          {value && (
+            <button className="lnk lnk--mute" onClick={() => {
+              onChange(null)
+              toast.info('رجعنا للخلفية المولّدة', { sub: 'المبنية من لون المنشأة' })
+            }}>شيل الصورة وارجع للمولّدة</button>
+          )}
+        </div>
+      </div>
+
+      <input ref={inp} type="file" accept="image/*" hidden
+        onChange={(e) => { take(e.target.files?.[0]); e.target.value = '' }} />
+    </section>
   )
 }

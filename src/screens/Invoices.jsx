@@ -1,13 +1,18 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell, PageHeader, CurrencyNote } from '../components/layout.jsx'
 import { DataTable, BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
+import { docMenu } from '../components/rowmenu.jsx'
 import { Button, SearchField } from '../components/primitives.jsx'
 import { Money, DateCell, PartyCell, StatusCell, DocNo } from '../components/data.jsx'
 import { GROUPS, groupOf, Group, MoneyHead, ChangeLine, ViewToggle } from '../components/doclist.jsx'
-import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod } from '../components/pagefilter.jsx'
+import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod,
+  useSort, byDate, byNum, byText, byParty } from '../components/pagefilter.jsx'
 import { daysFrom, TODAY } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { useDocs } from '../lib/store.js'
+import * as ACT from '../lib/actions.js'
+import { toast } from '../components/feedback.jsx'
 
 const LIVE = ['issued', 'partial', 'overdue']
 
@@ -50,6 +55,23 @@ const FGROUPS = [
     ],
   },
   {
+    id: 'cred', label: 'الإشعارات',
+    options: [
+      { id: 'all',  label: 'الكل' },
+      { id: 'has',  label: 'مقيّدة بإشعار',
+        test: (v) => !!DATA.creditedState(v.no, v.total) },
+      { id: 'none', label: 'من غير إشعارات',
+        test: (v) => !DATA.creditedState(v.no, v.total) },
+    ],
+  },
+  {
+    id: 'cust', label: 'العميل',
+    options: [
+      { id: 'all', label: 'الكل' },
+      ...DATA.customers.map((c) => ({ id: c.id, label: c.ar, test: (v) => v.c?.id === c.id })),
+    ],
+  },
+  {
     id: 'city', label: 'المدينة',
     options: [
       { id: 'all', label: 'الكل' },
@@ -62,41 +84,103 @@ export default function Invoices() {
   const nav = useNavigate()
   const [view, setView] = useState('list')
   const [period, setPeriod] = useState({ id: 'y' })
-  const [filter, setFilter] = useState(() => emptyFilter(FGROUPS))
+  /* الشاشة بتقبل فلترة جاهزة من الرابط، عشان أي حتة تانية في
+     السيستم (الداشبورد · الإشعارات) تقدر توديك على «الفواتير
+     المرفوضة» مش على «كل الفواتير». مثال: ?zatca=bad */
+  const [params] = useSearchParams()
+  const [filter, setFilter] = useState(() => {
+    const f = emptyFilter(FGROUPS)
+    FGROUPS.forEach((g) => {
+      const v = params.get(g.id)
+      if (v && g.options.some((o) => o.id === v)) f[g.id] = v
+    })
+    return f
+  })
   const [q, setQ] = useState('')
   const { selected, toggle, selectAll, clear } = useSelection()
 
   /* ★ الفترة بتحدّد الشغلانة كلها — الانسايتس والجدول بيقروا من نفس المصدر */
+  const all = useDocs('invoices')
   const inRange = useMemo(
-    () => DATA.invoices.filter((v) => inPeriod(v, period, TODAY)), [period])
+    () => all.filter((v) => inPeriod(v, period, TODAY)), [all, period])
 
   /* فلترة الجدول جوّه الفترة */
   const rows = useMemo(
     () => applyFilter(inRange, FGROUPS, filter, q), [inRange, filter, q])
 
+  /* الترتيب — بيشتغل في عرض الجدول. عرض القائمة مرتّب بالأولوية
+     أصلًا، فالترتيب هناك ملهوش معنى. */
+  const S = useSort({
+    no: byText('no'), party: byParty, date: byDate('date'),
+    due: byDate('due'), total: byNum('total'),
+  }, 'due')
+
+  /* ★ الترتيب كان بيسري على الجدول بس، والقائمة مرتّبة بالأولوية
+     جوّه كل مجموعة من غير ما المستخدم يتحكّم. دلوقتي نفس الترتيب
+     بيتطبّق **جوّه كل مجموعة** — فالمبدّل بين العرضين مش بيغيّر
+     المعنى، بيغيّر الشكل بس. */
   const grouped = useMemo(() => {
     const g = GROUPS.map(() => [])
-    rows.forEach((v) => g[groupOf(v)].push(v))
+    S.apply(rows).forEach((v) => g[groupOf(v)].push(v))
     return g
-  }, [rows])
+  }, [rows, S.sort])
 
   const open = (no) => nav(`/sales/invoices/${no}`)
 
-  const tableRows = rows.map((v) => {
+  /* كل أوامر الصف بتعدّي من هنا. الشاشة بتعرف «مين» بس؛
+     «إيه اللي بيحصل» عايش في lib/actions.js. */
+  const on = (id, v) => {
+    switch (id) {
+      case 'issue':    return ACT.issueDoc('invoices', v)
+      case 'resubmit': return ACT.resubmitZatca('invoices', v)
+      case 'pay':      return open(v.no)
+      case 'mail':     return ACT.sendEmail('invoices', v)
+      case 'email':    return ACT.sendEmail('invoices', v)
+      case 'wa':       return ACT.sendWhatsApp('invoices', v)
+      case 'correct':  return ACT.correctDoc('invoices', v, () => nav('/sales/invoices/new'))
+      case 'view':     return open(v.no)
+      case 'pdf':      return ACT.downloadPdf('invoices', v)
+      case 'xml':      return ACT.downloadXml('invoices', v)
+      case 'print':    return ACT.printDoc()
+      case 'cn':       return nav('/sales/credit-notes/new')
+      case 'cancel':   return ACT.cancelDoc('invoices', v)
+      default: return undefined
+    }
+  }
+  const bulk = (label) => ACT.bulkAction(label, 'invoices', [...selected]).then(clear)
+  const byNo = (no) => rows.find((v) => v.no === no)
+
+  const tableRows = S.apply(rows).map((v) => {
     const rem = v.total - v.paid
     const live = LIVE.includes(v.status)
     let sub = ''
     if (v.status === 'overdue') sub = `متأخرة ${v.overdueDays} يوم`
     if (v.status === 'partial') sub = `سُدِّد ${Math.round((v.paid / v.total) * 100)}٪`
+    const act = v.status === 'draft' ? { label: 'إصدار', onClick: () => on('issue', v) }
+      : v.zatca === 'bad' ? { label: 'إعادة الإرسال', tone: 'crit', onClick: () => on('resubmit', v) }
+      : null
     return {
       key: v.no,
       onOpen: () => open(v.no),
+      action: act,
+      menu: docMenu({ zatca: v.zatca, status: v.status, onView: () => open(v.no), on: (id) => on(id, v) }),
       cells: [
         <DocNo value={v.no} />,
         <PartyCell party={v.c} />,
         <DateCell value={v.date} />,
         <DateCell value={v.due} rel={v.status === 'issued' || v.status === 'partial'} />,
-        <StatusCell status={v.status} zatca={v.zatca} zatcaReason={v.zatcaReason} sub={sub} />,
+        <span className="stwrap">
+          <StatusCell status={v.status} zatca={v.zatca} zatcaReason={v.zatcaReason} sub={sub} />
+          {(() => {
+            const cr = DATA.creditedState(v.no, v.total)
+            return cr ? (
+              <span className={`st st--${cr.full ? 'neutral' : 'info'} st--mini`}
+                title={`إشعارات بقيمة ${cr.amount} — المبلغ المعدّل ${cr.net}`}>
+                {cr.full ? 'مقيّدة بالكامل' : 'مقيّدة بإشعار'}
+              </span>
+            ) : null
+          })()}
+        </span>,
         <Money value={v.total} muted={v.status === 'cancelled' || v.status === 'void'} />,
         live && rem > 0 ? <Money value={rem} /> : <span className="hint" />,
       ],
@@ -115,7 +199,9 @@ export default function Invoices() {
       </div>
 
       <MoneyHead rows={inRange} />
-      <ChangeLine items={CHANGES} onOpen={() => {}} />
+      <ChangeLine items={CHANGES}
+        onOpen={() => toast.info('التغييرات دي بتيجي من سجل النشاط',
+          { sub: 'هتتربط بشاشة السجل لما الموديول بتاعها يتعمل' })} />
 
       {/* ---------- الجدول: اسمه ظاهر، والفلترة والعرض بتوعه جنبه ---------- */}
       <section className="sect" data-component="InvoiceTable">
@@ -141,19 +227,19 @@ export default function Invoices() {
           <div className="dlist" data-component="DocList">
             {GROUPS.map((g, i) => (
               <Group key={g.id} group={g} rows={grouped[i]}
-                selected={selected} onSelect={toggle} onOpen={open} />
+                selected={selected} onSelect={toggle} onOpen={open} on={on} />
             ))}
           </div>
         ) : (
           <>
             <DataTable
               columns={[
-                { label: 'رقم الفاتورة', width: '112px', sortable: true },
-                { label: 'العميل' },
-                { label: 'تاريخ الإصدار', width: '116px', sortable: true },
-                { label: 'الاستحقاق', width: '132px', sortable: true, sorted: 'desc' },
+                S.col('رقم الفاتورة', 'no', { width: '112px' }),
+                S.col('العميل', 'party'),
+                S.col('تاريخ الإصدار', 'date', { width: '116px' }),
+                S.col('الاستحقاق', 'due', { width: '132px' }),
                 { label: 'الحالة', width: '232px' },
-                { label: 'المبلغ', num: true, width: '125px', sortable: true },
+                S.col('المبلغ', 'total', { num: true, width: '125px' }),
                 { label: 'المتبقي', num: true, width: '112px' },
               ]}
               rows={tableRows} selected={selected} onSelect={toggle}
@@ -164,7 +250,7 @@ export default function Invoices() {
         )}
       </section>
 
-      <BulkActionBar count={selected.size} onClear={clear}
+      <BulkActionBar count={selected.size} onClear={clear} onAction={bulk}
         actions={['تنزيل PDF', 'إرسال بالبريد', 'تعليم كمدفوعة', 'إلغاء المسودات', 'تصدير CSV']} />
     </AppShell>
   )

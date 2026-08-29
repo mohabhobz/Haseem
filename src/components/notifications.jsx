@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Drawer } from './drawer.jsx'
 import { Ico } from './icons.jsx'
 import { SAR } from './data.jsx'
-import { fmtDate, daysFrom } from '../lib/format.js'
+import { fmtDate, daysFrom, dayAr } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 
 /* ============================================================
@@ -32,13 +32,6 @@ import * as DATA from '../data/mock.js'
 
 const ago = (iso) => Math.max(0, -(daysFrom(iso) ?? 0))
 /* تمييز العدد في العربية: ٣–١٠ جمع، وفوق العشرة مفرد منصوب */
-const dayAr = (n) =>
-  n === 0 ? 'اليوم'
-    : n === 1 ? 'يوم واحد'
-    : n === 2 ? 'يومين'
-    : n <= 10 ? `${n} أيام`
-    : `${n} يومًا`
-
 /* ---------- المصادر: كلها من الداتا ---------- */
 const rejected = DATA.invoices.filter((v) => v.zatca === 'bad')
 const overdue  = DATA.invoices.filter((v) => v.status === 'overdue')

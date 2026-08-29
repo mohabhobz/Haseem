@@ -4,11 +4,17 @@ import { AppShell, PageHeader, CurrencyNote } from '../components/layout.jsx'
 import { DataTable, BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
 import { Button, SearchField } from '../components/primitives.jsx'
 import { Money, DateCell, PartyCell, StatusCell, DocNo } from '../components/data.jsx'
+import { docMenu } from '../components/rowmenu.jsx'
 import { ViewToggle } from '../components/doclist.jsx'
 import { NGROUPS, ngroupOf, NGroup, NMoneyHead } from '../components/notelist.jsx'
-import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod } from '../components/pagefilter.jsx'
+import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod,
+  useSort, byDate, byNum, byText, byParty } from '../components/pagefilter.jsx'
 import { TODAY } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { useDocs } from '../lib/store.js'
+import * as ACT from '../lib/actions.js'
+import { PrintPreview } from '../components/printpreview.jsx'
+import { previewOf } from '../lib/preview.js'
 
 const REASONS = [...new Set(DATA.creditNotes.map((n) => n.reason).filter(Boolean))]
 const CITIES  = [...new Set(DATA.creditNotes.map((n) => n.c?.city).filter(Boolean))]
@@ -58,8 +64,9 @@ export default function CreditNotes() {
   const [q, setQ] = useState('')
   const { selected, toggle, selectAll, clear } = useSelection()
 
+  const all = useDocs('creditNotes')
   const inRange = useMemo(
-    () => DATA.creditNotes.filter((n) => inPeriod(n, period, TODAY)), [period])
+    () => all.filter((n) => inPeriod(n, period, TODAY)), [all, period])
 
   /* المبيعات في نفس الفترة — عشان نسبة الإشعارات تبقى ليها معنى */
   const salesInRange = useMemo(
@@ -68,18 +75,43 @@ export default function CreditNotes() {
   const rows = useMemo(
     () => applyFilter(inRange, FGROUPS, filter, q), [inRange, filter, q])
 
+  const S = useSort({
+    no: byText('no'), party: byParty, date: byDate('date'), total: byNum('total'),
+  }, 'date')
+
+  /* الإشعار مالوش شاشة مستند لوحدها — «عرض المستند» بيفتح الورقة
+     نفسها في المعاينة، ودي نفس اللي بتتطبع. */
+  const [preview, setPreview] = useState(null)
+  const open = (n) => setPreview(n)
+
+  const on = (id, n) => {
+    switch (id) {
+      case 'issue':    return ACT.issueDoc('creditNotes', n)
+      case 'resubmit': return ACT.resubmitZatca('creditNotes', n)
+      case 'mail':     return ACT.sendEmail('creditNotes', n)
+      case 'view':     return open(n)
+      case 'pdf':      return ACT.downloadPdf('creditNotes', n)
+      case 'xml':      return ACT.downloadXml('creditNotes', n)
+      case 'print':    return ACT.printDoc()
+      default: return undefined
+    }
+  }
+  const bulk = (label) => ACT.bulkAction(label, 'creditNotes', [...selected]).then(clear)
+
   const grouped = useMemo(() => {
     const g = NGROUPS.map(() => [])
     rows.forEach((n) => g[ngroupOf(n)].push(n))
     return g
   }, [rows])
 
-  const tableRows = rows.map((n) => ({
+  const tableRows = S.apply(rows).map((n) => ({
     key: n.no,
+    onOpen: () => open(n),
+    menu: docMenu({ zatca: n.zatca, onView: () => open(n), on: (id) => on(id, n) }),
     cells: [
       <DocNo value={n.no} />,
       <PartyCell party={n.c} />,
-      <DocNo value={n.src} href="#/sales/invoices" />,
+      <DocNo value={n.src} onClick={() => nav(`/sales/invoices/${n.src}`)} />,
       <span className="cell-reason">{n.reason}</span>,
       <DateCell value={n.date} />,
       <StatusCell status={n.status} zatca={n.zatca} zatcaReason={n.zatcaReason} />,
@@ -124,20 +156,20 @@ export default function CreditNotes() {
           <div className="dlist dlist--note" data-component="NoteList">
             {NGROUPS.map((g, i) => (
               <NGroup key={g.id} group={g} rows={grouped[i]} kind="credit"
-                selected={selected} onSelect={toggle} />
+                selected={selected} onSelect={toggle} onOpen={open} on={on} />
             ))}
           </div>
         ) : (
           <>
             <DataTable
               columns={[
-                { label: 'رقم الإشعار', width: '118px', sortable: true },
+                S.col('رقم الإشعار', 'no', { width: '118px' }),
                 { label: 'العميل' },
                 { label: 'الفاتورة الأصلية', width: '128px' },
                 { label: 'السبب', width: '150px' },
-                { label: 'التاريخ', width: '116px', sortable: true, sorted: 'desc' },
+                S.col('التاريخ', 'date', { width: '116px' }),
                 { label: 'الحالة', width: '210px' },
-                { label: 'المبلغ المخصوم', num: true, width: '140px', sortable: true },
+                S.col('المبلغ المخصوم', 'total', { num: true, width: '140px' }),
               ]}
               rows={tableRows} selected={selected} onSelect={toggle}
               onSelectAll={(on) => selectAll(on, rows.map((n) => n.no))}
@@ -147,8 +179,12 @@ export default function CreditNotes() {
         )}
       </section>
 
-      <BulkActionBar count={selected.size} onClear={clear}
+      <BulkActionBar count={selected.size} onClear={clear} onAction={bulk}
         actions={['تنزيل PDF', 'إرسال بالبريد', 'إعادة الإرسال للهيئة', 'تصدير CSV']} />
+
+      {preview && (
+        <PrintPreview doc={previewOf(preview, 'custCredit')} onClose={() => setPreview(null)} />
+      )}
     </AppShell>
   )
 }

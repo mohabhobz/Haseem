@@ -1,10 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { AppShell, PageHeader, Panel } from '../components/layout.jsx'
 import { NotificationsDrawer, NOTIF_COUNT } from '../components/notifications.jsx'
 import { Button, SearchField } from '../components/primitives.jsx'
 import { AreaChart } from '../components/charts.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
+import { toast } from '../components/feedback.jsx'
+import { daysFrom, fmtMoney, STATUS } from '../lib/format.js'
+import * as R from '../lib/reports.js'
+import * as DATA from '../data/mock.js'
 
 /* ============================================================
    الرئيسية — نفس تركيبة الريفرنس بالضبط
@@ -13,53 +18,106 @@ import { SAR } from '../components/data.jsx'
    صف 3: توزيع المستحقات · خريطة المدن · دونات الحالة
    ============================================================ */
 
+/* ★ الأربع كروت دول كانوا **مكتوبين بالإيد**: «النقد المتاح
+   ٦٥٣ ألف» و«المستحق عليك للموردين صفر» — والسيستم كله بيقول
+   أرقام تانية. ودي أول شاشة الكلاينت بيشوفها.
+
+   دلوقتي كلهم من **نفس دفتر اليومية** اللي التقارير بتقرا منه،
+   فمستحيل الرئيسية تخالف الميزانية ولا شاشة الموردين. */
+const TODAY = DATA.TODAY
+const cashTotal = DATA.cashAccounts.reduce((a, x) => a + R.balanceOf(x.acc, TODAY), 0)
+const arTotal   = R.balanceOf('1200', TODAY)
+const apTotal   = -R.balanceOf('2000', TODAY)
+const lateAr    = DATA.invoices
+  .filter((v) => ['issued', 'partial', 'overdue'].includes(v.status) && daysFrom(v.due) < 0)
+  .reduce((a, v) => a + (v.total - (v.paid || 0)), 0)
+
+/* الشهر الحالي — من أول يومه لحد النهارده */
+const MSTART = `${TODAY.slice(0, 7)}-01`
+const mInc = R.incomeStatement(MSTART, TODAY)
+
 const STATS = [
-  { l: 'النقد المتاح', v: 653092.47, Ic: Ico.cash,
-    sub: 'في 3 حسابات بنكية' },
-  { l: 'المستحق لك من العملاء', v: 29778.89, Ic: Ico.receivable,
-    sub: 'منها 26,653.89 متأخر', alert: true },
-  { l: 'المستحق عليك للموردين', v: 0.00, Ic: Ico.purchases,
-    sub: 'لا يوجد مستحقات' },
-  { l: 'صافي الربح هذا الشهر', v: 27830.00, Ic: Ico.sales,
-    sub: 'الإيراد ناقص المصروف' },
+  { l: 'النقد المتاح', v: cashTotal, Ic: Ico.cash,
+    sub: `في ${DATA.cashAccounts.length} حسابات`, to: '/cash/accounts' },
+  { l: 'المستحق لك من العملاء', v: arTotal, Ic: Ico.receivable,
+    sub: lateAr > 0 ? `منها ${fmtMoney(lateAr)} متأخر` : 'مفيش متأخر',
+    alert: lateAr > 0, to: '/sales/invoices?due=late' },
+  { l: 'المستحق عليك للموردين', v: apTotal, Ic: Ico.purchases,
+    sub: apTotal > 0 ? 'على فواتير مشتريات مرحّلة' : 'لا يوجد مستحقات',
+    to: '/purchases/suppliers' },
+  /* الشهر ممكن يقفل بخسارة — الكارت بيقول كده بدل ما يسمّيها «ربح» */
+  { l: mInc.net < 0 ? 'خسارة الشهر' : 'صافي الربح هذا الشهر', v: mInc.net, Ic: Ico.sales,
+    sub: mInc.net < 0 ? 'المصروف أكبر من الإيراد في الشهر ده' : 'الإيراد ناقص المصروف',
+    alert: mInc.net < 0, to: '/reports/income-statement' },
 ]
 
-const MONTHS = [
-  { l: 'يناير',  v: 112400 }, { l: 'فبراير', v: 138900 }, { l: 'مارس',   v: 176300 },
-  { l: 'أبريل',  v: 149800 }, { l: 'مايو',   v: 121500 }, { l: 'يونيو',  v: 158200 },
-  { l: 'يوليو',  v: 165800 }, { l: 'أغسطس',  v: 186420 }, { l: 'سبتمبر', v: 142000 },
-  { l: 'أكتوبر', v: 154600 }, { l: 'نوفمبر', v: 171200 }, { l: 'ديسمبر', v: 133700 },
-]
+/* الرسم من نفس سلسلة تقرير المبيعات — مش أرقام متخيّلة */
+const MONTHS = R.salesTrend(`${TODAY.slice(0, 4)}-01-01`, TODAY)
+  .map((m) => ({ l: m.label.split(' ')[0], v: m.net }))
 
-const DISTRIB = [
-  { n: 'شركة الفهد للمقاولات',  v: 84300, late: 20 },
-  { n: 'مجموعة الأفق التجارية', v: 67400, late: 0  },
-  { n: 'مؤسسة البناء المتين',   v: 46015, late: 6  },
-  { n: 'مؤسسة وادي القمم',      v: 43110, late: 7  },
-]
+/* أكبر المستحقات — من أرصدة العملاء الحقيقية */
+/* ★ كان بيقرا `c.balance` المخزّن. الرصيد المشتق هو المصدر
+   الوحيد في باقي السيستم، والمخزّن كان بيخالفه. */
+const DISTRIB = DATA.customers
+  .map((c) => ({ c, bal: DATA.customerBalance(c.id) }))
+  .filter((x) => x.bal > 0)
+  .sort((a, b) => b.bal - a.bal)
+  .slice(0, 4)
+  .map(({ c, bal }) => {
+    const late = DATA.invoices
+      .filter((v) => v.c?.id === c.id && v.status === 'overdue')
+      .reduce((m, v) => Math.max(m, v.overdueDays || 0), 0)
+    return { n: c.ar, v: bal, late }
+  })
 
-const RECENT = [
-  { no: 'INV-027122', c: 'مؤسسة النخبة للتجارة', v: 12450,  st: 'مدفوعة' },
-  { no: 'INV-027121', c: 'شركة الفهد للمقاولات',  v: 84300,  st: 'متأخرة' },
-  { no: 'INV-027120', c: 'مصنع الرياض للبلاستيك', v: 5780,   st: 'مرفوضة' },
-  { no: 'INV-027119', c: 'مؤسسة درب الشرق',       v: 23900,  st: 'جزئي' },
-]
+/* آخر أربع مستندات من الداتا نفسها — الصف بيفتح الفاتورة */
+const RECENT = [...DATA.invoices]
+  .sort((a, b) => new Date(b.date) - new Date(a.date))
+  .slice(0, 4)
+  .map((v) => ({ no: v.no, c: v.c.ar, v: v.total, st: (STATUS[v.status] || {}).label || v.status }))
 
+/* الإقرار من نفس محرّك التقارير — الكارت والشاشة بيقولوا رقم واحد */
+const QSTART = `${TODAY.slice(0, 4)}-${String(Math.floor(Number(TODAY.slice(5, 7)) / 3) * 3 + 1).padStart(2, '0')}-01`
+const qVat = R.vatReturn(QSTART, TODAY)
+const qNet = +(qVat.outVat - qVat.inVat).toFixed(2)
 const VAT = [
-  { l: 'ضريبة على مبيعاتك',   v: 42180.00 },
-  { l: 'ضريبة على مشترياتك', v: 14217.00, minus: true },
-  { l: 'الصافي المستحق',           v: 27963.00, net: true },
+  { l: 'ضريبة على مبيعاتك',   v: qVat.outVat },
+  { l: 'ضريبة على مشترياتك', v: qVat.inVat, minus: true },
+  /* لما المدخلات تزيد عن المخرجات الإقرار بيبقى **مسترد** مش مستحق.
+     كلمة «المستحق» جنب رقم سالب بتقلب المعنى. */
+  { l: qNet < 0 ? 'مسترد من الهيئة' : 'الصافي المستحق',
+    v: Math.abs(qNet), net: true },
 ]
+
+/* ★ الأرقام دي كانت مكتوبة بالإيد ومختلفة عن الداتا. دلوقتي
+   بتتحسب بنفس القواعد اللي الفلاتر في شاشة الفواتير بتستخدمها،
+   فالكارت والشاشة اللي بيفتحها بيقولوا نفس الرقم دايمًا.
+   والرابط هو الفلتر — الشاشة بتفتح على اللي الكارت بيتكلم عنه. */
+const sum = (rows) => rows.reduce((a, r) => a + (r.total || 0), 0)
+
+const REJECTED = DATA.invoices.filter((v) => v.zatca === 'bad')
+const OVERDUE  = DATA.invoices.filter((v) =>
+  v.status === 'overdue' || (['issued', 'partial'].includes(v.status) && daysFrom(v.due) < 0))
+const DRAFTS   = DATA.invoices.filter((v) => v.status === 'draft')
+const SOON     = DATA.quotations.filter((q) => {
+  const d = daysFrom(q.valid)
+  return q.status === 'sent' && d !== null && d >= 0 && d <= 7
+})
 
 const NEEDS = [
-  { t: 'مرفوضة من هيئة الزكاة', c: 2, unit: 'فاتورة', v: 11180,  Ic: Ico.rejected, crit: true },
-  { t: 'تجاوزت تاريخ الاستحقاق', c: 2, unit: 'فاتورة', v: 127410, Ic: Ico.overdue },
-  { t: 'عروض أسعار تنتهي قريبًا', c: 3, unit: 'عرض',   v: 46000,  Ic: Ico.expiring },
-  { t: 'مسودات لم تُصدَر',        c: 2, unit: 'مسودة',  v: 54915,  Ic: Ico.invoice },
-]
+  { t: 'مرفوضة من هيئة الزكاة', c: REJECTED.length, unit: 'فاتورة', v: sum(REJECTED),
+    Ic: Ico.rejected, crit: true, to: '/sales/invoices?zatca=bad' },
+  { t: 'تجاوزت تاريخ الاستحقاق', c: OVERDUE.length, unit: 'فاتورة', v: sum(OVERDUE),
+    Ic: Ico.overdue, to: '/sales/invoices?due=late' },
+  { t: 'عروض أسعار تنتهي قريبًا', c: SOON.length, unit: 'عرض', v: sum(SOON),
+    Ic: Ico.expiring, to: '/sales/quotations' },
+  { t: 'مسودات لم تُصدَر', c: DRAFTS.length, unit: 'مسودة', v: sum(DRAFTS),
+    Ic: Ico.invoice, to: '/sales/invoices?state=draft' },
+].filter((n) => n.c > 0)
 
 
 export default function Dashboard() {
+  const nav = useNavigate()
   const [attn, setAttn] = useState(false)
   const total = NOTIF_COUNT
 
@@ -68,7 +126,9 @@ export default function Dashboard() {
       <div className="tophead">
         <PageHeader title="وضعك المالي" />
         <div className="tophead__ctrl">
-          <button className="select select--pill">
+          <button className="select select--pill"
+            onClick={() => toast.info('السنة المالية الحالية 2026',
+              { sub: 'تبديل السنوات بيتفتح مع موديول المحاسبة' })}>
             <span>2026</span><Ico.chevron size={15} className="chev" />
           </button>
           <SearchField placeholder="ابحث عن أي شيء…" width={240} />
@@ -82,7 +142,11 @@ export default function Dashboard() {
       {/* ---------- صف ١ ---------- */}
       <div className="row1">
         {STATS.map((s) => (
-          <div key={s.l} data-component="StatCard" className={`stat${s.alert ? ' stat--alert' : ''}`}>
+          <div key={s.l} data-component="StatCard" role={s.to ? 'button' : undefined}
+            tabIndex={s.to ? 0 : undefined}
+            onClick={s.to ? () => nav(s.to) : undefined}
+            onKeyDown={s.to ? (e) => { if (e.key === 'Enter') nav(s.to) } : undefined}
+            className={`stat${s.alert ? ' stat--alert' : ''}${s.to ? ' stat--go' : ''}`}>
             <div className="stat__icon" ><s.Ic size={19} /></div>
             <div className="stat__t">
               <div className="stat__l">{s.l}</div>
@@ -96,14 +160,17 @@ export default function Dashboard() {
       {/* ---------- صف ٢ ---------- */}
       <div className="row2">
         <Panel title="المبيعات الشهرية"
-          action={<button className="select select--pill"><span>شهري</span><Ico.chevron size={15} className="chev" /></button>}>
+          action={<button className="select select--pill"
+            onClick={() => toast.info('العرض الشهري هو المتاح دلوقتي',
+              { sub: 'الأسبوعي والربعي جايين مع موديول التقارير' })}>
+            <span>شهري</span><Ico.chevron size={15} className="chev" /></button>}>
           <AreaChart data={MONTHS} highlightIndex={7} />
         </Panel>
 
         <Panel title="محتاج تصرّف منك" action={<Ico.more size={18} className="dots" />}>
           <div className="needs">
             {NEEDS.map((n) => (
-              <button key={n.t} className="needs__row">
+              <button key={n.t} className="needs__row" onClick={() => nav(n.to)}>
                 <span className={`needs__ic${n.crit ? ' needs__ic--crit' : ''}`}><n.Ic size={17} /></span>
                 <span className="needs__body">
                   <span className="needs__t">{n.t}</span>
@@ -122,7 +189,8 @@ export default function Dashboard() {
         <Panel title="أكبر المستحقات">
           <div className="distrib">
             {DISTRIB.map((c) => (
-              <button key={c.n} className="distrib__row">
+              <button key={c.n} className="distrib__row"
+                onClick={() => nav('/sales/invoices?due=late')}>
                 <span className="distrib__body">
                   <span className="distrib__n">{c.n}</span>
                   <span className={`distrib__m${c.late ? ' is-late' : ''}`}>
@@ -133,13 +201,15 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <Button label="متابعة التحصيل" variant="outline" className="panel__foot" />
+          <Button label="متابعة التحصيل" variant="outline" className="panel__foot"
+            onClick={() => nav('/sales/invoices?due=late')} />
         </Panel>
 
         <Panel title="آخر المستندات" action={<Ico.more size={18} className="dots" />}>
           <div className="recent">
             {RECENT.map((r) => (
-              <button key={r.no} className="recent__row">
+              <button key={r.no} className="recent__row"
+                onClick={() => nav(`/sales/invoices/${r.no}`)}>
                 <span className="recent__ic"><Ico.invoice size={16} /></span>
                 <span className="recent__body">
                   <span className="recent__c">{r.c}</span>
@@ -150,7 +220,8 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <Button label="كل المستندات" variant="outline" className="panel__foot" />
+          <Button label="كل المستندات" variant="outline" className="panel__foot"
+            onClick={() => nav('/sales/invoices')} />
         </Panel>
 
         <Panel title="ضريبة القيمة المضافة"
@@ -173,7 +244,9 @@ export default function Dashboard() {
               </span>
             </div>
 
-            <Button label="مراجعة الإقرار" variant="outline" className="panel__foot" />
+            <Button label="مراجعة الإقرار" variant="outline" className="panel__foot"
+            onClick={() => toast.info('إقرار الربع الثالث بيتفتح من موديول المحاسبة',
+              { sub: 'الأرقام هنا بتتجمّع من فواتير المبيعات والمشتريات' })} />
           </div>
         </Panel>
       </div>

@@ -6,6 +6,7 @@ import { SAR } from '../components/data.jsx'
 import { fmtMoney, TODAY } from '../lib/format.js'
 import { PrintPreview } from '../components/printpreview.jsx'
 import * as DATA from '../data/mock.js'
+import { toast, confirmAction } from '../components/feedback.jsx'
 
 /* ============================================================
    إشعار مدين جديد.
@@ -85,7 +86,32 @@ export default function DebitNoteNew() {
   const nErr = Object.keys(errs).length
 
   /* ★ الزرار شغّال دايمًا */
-  const submit = () => setTried(true)
+  /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك.
+     لو الفورم سليم، الإصدار بيسأل الأول لأنه مالوش رجعة. */
+  const submit = async () => {
+    setTried(true)
+    if (Object.keys(errs).length) return
+    const ok = await confirmAction({
+      title: `إصدار الإشعار المدين ${no}؟`,
+      body: 'الإصدار مالوش رجعة.',
+      tone: 'primary',
+      confirm: 'إصدار وإرسال للهيئة',
+      consequences: [
+        'المستند بياخد رقمه النهائي ومينفعش يتعدّل بعدها',
+        'بيتبعت لهيئة الزكاة والضريبة والجمارك فورًا',
+        'أثره على الفاتورة الأصلية بيتسجّل على طول',
+      ],
+    })
+    if (!ok) return
+    toast.ok(`الإشعار المدين ${no} اتصدر`, { sub: 'الهيئة قبلته' })
+    nav('/sales/debit-notes')
+  }
+
+  /* الحفظ كمسودة ليه رجعة، فبيتنفّذ على طول */
+  const saveDraft = () => {
+    toast.ok(`الإشعار المدين ${no} اتحفظ كمسودة`, { sub: 'تقدر تكمّله وتصدره بعدين' })
+    nav('/sales/debit-notes')
+  }
 
   return (
     <AppShell>
@@ -353,7 +379,7 @@ export default function DebitNoteNew() {
         </span>
         <div className="savebar__b">
           <button className="btn btn--ghost" onClick={() => nav('/sales/debit-notes')}>إلغاء</button>
-          <button className="btn btn--soft">حفظ كمسودة</button>
+          <button className="btn btn--soft" onClick={saveDraft}>حفظ كمسودة</button>
           <button className="btn btn--primary" onClick={submit}>
             <Ico.send size={16} />إصدار وإرسال للهيئة
           </button>
@@ -362,9 +388,10 @@ export default function DebitNoteNew() {
 
       {preview && (
         <PrintPreview onClose={() => setPreview(false)} doc={{
-          no, date, due: date, party: c, lines: calc.per,
+          no, date, party: c, lines: calc.per,
           net: calc.net, disc: 0, tax: calc.tax, total: calc.total,
           bank: DATA.banks[0], note, zatcaOk: false,
+          kind: 'custDebit', ref: src || undefined,
         }} />
       )}
     </AppShell>

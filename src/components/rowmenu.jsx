@@ -55,14 +55,26 @@ export function RowMenu({ items, label = 'خيارات' }) {
 
 /* الأوامر المشتركة لأي مستند اتبعت للهيئة — نفس القاعدة في كل الشاشات:
    العرض دايمًا شغّال، والـXML والPDF بعد قبول الهيئة بس. */
-export function docMenu({ zatca, onView }) {
+export function docMenu({ zatca, status, onView, on }) {
   const ok = zatca === 'ok'
   const why = zatca === 'bad' ? 'الهيئة رفضته' : 'بيتولد بعد قبول الهيئة'
+  const call = (id) => (on ? () => on(id) : undefined)
+  const live = ['issued', 'partial', 'paid', 'overdue'].includes(status)
   return [
-    { label: 'عرض المستند', Ic: Ico.search, onClick: onView },
+    { label: 'عرض المستند', Ic: Ico.search, onClick: onView || call('view') },
     { sep: true },
-    { label: 'تنزيل XML', Ic: Ico.download, off: !ok, why },
-    { label: 'تنزيل PDF', Ic: Ico.download, off: !ok, why },
-    { label: 'طباعة',     Ic: Ico.print },
+    /* ★ الإرسال والتصحيح كانوا على شاشة المستند بس. بقوا أوامر صف
+       كمان — المستخدم اللي بيراجع قايمة مش لازم يفتح كل فاتورة. */
+    { label: 'إرسال بالبريد', Ic: Ico.send, onClick: call('email'),
+      off: !live, why: 'المسودة ما بتتبعتش' },
+    { label: 'إرسال واتساب', Ic: Ico.send, onClick: call('wa'),
+      off: !live, why: 'المسودة ما بتتبعتش' },
+    { sep: true },
+    { label: 'تنزيل XML', Ic: Ico.download, off: !ok, why, onClick: call('xml') },
+    { label: 'تنزيل PDF', Ic: Ico.download, off: !ok, why, onClick: call('pdf') },
+    { label: 'طباعة',     Ic: Ico.print, onClick: call('print') },
+    { sep: true },
+    { label: 'نسخ للتصحيح', Ic: Ico.copy, onClick: call('correct'),
+      off: !live, why: 'التصحيح للصادرة بس' },
   ]
 }

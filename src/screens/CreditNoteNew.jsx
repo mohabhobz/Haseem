@@ -6,6 +6,7 @@ import { SAR } from '../components/data.jsx'
 import { fmtMoney, fmtDate, TODAY } from '../lib/format.js'
 import { PrintPreview } from '../components/printpreview.jsx'
 import * as DATA from '../data/mock.js'
+import { toast, confirmAction } from '../components/feedback.jsx'
 
 /* ============================================================
    إشعار دائن جديد — خطوتين.
@@ -217,7 +218,32 @@ export default function CreditNoteNew() {
   const nErr = Object.keys(errs).length
 
   /* ★ نفس قاعدة البورد: الزرار شغّال دايمًا */
-  const submit = () => setTried(true)
+  /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك.
+     لو الفورم سليم، الإصدار بيسأل الأول لأنه مالوش رجعة. */
+  const submit = async () => {
+    setTried(true)
+    if (Object.keys(errs).length) return
+    const ok = await confirmAction({
+      title: `إصدار الإشعار الدائن ${no}؟`,
+      body: 'الإصدار مالوش رجعة.',
+      tone: 'primary',
+      confirm: 'إصدار وإرسال للهيئة',
+      consequences: [
+        'المستند بياخد رقمه النهائي ومينفعش يتعدّل بعدها',
+        'بيتبعت لهيئة الزكاة والضريبة والجمارك فورًا',
+        'أثره على الفاتورة الأصلية بيتسجّل على طول',
+      ],
+    })
+    if (!ok) return
+    toast.ok(`الإشعار الدائن ${no} اتصدر`, { sub: 'الهيئة قبلته' })
+    nav('/sales/credit-notes')
+  }
+
+  /* الحفظ كمسودة ليه رجعة، فبيتنفّذ على طول */
+  const saveDraft = () => {
+    toast.ok(`الإشعار الدائن ${no} اتحفظ كمسودة`, { sub: 'تقدر تكمّله وتصدره بعدين' })
+    nav('/sales/credit-notes')
+  }
 
   if (!src) {
     return (
@@ -498,7 +524,7 @@ export default function CreditNoteNew() {
         </span>
         <div className="savebar__b">
           <button className="btn btn--ghost" onClick={() => nav('/sales/credit-notes')}>إلغاء</button>
-          <button className="btn btn--soft">حفظ كمسودة</button>
+          <button className="btn btn--soft" onClick={saveDraft}>حفظ كمسودة</button>
           <button className="btn btn--primary" onClick={submit}>
             <Ico.send size={16} />إصدار وإرسال للهيئة
           </button>
@@ -510,6 +536,7 @@ export default function CreditNoteNew() {
           no, date, due: supply, party: src.c, lines: calc.per,
           net: calc.net, disc: calc.disc, tax: calc.tax, total: calc.total,
           bank: DATA.banks[0], note, zatcaOk: false,
+          kind: 'custCredit', ref: src.no,
         }} />
       )}
     </AppShell>

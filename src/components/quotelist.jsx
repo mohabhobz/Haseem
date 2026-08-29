@@ -1,6 +1,7 @@
 import { Ico, Riyal } from './icons.jsx'
 import { Checkbox } from './primitives.jsx'
 import { STATUS, fmtDate, fmtMoney, daysFrom } from '../lib/format.js'
+import { isPrf, qKindAr } from '../data/mock.js'
 import { RowMenu } from './rowmenu.jsx'
 
 /* ============================================================
@@ -27,14 +28,17 @@ export function qgroupOf(q) {
   return 3
 }
 
-/* ---------- أمر واحد لكل صف، الحالة هي اللي بتقرره ---------- */
+/* ---------- أمر واحد لكل صف، الحالة هي اللي بتقرره ----------
+   والنوع بيغيّر **اللفظ** مش المنطق: العرض بيستنى موافقة،
+   والفاتورة المبدئية بتستنى سداد. تذكير واحد بكلمتين مختلفتين. */
 function actionOf(q) {
-  if (q.status === 'draft')     return { label: 'إرسال',        tone: 'go' }
-  if (q.status === 'accepted')  return { label: 'تحويل لفاتورة', tone: 'go' }
-  if (q.status === 'sent')      return { label: 'تذكير',        tone: 'quiet' }
-  if (q.status === 'expired')   return { label: 'تجديد', tone: 'quiet' }
-  if (q.status === 'rejected')  return { label: 'نسخة معدّلة',   tone: 'quiet' }
-  if (q.status === 'converted') return { label: 'فتح الفاتورة',  tone: 'quiet' }
+  const prf = isPrf(q)
+  if (q.status === 'draft')     return { id: 'send',    label: 'إرسال',        tone: 'go' }
+  if (q.status === 'accepted')  return { id: 'convert', label: 'تحويل لفاتورة', tone: 'go' }
+  if (q.status === 'sent')      return { id: 'remind',  label: prf ? 'تذكير بالسداد' : 'تذكير', tone: 'quiet' }
+  if (q.status === 'expired')   return { id: 'renew',   label: 'تجديد', tone: 'quiet' }
+  if (q.status === 'rejected')  return { id: 'revise',  label: 'نسخة معدّلة',   tone: 'quiet' }
+  if (q.status === 'converted') return { id: 'goinv',   label: 'فتح الفاتورة',  tone: 'quiet' }
   return null
 }
 
@@ -55,7 +59,7 @@ function QState({ status }) {
 }
 
 /* ---------- الصف ---------- */
-export function QRow({ q, selected, onSelect, onOpen }) {
+export function QRow({ q, selected, onSelect, onOpen, on }) {
   const act = actionOf(q)
   const soft = ['rejected', 'cancelled', 'expired'].includes(q.status)
   const d = daysFrom(q.valid)
@@ -84,7 +88,7 @@ export function QRow({ q, selected, onSelect, onOpen }) {
 
       <span className="row__party">
         <b>{q.c.ar}</b>
-        <span className="row__doc">{q.no}</span>
+        <span className="row__doc">{q.no} · {qKindAr(q)}</span>
       </span>
 
       <span className="row__mid">
@@ -97,16 +101,21 @@ export function QRow({ q, selected, onSelect, onOpen }) {
       </span>
 
       <span className="row__act">
-        {act && <button className={`act act--${act.tone}`}>{act.label}</button>}
+        {act && (
+          <button className={`act act--${act.tone}`} onClick={() => on?.(act.id, q)}>
+            {act.label}
+          </button>
+        )}
         <RowMenu label={`خيارات ${q.no}`} items={[
-          { label: 'عرض العرض', Ic: Ico.search },
+          { label: isPrf(q) ? 'عرض المستند' : 'عرض العرض', Ic: Ico.search, onClick: onOpen },
           { sep: true },
-          { label: 'تنزيل PDF', Ic: Ico.download },
-          { label: 'طباعة',     Ic: Ico.print },
-          { label: 'إرسال بالبريد', Ic: Ico.send },
+          { label: 'تنزيل PDF', Ic: Ico.download, onClick: () => on?.('pdf', q) },
+          { label: 'طباعة',     Ic: Ico.print, onClick: () => on?.('print', q) },
+          { label: 'إرسال بالبريد', Ic: Ico.send, onClick: () => on?.('mail', q) },
           { sep: true },
-          { label: 'نسخة جديدة', Ic: Ico.copy },
-          { label: 'إلغاء العرض', Ic: Ico.close, tone: 'crit',
+          { label: 'نسخة جديدة', Ic: Ico.copy, onClick: () => on?.('dup', q) },
+          { label: isPrf(q) ? 'إلغاء المستند' : 'إلغاء العرض', Ic: Ico.close, tone: 'crit',
+            onClick: () => on?.('cancel', q),
             off: ['converted','cancelled'].includes(q.status),
             why: q.status === 'converted' ? 'اتحوّل لفاتورة' : 'ملغي أصلًا' },
         ]} />
@@ -115,7 +124,7 @@ export function QRow({ q, selected, onSelect, onOpen }) {
   )
 }
 
-export function QGroup({ group, rows, selected, onSelect, onOpen }) {
+export function QGroup({ group, rows, selected, onSelect, onOpen, on }) {
   if (!rows.length) return null
   /* قيمة المجموعة — بس للمجموعات اللي القيمة فيها معناها حاجة */
   const sum = rows.reduce((a, r) => a + r.total, 0)
@@ -133,15 +142,19 @@ export function QGroup({ group, rows, selected, onSelect, onOpen }) {
       </header>
       {rows.map((q) => (
         <QRow key={q.no} q={q} selected={selected.has(q.no)} onSelect={() => onSelect(q.no)}
-          onOpen={onOpen ? () => onOpen(q.no) : undefined} />
+          onOpen={onOpen ? () => onOpen(q.no) : undefined} on={on} />
       ))}
     </section>
   )
 }
 
 /* ---------- رأس الأرقام ----------
-   الرقم اللي بيجاوب «العروض دي رايحة على فين؟»:
-   كام عرض، وقيمة اللي لسه شغّال، ونسبة القبول. */
+   الرقم اللي بيجاوب «المستندات دي رايحة على فين؟»:
+   كام مستند، وقيمة اللي لسه شغّال، ونسبة القبول.
+
+   ★ نسبة القبول بتتحسب على **العروض بس**. الفاتورة المبدئية
+   مش بتتقبل ولا بتترفض — بتتدفع أو بتنتهي، فخلطها في النسبة
+   كان هيدّي رقم مالوش معنى. */
 export function QMoneyHead({ rows }) {
   const has = (st) => rows.filter((r) => st.includes(r.status))
   const sent      = has(['sent'])
@@ -155,10 +168,12 @@ export function QMoneyHead({ rows }) {
   const sentSum     = sent.reduce((a, r) => a + r.total, 0)
 
   /* نسبة القبول: اللي العميل ردّ عليه بموافقة من اللي ردّ عليه أصلًا */
-  const answered = [...accepted, ...converted, ...has(['rejected', 'expired'])]
-  const won      = [...accepted, ...converted]
+  const quotes   = (l) => l.filter((r) => !isPrf(r))
+  const answered = quotes([...accepted, ...converted, ...has(['rejected', 'expired'])])
+  const won      = quotes([...accepted, ...converted])
   const rate     = answered.length ? Math.round((won.length / answered.length) * 100) : 0
 
+  const prfN = rows.filter(isPrf).length
   const pc = (n, d) => (d ? (n / d) * 100 : 0)
 
   const SPLIT = [
@@ -174,8 +189,11 @@ export function QMoneyHead({ rows }) {
 
       {/* ١ — العدد وتقسيمته */}
       <article className="ins__c">
-        <span className="ins__lbl">العروض هذه الفترة</span>
-        <span className="ins__v"><span className="ins__n">{rows.length}</span><em>عرض</em></span>
+        <span className="ins__lbl">المستندات هذه الفترة</span>
+        <span className="ins__v">
+          <span className="ins__n">{rows.length}</span>
+          <em>{prfN ? `منها ${prfN} فاتورة مبدئية` : 'عرض'}</em>
+        </span>
         <span className="ins__bar">
           {SPLIT.map(([key, c, list]) => list().length > 0 && (
             <i key={key} style={{ width: `${pc(list().length, rows.length)}%`, background: c }} />
@@ -190,7 +208,7 @@ export function QMoneyHead({ rows }) {
 
       {/* ٢ — القيمة اللي لسه شغّالة */}
       <article className="ins__c">
-        <span className="ins__lbl">قيمة العروض المفتوحة</span>
+        <span className="ins__lbl">القيمة المفتوحة</span>
         <span className="ins__v"><Amount v={openSum} sign /></span>
         <span className="ins__bar">
           <i style={{ width: `${pc(acceptedSum, openSum)}%`, background: 'var(--viz-positive)' }} />
@@ -204,7 +222,7 @@ export function QMoneyHead({ rows }) {
 
       {/* ٣ — نسبة القبول */}
       <article className="ins__c">
-        <span className="ins__lbl">نسبة القبول</span>
+        <span className="ins__lbl">نسبة قبول العروض</span>
         <span className="ins__v"><span className="ins__n">{rate}</span><em>٪</em></span>
         <span className="ins__bar">
           <i style={{ width: `${rate}%`, background: 'var(--viz-positive)' }} />
@@ -212,6 +230,7 @@ export function QMoneyHead({ rows }) {
         <span className="ins__leg">
           <b><i data-c="p" />{won.length} مقبول</b>
           <b><i data-c="f" />{answered.length - won.length} ما تمّش</b>
+          {prfN > 0 && <b className="is-quiet">الفواتير المبدئية برّه الحساب</b>}
         </span>
       </article>
     </div>

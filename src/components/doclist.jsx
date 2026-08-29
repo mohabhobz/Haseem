@@ -29,10 +29,10 @@ export function groupOf(v) {
 
 /* ---------- أكشن واحد، بيتحدد من حالة الصف ---------- */
 function actionOf(v) {
-  if (v.zatca === 'bad') return { label: 'إعادة الإرسال', tone: 'crit' }
-  if (v.status === 'draft') return { label: 'إصدار', tone: 'go' }
-  if (['overdue', 'partial', 'issued'].includes(v.status)) return { label: 'تسجيل دفعة', tone: 'go' }
-  if (v.status === 'paid') return { label: 'إرسال', tone: 'quiet' }
+  if (v.zatca === 'bad') return { id: 'resubmit', label: 'إعادة الإرسال', tone: 'crit' }
+  if (v.status === 'draft') return { id: 'issue', label: 'إصدار', tone: 'go' }
+  if (['overdue', 'partial', 'issued'].includes(v.status)) return { id: 'pay', label: 'تسجيل دفعة', tone: 'go' }
+  if (v.status === 'paid') return { id: 'mail', label: 'إرسال', tone: 'quiet' }
   return null
 }
 
@@ -68,7 +68,7 @@ function ZatcaState({ state, reason }) {
 }
 
 /* ---------- الصف ---------- */
-export function Row({ v, selected, onSelect, onOpen }) {
+export function Row({ v, selected, onSelect, onOpen, on }) {
   const rem = v.total - v.paid
   const live = ['issued', 'partial', 'overdue'].includes(v.status)
   const closed = ['paid', 'void', 'cancelled'].includes(v.status)
@@ -112,13 +112,17 @@ export function Row({ v, selected, onSelect, onOpen }) {
       </span>
 
       <span className="row__act">
-        {act && <button className={`act act--${act.tone}`}>{act.label}</button>}
+        {act && (
+          <button className={`act act--${act.tone}`} onClick={() => on?.(act.id, v)}>
+            {act.label}
+          </button>
+        )}
         <RowMenu label={`خيارات ${v.no}`}
-          items={[...docMenu({ zatca: v.zatca, onView: onOpen }),
+          items={[...docMenu({ zatca: v.zatca, onView: onOpen, on: (id) => on?.(id, v) }),
             { sep: true },
-            { label: 'إشعار دائن', Ic: Ico.retry,
+            { label: 'إشعار دائن', Ic: Ico.retry, onClick: () => on?.('cn', v),
               off: v.status === 'draft', why: 'الفاتورة لسه مسودة' },
-            { label: 'إلغاء الفاتورة', Ic: Ico.close, tone: 'crit',
+            { label: 'إلغاء الفاتورة', Ic: Ico.close, tone: 'crit', onClick: () => on?.('cancel', v),
               off: ['cancelled','void'].includes(v.status), why: 'ملغاة أصلًا' },
           ]} />
       </span>
@@ -127,7 +131,7 @@ export function Row({ v, selected, onSelect, onOpen }) {
 }
 
 /* ---------- المجموعة: عنوان + خط، والصفوف على نفس شبكة الصفحة ---------- */
-export function Group({ group, rows, selected, onSelect, onOpen }) {
+export function Group({ group, rows, selected, onSelect, onOpen, on }) {
   if (!rows.length) return null
   const owed = rows.reduce((a, r) =>
     ['issued', 'partial', 'overdue'].includes(r.status) ? a + (r.total - r.paid) : a, 0)
@@ -143,7 +147,7 @@ export function Group({ group, rows, selected, onSelect, onOpen }) {
       </header>
       {rows.map((v) => (
         <Row key={v.no} v={v} selected={selected.has(v.no)} onSelect={() => onSelect(v.no)}
-          onOpen={onOpen ? () => onOpen(v.no) : undefined} />
+          onOpen={onOpen ? () => onOpen(v.no) : undefined} on={on} />
       ))}
     </section>
   )

@@ -28,9 +28,9 @@ export function ngroupOf(n) {
 }
 
 function actionOf(n) {
-  if (n.zatca === 'bad')       return { label: 'إعادة الإرسال', tone: 'crit' }
-  if (n.status === 'draft')    return { label: 'إصدار', tone: 'go' }
-  if (n.status === 'issued')   return { label: 'إرسال للعميل', tone: 'quiet' }
+  if (n.zatca === 'bad')       return { id: 'resubmit', label: 'إعادة الإرسال', tone: 'crit' }
+  if (n.status === 'draft')    return { id: 'issue', label: 'إصدار', tone: 'go' }
+  if (n.status === 'issued')   return { id: 'mail', label: 'إرسال للعميل', tone: 'quiet' }
   return null
 }
 
@@ -60,12 +60,15 @@ function ZatcaState({ state, reason }) {
   )
 }
 
-export function NRow({ n, kind, selected, onSelect }) {
+export function NRow({ n, kind, selected, onSelect, onOpen, on }) {
   const act = actionOf(n)
   const soft = ['void', 'cancelled'].includes(n.status)
 
   return (
-    <div className={`row${selected ? ' is-sel' : ''}`} data-component="NoteRow">
+    <div className={`row${selected ? ' is-sel' : ''}`} data-component="NoteRow"
+      role={onOpen ? 'button' : undefined} tabIndex={onOpen ? 0 : undefined}
+      onClick={onOpen ? (e) => { if (!e.target.closest('button,input,label')) onOpen() } : undefined}
+      onKeyDown={onOpen ? (e) => { if (e.key === 'Enter') onOpen() } : undefined}>
       <span className="row__cb"><Checkbox checked={selected} onChange={onSelect} /></span>
 
       <span className="row__party">
@@ -90,14 +93,19 @@ export function NRow({ n, kind, selected, onSelect }) {
       </span>
 
       <span className="row__act">
-        {act && <button className={`act act--${act.tone}`}>{act.label}</button>}
-        <RowMenu label={`خيارات ${n.no}`} items={docMenu({ zatca: n.zatca })} />
+        {act && (
+          <button className={`act act--${act.tone}`} onClick={() => on?.(act.id, n)}>
+            {act.label}
+          </button>
+        )}
+        <RowMenu label={`خيارات ${n.no}`}
+          items={docMenu({ zatca: n.zatca, onView: onOpen, on: (id) => on?.(id, n) })} />
       </span>
     </div>
   )
 }
 
-export function NGroup({ group, rows, kind, selected, onSelect }) {
+export function NGroup({ group, rows, kind, selected, onSelect, onOpen, on }) {
   if (!rows.length) return null
   const sum = rows.reduce((a, r) => a + r.total, 0)
   return (
@@ -114,7 +122,8 @@ export function NGroup({ group, rows, kind, selected, onSelect }) {
       </header>
       {rows.map((n) => (
         <NRow key={n.no} n={n} kind={kind} selected={selected.has(n.no)}
-          onSelect={() => onSelect(n.no)} />
+          onSelect={() => onSelect(n.no)}
+          onOpen={onOpen ? () => onOpen(n) : undefined} on={on} />
       ))}
     </section>
   )

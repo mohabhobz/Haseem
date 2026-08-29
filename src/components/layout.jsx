@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Button, IconButton, SearchField } from './primitives.jsx'
 import { Ico, Riyal } from './icons.jsx'
+import { Toaster, ConfirmHost, toast } from './feedback.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { getTheme, setTheme } from '../lib/theme.js'
@@ -17,16 +18,57 @@ const NAV = [
       { label: 'إشعارات مدينة',   to: '/sales/debit-notes' },
   ]},
   { Ic: Ico.customers, label: 'العملاء', to: '/sales/customers' },
-  { Ic: Ico.reports, label: 'التقارير', to: '#' },
-  { Ic: Ico.items, label: 'المنتجات والخدمات', to: '#' },
-  { Ic: Ico.purchases, label: 'المشتريات والمصروفات', to: '#' },
-  { Ic: Ico.bank, label: 'النقد والبنوك', to: '#' },
-  { Ic: Ico.ledger, label: 'المحاسبة', to: '#' },
-  { Ic: Ico.settings, label: 'الإعدادات', children: [
-      { label: 'إعدادات المنشأة', to: '/settings/organization' },
+  { Ic: Ico.reports, label: 'التقارير', children: [
+      { label: 'تقرير المبيعات',   to: '/reports/sales' },
+      { label: 'تقرير المصروفات',  to: '/reports/expenses' },
+      { label: 'قائمة الدخل',      to: '/reports/income-statement' },
+      { label: 'التدفق النقدي',    to: '/reports/cash-flow' },
+      { label: 'ميزان المراجعة',   to: '/reports/trial-balance' },
+      { label: 'الميزانية العمومية', to: '/reports/balance-sheet' },
+      { label: 'الإقرار الضريبي',  to: '/reports/vat-return' },
+      { label: 'كشف الحساب',       to: '/reports/statement' },
   ]},
-  { Ic: Ico.projects, label: 'المشاريع', to: '#' },
-  { Ic: Ico.help, label: 'المساعدة', to: '#' },
+  { Ic: Ico.items, label: 'المنتجات والخدمات', children: [
+      { label: 'الأصناف',        to: '/inventory/items' },
+      { label: 'المستودعات',     to: '/inventory/warehouses' },
+      { label: 'تسويات المخزون', to: '/inventory/adjustments' },
+      { label: 'نقل المخزون',    to: '/inventory/transfers' },
+      { label: 'تقارير المخزون', to: '/inventory/reports' },
+  ]},
+  { Ic: Ico.purchases, label: 'المشتريات والمصروفات', children: [
+      { label: 'فواتير المشتريات', to: '/purchases/bills' },
+      { label: 'أوامر الشراء',     to: '/purchases/orders' },
+      { label: 'الموردون',         to: '/purchases/suppliers' },
+      { label: 'المصروفات',        to: '/purchases/expenses' },
+      { label: 'البيانات الجمركية', to: '/purchases/customs' },
+  ]},
+  { Ic: Ico.bank, label: 'النقد والبنوك', children: [
+      { label: 'الحسابات',      to: '/cash/accounts' },
+      { label: 'سندات القبض',   to: '/cash/receipts' },
+      { label: 'سندات الصرف',   to: '/cash/payments' },
+      { label: 'التحويلات',     to: '/cash/transfers' },
+  ]},
+  { Ic: Ico.ledger, label: 'المحاسبة', children: [
+      { label: 'قيود اليومية',   to: '/accounting/journal' },
+      { label: 'دفتر الأستاذ',   to: '/accounting/ledger' },
+      { label: 'دليل الحسابات',  to: '/accounting/accounts' },
+      { label: 'مراكز التكلفة',  to: '/accounting/cost-centers' },
+  ]},
+  { Ic: Ico.projects, label: 'المشاريع', to: '/projects' },
+  { Ic: Ico.help, label: 'المساعدة', children: [
+      { label: 'مركز المساعدة',  to: '/help' },
+      { label: 'مسرد المصطلحات', to: '/help/glossary' },
+      { label: 'الدعم',          to: '/help/support' },
+  ]},
+  { Ic: Ico.settings, label: 'الإعدادات', children: [
+      { label: 'المنشأة',           to: '/settings/organization' },
+      { label: 'الفروع',            to: '/settings/branches' },
+      { label: 'الفريق والصلاحيات', to: '/settings/team' },
+      { label: 'المستندات',         to: '/settings/documents' },
+      { label: 'العملات',           to: '/settings/currencies' },
+      { label: 'الهيئة والفوترة',   to: '/settings/zatca' },
+      { label: 'الهوية البصرية',    to: '/settings/brand' },
+  ]},
 ]
 
 const PROFILE_MENU = [
@@ -48,13 +90,32 @@ export function Sidebar({ collapsed, onToggle }) {
     window.addEventListener('haseem:brand', on)
     return () => window.removeEventListener('haseem:brand', on)
   }, [])
+  /* ★ الرابط النشِط: أطول مسار مطابق، مش أي مسار بادئ.
+     `NavLink` لوحده بيطابق بالبادئة، يعني وإنت في /help/glossary
+     بيعتبر /help نشط كمان — فبيبان لينكين مضوّيين مع بعض.
+     الصح: الأخ اللي مساره أطول وبيطابق هو النشِط لوحده. */
+  const hits = (to) => pathname === to || pathname.startsWith(to + '/')
+  const activeIn = (kids) =>
+    kids.filter((c) => hits(c.to)).sort((a, b) => b.to.length - a.to.length)[0]?.to
+
   const [open, setOpen] = useState(() => {
     const o = {}
-    NAV.forEach((it) => {
-      if (it.children?.some((c) => c.to === pathname)) o[it.label] = true
-    })
+    NAV.forEach((it) => { if (it.children && activeIn(it.children)) o[it.label] = true })
     return o
   })
+
+  /* القسم اللي فيه الصفحة الحالية بيفتح لوحده — عشان لو دخلت
+     صفحة من زرار جوه المحتوى، القايمة تبان مفتوحة على مكانك. */
+  useEffect(() => {
+    setOpen((p) => {
+      const o = { ...p }
+      let ch = false
+      NAV.forEach((it) => {
+        if (it.children && activeIn(it.children) && !o[it.label]) { o[it.label] = true; ch = true }
+      })
+      return ch ? o : p
+    })
+  }, [pathname])
 
   useEffect(() => {
     if (!menu && !orgMenu) return
@@ -67,6 +128,7 @@ export function Sidebar({ collapsed, onToggle }) {
 
   const renderItem = (it) => {
     if (it.children) {
+      const on = activeIn(it.children)
       return (
         <div key={it.label} data-component="NavGroup" className={`nav__group${open[it.label] ? ' open' : ''}`}>
           <button className="nav__item" onClick={() => setOpen((p) => ({ ...p, [it.label]: !p[it.label] }))}>
@@ -77,16 +139,22 @@ export function Sidebar({ collapsed, onToggle }) {
           <div className="nav__sub">
             {it.children.map((c) => (
               <NavLink key={c.label} to={c.to} data-component="NavLink"
-                className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}>{c.label}</NavLink>
+                /* لازم شكل الدالة: NavLink بيزوّد كلاس `active` بتاعه
+                   لوحده لما الكلاس نص عادي — وده اللي كان بيضوّي لينكين */
+                aria-current={on === c.to ? 'page' : undefined}
+                className={() => `nav__link${on === c.to ? ' active' : ''}`}>{c.label}</NavLink>
             ))}
           </div>
         </div>
       )
     }
     if (it.to === '#') {
-      /* شاشة لسه متبنيتش — بتفضل بشكلها الطبيعي، مش رمادية ولا معطّلة */
+      /* شاشة لسه متبنيتش — بتفضل بشكلها الطبيعي، مش رمادية ولا
+         معطّلة، بس بتقول الحقيقة بدل ما تسكت */
       return (
-        <button key={it.label} className="nav__item" data-component="NavItem">
+        <button key={it.label} className="nav__item" data-component="NavItem"
+          onClick={() => toast.info(`${it.label} — الموديول ده لسه تحت التصميم`,
+            { sub: 'المبيعات والعملاء هما الجاهزين دلوقتي' })}>
           <span className="ico"><it.Ic size={18} /></span><span className="label">{it.label}</span>
         </button>
       )
@@ -262,6 +330,10 @@ export function AppShell({ children, search }) {
       <main className="main">
         <div className="content">{children}</div>
       </main>
+
+      {/* طبقة الرد على الأمر — مرة واحدة للتطبيق كله */}
+      <Toaster />
+      <ConfirmHost />
     </div>
   )
 }
@@ -326,13 +398,19 @@ export function FilterBar({ filters, extra }) {
   )
 }
 
-/* بديل صف كروت الـKPI — رقم قائد واحد وأرقام تابعة بحجم أصغر */
-export function SummaryStrip({ label, value, note, items = [] }) {
+/* بديل صف كروت الـKPI — رقم قائد واحد وأرقام تابعة بحجم أصغر.
+
+   `money={false}` للرقم اللي مش مبلغ (عدد حسابات مثلًا) — من
+   غيرها كان بيطلع «٣٣٫٠٠ ﷼» وده رقم بيكدب على المستخدم. */
+export function SummaryStrip({ label, value, note, items = [], money = true, unit }) {
   return (
     <div data-component="SummaryStrip" className="summary">
       <div className="summary__lead">
         <div className="summary__label">{label}</div>
-        <div className="summary__value"><span className="num">{fmtMoney(value)}</span><Riyal /></div>
+        <div className="summary__value">
+          <span className="num">{money ? fmtMoney(value) : value}</span>
+          {money ? <Riyal /> : unit ? <em className="summary__unit">{unit}</em> : null}
+        </div>
         {note && <div className="summary__note">{note}</div>}
       </div>
       <div className="summary__rest">

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Ico } from './icons.jsx'
 import { MONTHS } from '../lib/format.js'
 
@@ -24,8 +24,13 @@ export function activeOf(groups, value) {
   })
 }
 
+/* الحقول اللي البحث بيدوّر فيها في المستندات: رقم المستند واسم
+   العميل بالعربي والإنجليزي. الشاشات اللي سطرها مش مستند — زي
+   العملاء — بتمرّر دالّتها بدل دي. */
+const docText = (r) => [r.no, r.c?.ar, r.c?.en]
+
 /* الفلترة نفسها — كل مجموعة بتضيّق اللي قبلها (AND) */
-export function applyFilter(rows, groups, value, q = '') {
+export function applyFilter(rows, groups, value, q = '', text = docText) {
   let out = rows
   groups.forEach((g) => {
     const v = value?.[g.id]
@@ -36,12 +41,48 @@ export function applyFilter(rows, groups, value, q = '') {
   const s = q.trim().toLowerCase()
   if (s) {
     out = out.filter((r) =>
-      (r.no || '').toLowerCase().includes(s) ||
-      (r.c?.ar || '').toLowerCase().includes(s) ||
-      (r.c?.en || '').toLowerCase().includes(s))
+      (text(r) || []).some((f) => String(f || '').toLowerCase().includes(s)))
   }
   return out
 }
+
+
+/* ============================================================
+   الترتيب — نفس السلوك في كل جدول بدل ما كل شاشة تخترع واحد.
+   الاستعمال:
+     const S = useSort({ due: (a,b) => ... }, 'due')
+     columns={[ S.col('الاستحقاق','due',{width:'132px'}), … ]}
+     rows = S.apply(rows)
+   ============================================================ */
+export function useSort(cmps, defKey, defDir = 'desc') {
+  const [sort, setSort] = useState({ key: defKey, dir: defDir })
+
+  const onSort = (key) =>
+    setSort((s) => (s.key === key
+      ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' }
+      : { key, dir: 'desc' }))
+
+  const col = (label, key, extra = {}) => ({
+    label, sortable: true,
+    onSort: () => onSort(key),
+    sorted: sort.key === key ? sort.dir : null,
+    ...extra,
+  })
+
+  const apply = (rows) => {
+    const c = cmps[sort.key]
+    if (!c) return rows
+    return [...rows].sort((a, b) => (sort.dir === 'asc' ? c(a, b) : c(b, a)))
+  }
+
+  return { sort, onSort, col, apply }
+}
+
+/* مقارنات جاهزة — التاريخ والنص والرقم */
+export const byDate = (f) => (a, b) => new Date(a[f] || 0) - new Date(b[f] || 0)
+export const byNum  = (f) => (a, b) => (a[f] || 0) - (b[f] || 0)
+export const byText = (f) => (a, b) => String(a[f] || '').localeCompare(String(b[f] || ''), 'ar')
+export const byParty = (a, b) => String(a.c?.ar || '').localeCompare(String(b.c?.ar || ''), 'ar')
 
 /* ---------- الزرار + البانل ---------- */
 export function PageFilter({ groups, value, onChange }) {

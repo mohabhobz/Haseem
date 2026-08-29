@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { AppShell, CurrencyNote } from '../components/layout.jsx'
 import { Ico, Riyal } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
 import { STATUS, fmtMoney, fmtDate, daysFrom } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { useDoc } from '../lib/store.js'
 import { getBrand } from '../lib/brand.js'
+import { PrintPreview } from '../components/printpreview.jsx'
+import * as ACT from '../lib/actions.js'
 
 /* ============================================================
    الفاتورة — المستند نفسه على الشمال، وكل الأوامر المتعلقة بيه
@@ -30,21 +34,21 @@ function primaryOf(v) {
 function secondaryOf(v) {
   const okZ = v.zatca === 'ok'
 
-  const mail  = { label: 'إرسال بالبريد',  Ic: Ico.send }
-  const wa    = { label: 'إرسال واتساب',   Ic: Ico.send }
-  const share = { label: 'نسخ لينك المشاركة', Ic: Ico.copy }
-  const pay   = { label: 'نسخ لينك الدفع',    Ic: Ico.card }
-  const pdf   = { label: 'تنزيل PDF',      Ic: Ico.download }
-  const xml   = { label: 'تنزيل XML',      Ic: Ico.download }
-  const print = { label: 'طباعة',          Ic: Ico.print }
-  const dup   = { label: 'نسخة جديدة منها', Ic: Ico.copy }
+  const mail  = { id: 'mail',  label: 'إرسال بالبريد',  Ic: Ico.send }
+  const wa    = { id: 'wa',    label: 'إرسال واتساب',   Ic: Ico.send }
+  const share = { id: 'share', label: 'نسخ لينك المشاركة', Ic: Ico.copy }
+  const pay   = { id: 'pay',   label: 'نسخ لينك الدفع',    Ic: Ico.card }
+  const pdf   = { id: 'pdf',   label: 'تنزيل PDF',      Ic: Ico.download }
+  const xml   = { id: 'xml',   label: 'تنزيل XML',      Ic: Ico.download }
+  const print = { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print }
+  const dup   = { id: 'dup',   label: 'نسخة جديدة منها', Ic: Ico.copy }
   /* مش «نسخة» — دي بتلغي الأصلية وتفتح مسودة بدلها. قاعدة صريحة في البورد. */
-  const fix   = { label: 'نسخ للتصحيح', Ic: Ico.retry, tone: 'crit',
+  const fix   = { id: 'fix', label: 'نسخ للتصحيح', Ic: Ico.retry, tone: 'crit',
                   note: 'بيلغي الفاتورة دي ويفتح مسودة جديدة مكانها' }
 
   if (v.status === 'draft')
-    return [{ label: 'تعديل المسودة', Ic: Ico.edit }, dup,
-            { label: 'حذف المسودة', Ic: Ico.trash, tone: 'crit' }]
+    return [{ id: 'edit', label: 'تعديل المسودة', Ic: Ico.edit }, dup,
+            { id: 'del', label: 'حذف المسودة', Ic: Ico.trash, tone: 'crit' }]
 
   if (['cancelled', 'void'].includes(v.status))
     return okZ ? [pdf, xml, print, dup] : [print, dup]
@@ -52,9 +56,9 @@ function secondaryOf(v) {
   const out = [mail, wa, share]
   if (v.status !== 'paid') out.push(pay)
   if (okZ) out.push(pdf, xml)
-  out.push(print, dup, { label: 'إشعار دائن', Ic: Ico.receivable })
+  out.push(print, dup, { id: 'cn', label: 'إشعار دائن', Ic: Ico.receivable })
   if (okZ) out.push(fix)
-  if (v.status !== 'paid') out.push({ label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit' })
+  if (v.status !== 'paid') out.push({ id: 'cancel', label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit' })
   return out
 }
 
@@ -79,7 +83,46 @@ function StateTags({ v }) {
 export default function Invoice() {
   const { no } = useParams()
   const nav = useNavigate()
-  const v = DATA.findInvoice(no)
+  /* بنقرا من الستور مش من الموك مباشرة، عشان لو المستخدم ألغى
+     الفاتورة أو أصدرها الشاشة تتغيّر قدامه فعلًا */
+  const v = useDoc('invoices', no)
+  /* ★ الفاتورة كانت **الوحيدة** اللي زرار الطباعة فيها بيروح على
+     طباعة المتصفح على طول — من غير ما المستخدم يشوف الورقة اللي
+     هتخرج. أمر الشراء وفاتورة المورد والعرض كلهم ليهم معاينة.
+     دلوقتي نفس المعاينة هنا كمان. */
+  const [preview, setPreview] = useState(false)
+
+  /* كل أمر بيتنادى بمفتاحه. مكان الاستدعاء واحد، فالمطوّر بيربط
+     من `lib/actions.js` مش من هنا. */
+  const run = (id) => {
+    const A = ACT
+    switch (id) {
+      case 'mail':   return A.sendEmail('invoices', v)
+      case 'wa':     return A.sendWhatsApp('invoices', v)
+      case 'share':  return A.copyShareLink('invoices', v)
+      case 'pay':    return A.copyPayLink('invoices', v)
+      case 'pdf':    return A.downloadPdf('invoices', v)
+      case 'xml':    return A.downloadXml('invoices', v)
+      case 'print':  return setPreview(true)
+      case 'dup':    return nav('/sales/invoices/new')
+      case 'edit':   return nav('/sales/invoices/new')
+      case 'cn':     return nav('/sales/credit-notes/new')
+      case 'fix':    return A.correctDoc('invoices', v, () => nav('/sales/invoices/new'))
+      case 'cancel': return A.cancelDoc('invoices', v)
+      case 'del':    return A.deleteDraft('invoices', v)
+                       .then((ok) => ok && nav('/sales/invoices'))
+      default: return undefined
+    }
+  }
+
+  /* الأمر الرئيسي بيتحدد من الحالة، فتنفيذه بيتحدد منها كمان */
+  const runPrimary = () => {
+    if (!v) return
+    if (v.zatca === 'bad')    return ACT.resubmitZatca('invoices', v)
+    if (v.status === 'draft') return ACT.issueDoc('invoices', v)
+    if (v.status === 'paid')  return ACT.sendEmail('invoices', v)
+    return ACT.recordPayment(v)
+  }
 
   if (!v) {
     return (
@@ -124,7 +167,8 @@ export default function Invoice() {
           </div>
           <div className="dochead__act">
             {prim && (
-              <button className={`btn btn--${prim.tone === 'crit' ? 'danger2' : 'primary'}`}>
+              <button className={`btn btn--${prim.tone === 'crit' ? 'danger2' : 'primary'}`}
+                onClick={runPrimary}>
                 <prim.Ic size={16} />{prim.label}
               </button>
             )}
@@ -230,6 +274,41 @@ export default function Invoice() {
         {/* ================= الرَّيل ================= */}
         <aside className="rail">
           {/* المبلغ والحالة */}
+          {/* ★ المبلغ المعدّل بعد الإشعارات — الفاتورة اللي عليها إشعار
+              دائن مش قيمتها الأصلية. كان ناقص في الاتنين: سيستمه وعندنا. */}
+          {(() => {
+            const cr = DATA.creditedState(v.no, v.total)
+            if (!cr) return null
+            const rel = [...DATA.creditNotes.filter((n) => n.src === v.no),
+                         ...DATA.debitNotes.filter((n) => n.src === v.no)]
+            return (
+              <section className="rail__c">
+                <span className="rail__lbl">المبلغ بعد الإشعارات</span>
+                <div className="rail__v"><SAR v={cr.net} dec /></div>
+                <span className="rail__due">
+                  الأصلي {fmtMoney(v.total)} − إشعارات {fmtMoney(cr.amount)}
+                </span>
+                <ul className="rail__pays" style={{ marginTop: 14 }}>
+                  {rel.map((n) => (
+                    <li key={n.no}>
+                      <b><SAR v={n.total} dec /></b>
+                      <em>{fmtDate(n.date)}</em>
+                      <span>
+                        <button className="linkish"
+                          onClick={() => nav(n.no.startsWith('CN') ? '/sales/credit-notes' : '/sales/debit-notes')}>
+                          {n.no}
+                        </button>
+                        {' · '}{n.no.startsWith('CN') ? 'دائن' : 'مدين'}
+                        {n.reason ? ` · ${n.reason}` : ''}
+                        {n.status !== 'issued' ? ' · مسودة' : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )
+          })()}
+
           <section className="rail__c">
             <span className="rail__lbl">{rem > 0 ? 'المتبقّي على العميل' : 'إجمالي الفاتورة'}</span>
             <span className="rail__v"><SAR v={rem > 0 ? rem : v.total} /></span>
@@ -250,7 +329,7 @@ export default function Invoice() {
             <div className="rail__acts">
               {sec.map((a) => (
                 <button key={a.label} className={`ract${a.tone === 'crit' ? ' ract--crit' : ''}`}
-                  title={a.note || undefined}>
+                  title={a.note || undefined} onClick={() => run(a.id)}>
                   <a.Ic size={16} />
                   <span className="ract__t">{a.label}
                     {a.note && <em>{a.note}</em>}
@@ -265,11 +344,21 @@ export default function Invoice() {
             <section className="rail__c">
               <span className="rail__lbl">الدفعات</span>
               <ul className="rail__pays">
+                {/* ★ الدفعة كانت سطر ساكت — بقى ليها أمرين:
+                    عكسها، وتحميل سند القبض RV- اللي بيتسلّم للعميل. */}
                 {pays.map((p) => (
                   <li key={p.ref}>
                     <b><SAR v={p.amount} /></b>
-                    <span>{p.way} · {p.ref}</span>
                     <em>{fmtDate(p.date)}</em>
+                    <span>
+                      {p.way} · {p.ref}
+                      {' · '}
+                      <button className="linkish"
+                        onClick={() => ACT.reverseReceipt({ ...p, no: v.no })}>عكس الدفعة</button>
+                      {' · '}
+                      <button className="linkish"
+                        onClick={() => ACT.downloadReceipt({ ...p, no: v.no })}>سند القبض</button>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -293,6 +382,20 @@ export default function Invoice() {
           </section>
         </aside>
       </div>
+
+      {preview && (
+        <PrintPreview onClose={() => setPreview(false)} doc={{
+          no: v.no, date: v.date, due: v.due, party: v.c,
+          lines: lines.map((l) => ({
+            code: l.code, ar: l.ar, unit: l.unit, qty: l.qty,
+            price: l.price ?? +(l.total / l.qty).toFixed(2),
+            net: l.total, taxAmt: +(l.total * VAT).toFixed(2),
+            total: +(l.total * (1 + VAT)).toFixed(2),
+          })),
+          net, tax: vat, total: v.total,
+          bank: DATA.banks[0], zatcaOk: v.zatca === 'ok',
+        }} />
+      )}
     </AppShell>
   )
 }

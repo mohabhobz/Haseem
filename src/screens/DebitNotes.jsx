@@ -4,11 +4,17 @@ import { AppShell, PageHeader, CurrencyNote } from '../components/layout.jsx'
 import { DataTable, BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
 import { Button, SearchField } from '../components/primitives.jsx'
 import { Money, DateCell, PartyCell, StatusCell, DocNo } from '../components/data.jsx'
+import { docMenu } from '../components/rowmenu.jsx'
 import { ViewToggle } from '../components/doclist.jsx'
 import { NGROUPS, ngroupOf, NGroup, NMoneyHead } from '../components/notelist.jsx'
-import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod } from '../components/pagefilter.jsx'
+import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod,
+  useSort, byDate, byNum, byText, byParty } from '../components/pagefilter.jsx'
 import { TODAY } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { useDocs } from '../lib/store.js'
+import * as ACT from '../lib/actions.js'
+import { PrintPreview } from '../components/printpreview.jsx'
+import { previewOf } from '../lib/preview.js'
 
 const REASONS = [...new Set(DATA.debitNotes.map((n) => n.reason).filter(Boolean))]
 const CITIES  = [...new Set(DATA.debitNotes.map((n) => n.c?.city).filter(Boolean))]
@@ -58,8 +64,9 @@ export default function DebitNotes() {
   const [q, setQ] = useState('')
   const { selected, toggle, selectAll, clear } = useSelection()
 
+  const all = useDocs('debitNotes')
   const inRange = useMemo(
-    () => DATA.debitNotes.filter((n) => inPeriod(n, period, TODAY)), [period])
+    () => all.filter((n) => inPeriod(n, period, TODAY)), [all, period])
 
   const salesInRange = useMemo(
     () => DATA.invoices.filter((v) => inPeriod(v, period, TODAY) && v.status !== 'draft'), [period])
@@ -67,18 +74,43 @@ export default function DebitNotes() {
   const rows = useMemo(
     () => applyFilter(inRange, FGROUPS, filter, q), [inRange, filter, q])
 
+  const S = useSort({
+    no: byText('no'), party: byParty, date: byDate('date'), total: byNum('total'),
+  }, 'date')
+
+  /* الإشعار مالوش شاشة مستند لوحدها — «عرض المستند» بيفتح الورقة
+     نفسها في المعاينة، ودي نفس اللي بتتطبع. */
+  const [preview, setPreview] = useState(null)
+  const open = (n) => setPreview(n)
+
+  const on = (id, n) => {
+    switch (id) {
+      case 'issue':    return ACT.issueDoc('debitNotes', n)
+      case 'resubmit': return ACT.resubmitZatca('debitNotes', n)
+      case 'mail':     return ACT.sendEmail('debitNotes', n)
+      case 'view':     return open(n)
+      case 'pdf':      return ACT.downloadPdf('debitNotes', n)
+      case 'xml':      return ACT.downloadXml('debitNotes', n)
+      case 'print':    return ACT.printDoc()
+      default: return undefined
+    }
+  }
+  const bulk = (label) => ACT.bulkAction(label, 'debitNotes', [...selected]).then(clear)
+
   const grouped = useMemo(() => {
     const g = NGROUPS.map(() => [])
     rows.forEach((n) => g[ngroupOf(n)].push(n))
     return g
   }, [rows])
 
-  const tableRows = rows.map((n) => ({
+  const tableRows = S.apply(rows).map((n) => ({
     key: n.no,
+    onOpen: () => open(n),
+    menu: docMenu({ zatca: n.zatca, onView: () => open(n), on: (id) => on(id, n) }),
     cells: [
       <DocNo value={n.no} />,
       <PartyCell party={n.c} />,
-      <DocNo value={n.src} href="#/sales/invoices" />,
+      <DocNo value={n.src} onClick={() => nav(`/sales/invoices/${n.src}`)} />,
       <span className="cell-reason">{n.reason}</span>,
       <DateCell value={n.date} />,
       <StatusCell status={n.status} zatca={n.zatca} zatcaReason={n.zatcaReason} />,
@@ -123,20 +155,20 @@ export default function DebitNotes() {
           <div className="dlist dlist--note" data-component="NoteList">
             {NGROUPS.map((g, i) => (
               <NGroup key={g.id} group={g} rows={grouped[i]} kind="debit"
-                selected={selected} onSelect={toggle} />
+                selected={selected} onSelect={toggle} onOpen={open} on={on} />
             ))}
           </div>
         ) : (
           <>
             <DataTable
               columns={[
-                { label: 'رقم الإشعار', width: '118px', sortable: true },
+                S.col('رقم الإشعار', 'no', { width: '118px' }),
                 { label: 'العميل' },
                 { label: 'الفاتورة الأصلية', width: '128px' },
                 { label: 'السبب', width: '150px' },
-                { label: 'التاريخ', width: '116px', sortable: true, sorted: 'desc' },
+                S.col('التاريخ', 'date', { width: '116px' }),
                 { label: 'الحالة', width: '210px' },
-                { label: 'المبلغ المضاف', num: true, width: '140px', sortable: true },
+                S.col('المبلغ المضاف', 'total', { num: true, width: '140px' }),
               ]}
               rows={tableRows} selected={selected} onSelect={toggle}
               onSelectAll={(on) => selectAll(on, rows.map((n) => n.no))}
@@ -146,8 +178,12 @@ export default function DebitNotes() {
         )}
       </section>
 
-      <BulkActionBar count={selected.size} onClear={clear}
+      <BulkActionBar count={selected.size} onClear={clear} onAction={bulk}
         actions={['تنزيل PDF', 'إرسال بالبريد', 'إعادة الإرسال للهيئة', 'تصدير CSV']} />
+
+      {preview && (
+        <PrintPreview doc={previewOf(preview, 'custDebit')} onClose={() => setPreview(null)} />
+      )}
     </AppShell>
   )
 }

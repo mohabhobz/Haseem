@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Ico, Riyal } from './icons.jsx'
 import { fmtMoney, fmtDate } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { toast } from './feedback.jsx'
 
 /* ============================================================
    معاينة الطباعة — ثنائية اللغة زي المطلوب من الهيئة.
@@ -13,6 +14,71 @@ import * as DATA from '../data/mock.js'
 function Money({ v }) {
   return <span className="pp__m"><Riyal className="pp__r" />{fmtMoney(v)}</span>
 }
+
+/* ------------------------------------------------------------
+   نوع المستند.
+
+   المعاينة كانت **متكتوبة على فاتورة المبيعات**: العنوان «فاتورة»،
+   الطرف التاني «العميل»، وفيه مكان للـQR. لو طبعنا بيها أمر شراء
+   أو إشعار مورد بتبقى بتكدب على المستخدم — إحنا هنا **المشتري**
+   والطرف التاني **المورد**، وأمر الشراء أصلًا مش مستند ضريبي
+   وماينفعش يبقى فيه رمز هيئة.
+
+   عشان كده النوع بقى وصف مستقل، والافتراضي فاتورة المبيعات
+   عشان الشاشات القديمة ما تتغيّرش.
+   ------------------------------------------------------------ */
+const KINDS = {
+  invoice: {
+    ar: 'فاتورة', en: 'Invoice', noAr: 'رقم الفاتورة', noEn: 'Invoice No',
+    us: 'البائع', them: 'العميل', themEn: 'Bill to', thermal: true, qr: true,
+  },
+  quotation: {
+    ar: 'عرض سعر', en: 'Quotation', noAr: 'رقم العرض', noEn: 'Quotation No',
+    us: 'مقدّم العرض', them: 'العميل', themEn: 'Quote to',
+    dueAr: 'صالح حتى', dueEn: 'Valid until',
+    foot: 'عرض سعر — مش مستند ضريبي وما بيقيّدش أي حاجة لحد ما يتحوّل لفاتورة.',
+  },
+  custCredit: {
+    ar: 'إشعار دائن', en: 'Credit Note', noAr: 'رقم الإشعار', noEn: 'Note No',
+    us: 'البائع', them: 'العميل', themEn: 'Bill to', qr: true,
+    dueAr: 'تاريخ التوريد', dueEn: 'Supply date',
+    refAr: 'الفاتورة الأصلية', refEn: 'Original invoice',
+  },
+  custDebit: {
+    ar: 'إشعار مدين', en: 'Debit Note', noAr: 'رقم الإشعار', noEn: 'Note No',
+    us: 'البائع', them: 'العميل', themEn: 'Bill to', qr: true,
+    refAr: 'الفاتورة الأصلية', refEn: 'Original invoice',
+  },
+  bill: {
+    ar: 'فاتورة مشتريات', en: 'Purchase Invoice', noAr: 'رقم الفاتورة', noEn: 'Invoice No',
+    us: 'المشتري', them: 'المورد', themEn: 'Supplier',
+    foot: 'فاتورة واردة من المورد — الرمز الضريبي والاعتماد بيطلعوا من عند المورد، مش من عندنا.',
+  },
+  proforma: {
+    ar: 'فاتورة مبدئية', en: 'Proforma Invoice', noAr: 'رقم المستند', noEn: 'Document No',
+    us: 'البائع', them: 'العميل', themEn: 'Bill to',
+    dueAr: 'صالحة حتى', dueEn: 'Valid until',
+    foot: 'فاتورة مبدئية — مش فاتورة ضريبية وما ينفعش تتخصم بيها ضريبة مدخلات. '
+        + 'الفاتورة الضريبية بتتصدر بعد السداد.',
+  },
+  po: {
+    ar: 'أمر شراء', en: 'Purchase Order', noAr: 'رقم الأمر', noEn: 'PO No',
+    us: 'المشتري', them: 'المورد', themEn: 'Supplier',
+    dueAr: 'التاريخ المتوقع', dueEn: 'Expected date',
+    foot: 'أمر شراء — مش مستند ضريبي. الفاتورة اللي بتتعمل منه هي اللي بتقيّد.',
+  },
+  supCredit: {
+    ar: 'إشعار دائن من المورد', en: 'Supplier Credit Note',
+    noAr: 'رقم الإشعار', noEn: 'Note No', us: 'المشتري', them: 'المورد', themEn: 'Supplier',
+    foot: 'إشعار دائن — بيقلّل المستحق للمورد وبيقلّل ضريبة المدخلات في الإقرار.',
+  },
+  supDebit: {
+    ar: 'إشعار مدين من المورد', en: 'Supplier Debit Note',
+    noAr: 'رقم الإشعار', noEn: 'Note No', us: 'المشتري', them: 'المورد', themEn: 'Supplier',
+    foot: 'إشعار مدين — بيزوّد المستحق للمورد وبيزوّد ضريبة المدخلات في الإقرار.',
+  },
+}
+const kindOf = (k) => KINDS[k] || KINDS.invoice
 
 export function PrintPreview({ doc, onClose }) {
   const [form, setForm] = useState('full')
@@ -28,8 +94,9 @@ export function PrintPreview({ doc, onClose }) {
   const {
     no, date, due, org = DATA.org, party, lines = [],
     net = 0, disc = 0, tax = 0, total = 0, retention = 0, netDue = total,
-    bank, zatcaOk = false, note,
+    bank, zatcaOk = false, note, kind, ref,
   } = doc
+  const K = kindOf(kind)
 
   return (
     <div className="pp" role="dialog" aria-modal="true" aria-label="معاينة الطباعة">
@@ -38,13 +105,18 @@ export function PrintPreview({ doc, onClose }) {
         <header className="pp__h">
           <span className="pp__t"><Ico.search size={16} />معاينة الطباعة</span>
           <div className="pp__ctrl">
-            <div className="segs segs--sm" role="group" aria-label="شكل المستند">
-              <button className={form === 'full' ? 'on' : ''} onClick={() => setForm('full')}>فاتورة كاملة</button>
-              <button className={form === 'thermal' ? 'on' : ''} onClick={() => setForm('thermal')}>فاتورة حرارية</button>
-            </div>
-            <button className="gbtn2"><Ico.print size={14} />طباعة</button>
-            <button className="gbtn2" disabled={!zatcaOk}
-              title={zatcaOk ? undefined : 'الـPDF المعتمد بيتولد بعد قبول الهيئة'}>
+            {K.thermal && (
+              <div className="segs segs--sm" role="group" aria-label="شكل المستند">
+                <button className={form === 'full' ? 'on' : ''} onClick={() => setForm('full')}>فاتورة كاملة</button>
+                <button className={form === 'thermal' ? 'on' : ''} onClick={() => setForm('thermal')}>فاتورة حرارية</button>
+              </div>
+            )}
+            <button className="gbtn2" onClick={() => window.print()}>
+              <Ico.print size={14} />طباعة
+            </button>
+            <button className="gbtn2" disabled={K.qr && !zatcaOk}
+              title={!K.qr || zatcaOk ? undefined : 'الـPDF المعتمد بيتولد بعد قبول الهيئة'}
+              onClick={() => toast.ok(`${no}.pdf جاهز`, { sub: 'اتنزّل في مجلد التنزيلات' })}>
               <Ico.download size={14} />PDF
             </button>
             <button className="pp__x" aria-label="إغلاق" onClick={onClose}><Ico.close size={18} /></button>
@@ -56,22 +128,32 @@ export function PrintPreview({ doc, onClose }) {
             <Thermal doc={doc} />
           ) : (
           <div className="pp__paper pp__paper--full">
-            <h1 className="pp__title">فاتورة / Invoice</h1>
+            <h1 className="pp__title">{K.ar} / {K.en}</h1>
 
             <dl className="pp__meta">
-              <div><dt>رقم الفاتورة / Invoice No</dt><dd>{no}</dd></div>
+              <div><dt>{K.noAr} / {K.noEn}</dt><dd>{no}</dd></div>
               <div><dt>التاريخ / Issue date</dt><dd>{date}</dd></div>
-              <div><dt>الاستحقاق / Due date</dt><dd>{due}</dd></div>
+              {due && (
+                <div>
+                  <dt>{K.dueAr || 'الاستحقاق'} / {K.dueEn || 'Due date'}</dt>
+                  <dd>{due}</dd>
+                </div>
+              )}
+              {ref && K.refAr && (
+                <div><dt>{K.refAr} / {K.refEn}</dt><dd>{ref}</dd></div>
+              )}
             </dl>
 
             <div className="pp__parties">
               <div>
+                <i className="pp__plbl">{K.us}</i>
                 <b>{org.nameAr}</b>
                 <span>{org.branch}</span>
                 <span>الرقم الضريبي: {org.vat || '—'}</span>
                 <span>السجل التجاري: {org.cr || '—'}</span>
               </div>
               <div>
+                <i className="pp__plbl">{K.them} / {K.themEn}</i>
                 <b>{party?.ar || '—'}</b>
                 <span>{party?.en || ''}</span>
                 <span>Tax ID: {party?.vat || '—'}</span>
@@ -111,9 +193,11 @@ export function PrintPreview({ doc, onClose }) {
             </table>
 
             <div className="pp__foot">
-              {zatcaOk
-                ? <div className="pp__qr" aria-hidden="true" />
-                : <p className="pp__noqr">رمز الاستجابة السريعة بيتولد بعد قبول هيئة الزكاة والضريبة.</p>}
+              {!K.qr
+                ? <p className="pp__noqr">{K.foot}</p>
+                : zatcaOk
+                  ? <div className="pp__qr" aria-hidden="true" />
+                  : <p className="pp__noqr">رمز الاستجابة السريعة بيتولد بعد قبول هيئة الزكاة والضريبة.</p>}
               <dl className="pp__sum">
                 <div><dt>الإجمالي قبل الخصم / Subtotal</dt><dd><Money v={net + disc} /></dd></div>
                 {disc > 0 && <div><dt>الخصم / Discount</dt><dd>− <Money v={disc} /></dd></div>}

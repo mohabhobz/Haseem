@@ -281,3 +281,135 @@ export function DotMap({ cities }) {
     </div>
   )
 }
+
+
+/* ============================================================
+   رسوم التقارير — أعمدة شهرية
+
+   في سيستم العميل الرسم موجود في المكان الصح و**فاضي**: مكتوب
+   فيه «لا توجد بيانات كافية» وهو عنده فواتير فعلًا. فالمشكلة
+   مش إن الرسم ناقص — المشكلة إنه بيدّي انطباع إن مفيش شغل.
+
+   القواعد اللي ماشيين عليها هنا:
+
+   ١) **طول العمود = الرقم اللي مكتوب عليه.** مفيش تكبير عشان
+      يبان، ومفيش حد أدنى بيكدب. العمود الصغير بيفضل صغير.
+   ٢) **الصفر بيتعرض.** الشهر اللي مفيهوش مبيعات عمود فاضي مش
+      شهر متشال — حذفه بيخلّي الخط يبان طالع وهو مش طالع.
+      وشهور المستقبل **مبتتعرضش** — «لسه ما حصلتش» مش «صفر».
+   ٣) **اللون بيتبع النوع مش الترتيب.** أعلى شهر مش بياخد لون
+      مختلف عشان هو الأعلى.
+   ٤) **المحور بيبدأ من صفر.** قص المحور بيضخّم الفروق.
+   ٥) اتجاه الزمن **من اليمين للشمال** زي باقي المنتج.
+   ============================================================ */
+
+/* شكل مختصر للمبالغ فوق الأعمدة — الرقم الكامل بيفضل في الـtitle */
+export function short(v) {
+  const n = Math.abs(v)
+  if (n >= 1000000) return `${(v / 1000000).toFixed(n >= 10000000 ? 0 : 1)}م`
+  if (n >= 1000) return `${Math.round(v / 1000)} ألف`
+  return fmtMoney(v).split('.')[0]
+}
+
+/* ------------------------------------------------------------
+   ١) أعمدة سلسلة واحدة — اتجاه المبيعات
+   ------------------------------------------------------------ */
+export function TrendBars({ rows, title, hint, unit = 'ر.س', empty }) {
+  const vals = rows.map((r) => r.value)
+  const max = Math.max(0, ...vals)
+  const has = rows.some((r) => r.value !== 0)
+
+  return (
+    <section className="tchart" data-component="TrendBars">
+      <header className="tchart__h">
+        <h3 className="tchart__t">{title}</h3>
+        {hint && <span className="tchart__hint">{hint}</span>}
+      </header>
+
+      {!has ? (
+        <p className="fempty">{empty || 'مفيش حركة في الفترة دي.'}</p>
+      ) : (
+        <div className="tchart__plot" role="img"
+          aria-label={`${title} — ${rows.map((r) => `${r.label}: ${fmtMoney(r.value)}`).join('، ')}`}>
+          {rows.map((r) => (
+            <div className="tchart__col" key={r.key} title={`${r.label} — ${fmtMoney(r.value)} ${unit}`}>
+              <span className="tchart__v num">{r.value ? short(r.value) : ''}</span>
+              <span className="tchart__track">
+                {r.value > 0 && <i style={{ height: `${max ? (r.value / max) * 100 : 0}%` }} />}
+              </span>
+              <span className="tchart__x">{r.label}</span>
+              {r.sub && <span className="tchart__x2">{r.sub}</span>}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+/* ------------------------------------------------------------
+   ٢) داخل · خارج · الرصيد — اتجاه النقد
+
+   الاتجاه هنا بيتحمّل على **مكان العمود** مش على لونه: الداخل
+   فوق خط الصفر والخارج تحته. اللون تفرقة تانية مش الأساس، عشان
+   اللي عنده عمى ألوان يقرا الرسم من الشكل.
+
+   وخط الرصيد الختامي فوقهم، لأن السؤال الحقيقي مش «دخل كام»
+   — السؤال «الفلوس اللي في إيدنا بتروح فين».
+   ------------------------------------------------------------ */
+export function CashBars({ rows, title, hint }) {
+  const max = Math.max(1, ...rows.map((r) => Math.max(r.in, r.out)))
+  const closes = rows.map((r) => r.close)
+  const cMax = Math.max(0, ...closes)
+  const cMin = Math.min(0, ...closes)
+  const cSpan = cMax - cMin || 1
+
+  /* الخط: نقطة في نص كل عمود، والأقدم على اليمين — عشان كده
+     الـx معكوس (١٠٠ ناقص)، الأعمدة نفسها متصفّة RTL.
+     والمقياس بيبدأ من صفر زي الأعمدة، مع هامش ٦٪ فوق وتحت عشان
+     الخط ما يتقصّش على حافة الرسم. */
+  const n = rows.length
+  const px = (i) => 100 - ((i + 0.5) / n) * 100
+  const py = (v) => 94 - ((v - cMin) / cSpan) * 88
+  const pts = rows.map((r, i) => `${px(i)},${py(r.close)}`).join(' ')
+
+  return (
+    <section className="tchart tchart--cash" data-component="CashBars">
+      <header className="tchart__h">
+        <h3 className="tchart__t">{title}</h3>
+        {hint && <span className="tchart__hint">{hint}</span>}
+        <span className="tchart__leg">
+          <b><i data-k="in" />داخل</b>
+          <b><i data-k="out" />خارج</b>
+          <b><i data-k="line" />الرصيد الختامي</b>
+        </span>
+      </header>
+
+      <div className="tchart__plot tchart__plot--split" role="img"
+        aria-label={`${title} — ${rows.map((r) =>
+          `${r.label}: داخل ${fmtMoney(r.in)}، خارج ${fmtMoney(r.out)}، الرصيد ${fmtMoney(r.close)}`
+        ).join('، ')}`}>
+
+        <svg className="tchart__line" viewBox="0 0 100 100" preserveAspectRatio="none"
+          aria-hidden="true">
+          <polyline points={pts} vectorEffect="non-scaling-stroke" />
+        </svg>
+
+        {rows.map((r) => (
+          <div className="tchart__col" key={r.key}
+            title={`${r.label} — داخل ${fmtMoney(r.in)} · خارج ${fmtMoney(r.out)} · الرصيد ${fmtMoney(r.close)}`}>
+            <span className="tchart__half chart__half--up">
+              {r.in > 0 && <i data-k="in" style={{ height: `${(r.in / max) * 100}%` }} />}
+            </span>
+            <span className="tchart__zero" aria-hidden="true" />
+            <span className="tchart__half chart__half--dn">
+              {r.out > 0 && <i data-k="out" style={{ height: `${(r.out / max) * 100}%` }} />}
+            </span>
+            <span className="tchart__x">{r.label}</span>
+            <span className="tchart__x2 num">{short(r.close)}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
