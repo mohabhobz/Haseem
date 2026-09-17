@@ -8192,3 +8192,227 @@ button.tkrow:hover{background:var(--surface-hover)}
 .advdrw__f1 .selx{width:100%}
 .advdrw__f{display:flex;gap:var(--sp-3);justify-content:flex-end}
 .advdrw__f .btn{flex:1}
+
+/* ============================================================
+   ★ ثلاث تصليحات في شاشة إنشاء الفاتورة
+   ============================================================ */
+
+/* ١) الجدول كان بيفيض ٦px فيطلّع سكرول أفقي على اللابتوب.
+   السبب: خانات الجريد بتاخد `min-width:auto` افتراضيًا — يعني
+   بترفض تضيق تحت عرض محتواها. الخانة اللي فيها حقلين (الكمية
+   والوحدة، والضريبة وكود الإعفاء) كانت بتدفع الصف كله برّه.
+   `min-width:0` بيسمح لها تضيق، فالجدول بيقع جوّه الكارت. */
+.ltable__h > *,.ltable__r > *{min-width:0}
+.ltable__r,.ltable__h{min-width:0}
+.ltable{overflow-x:auto;overflow-y:visible}
+/* الزرار عنصر فورم — عرضه `auto` معناه «قد محتواه» مش «قد
+   الحاوية». فلازم عرض صريح، والإزاحة بتتخصم منه. */
+.ltable .ltable__add{
+  width:calc(100% - 27px);min-width:0;
+  margin-inline-start:27px;margin-inline-end:0
+}
+/* ★ شلت الـmedia query اللي كانت بتفرض `min-width:900px` تحت
+   ١١٠٠px. هي اللي كانت بتطلّع السكرول على اللابتوب: الأعمدة
+   بقت بتضيق لوحدها، فمفيش سبب نجبر الجدول على عرض أكبر من
+   الكارت. السكرول بيفضل موجود كشبكة أمان لو الشاشة ضاقت جدًا
+   (`overflow-x:auto` فوق) بس مش بيتفعّل قبل كده. */
+
+/* ٢) المبدّل المقسّم: الزرار جوّه كان بياخد ارتفاع التحكّمات
+   الكامل (٣٨) وهو جوّه حاوية ارتفاعها ٣٨ وحشوها ٢px — فكان
+   بيطلع بره حدودها من فوق ومن تحت، واللون الداخلي يبان خارج
+   الإطار. الزرار الداخلي لازم ياخد **ارتفاع الحاوية الداخلي**
+   مش الارتفاع المعياري. */
+.segs button,.segs--sm button,.vtog button,.vsw button{
+  height:100%;min-height:0;align-self:stretch
+}
+
+/* ٣) كرت المجاميع وأوامره الاختيارية كتلة واحدة — المسافة
+   بينهم أضيق من المسافة اللي بتفصل السكشنز الكبيرة، عشان
+   العين تقراهم مع بعض. */
+.sfoot__col{gap:var(--sp-2)}
+
+/* ============================================================
+   ★ التحكّمات مش نص يتحدّد
+   ------------------------------------------------------------
+   الزرار والتبويب والمبدّل حاجات **بتتداس**، مش نص بيتقرا
+   ويتنسخ. لما بيبقوا قابلين للتحديد، أي سحب بالماوس عليهم
+   بيرسم طبقة تحديد بلون **نظام التشغيل** — بتطلع برّه حدود
+   العنصر وبرّه زواياه المدوّرة، وبتبان كأنها غلطة في التصميم
+   مع إنها مش من الصفحة أصلًا.
+
+   وكمان بتمنع السحب غير المقصود وانت بتدوس بسرعة.
+   ============================================================ */
+.btn,.gbtn2,.xtra__b,.ptag__b,.ltools__more,.smeta__p,
+.segs button,.vsw button,.vtog button,.dtabs__t,
+.selx,.pager__btn,.advchip,.advchips__x,
+.nav__item,.nav__link,.navrail__b,.pagehead__back,
+.ivt__ic,.ivt__go,.ltable__add,.ltable__x,.stampf,
+.logobox__x,.logobox__up,.sfoot__row,.sfoot__add,
+.perpage__c,.drawer__x,.pp__x,.rmenu__b{
+  -webkit-user-select:none;user-select:none
+}
+
+/* ولون التحديد نفسه بقى من الهوية، مش من إعدادات الماك —
+   عشان أي نص **يستاهل** التحديد (أرقام، أسماء، آيبان) يتحدّد
+   بلون المنتج مش بلون عشوائي. */
+::selection{background:var(--accent-quiet);color:var(--accent)}
+
+/* ★ رأس المعاينة سطر واحد، وزرار الإغلاق له صندوق زي أي زرار
+   أيقوني في السيستم — كان سهم عريان في سطر فاضي. */
+.pp__h{
+  display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;
+  padding:var(--sp-4) var(--sp-5)
+}
+.pp__h .pp__ctrl{flex:1;min-width:0}
+.pp__x{
+  width:var(--ctl-h);height:var(--ctl-h);flex:none;
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);color:var(--ink-muted)
+}
+.pp__x:hover{background:var(--surface-hover);border-color:var(--accent);color:var(--accent)}
+
+/* رأس المعاينة: سطرين واضحين بدل سطر بيلف */
+.pp__h{display:grid;gap:var(--sp-3);flex-wrap:nowrap}
+.pp__hr{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.pp__t{display:flex;align-items:baseline;gap:var(--sp-3)}
+.pp__tn{
+  font-style:normal;font-family:var(--font-mono);
+  font-size:var(--fs-xs);font-weight:var(--fw-medium);color:var(--ink-faint)
+}
+.pp__h .pp__ctrl{flex:none}
+
+/* ★ القايمة اتوسّعت — والسطر جوّاها ما ينزلش تاني */
+.selx__p{max-width:min(92vw,520px)}
+.selx__ot{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:var(--sp-4);min-width:0
+}
+.selx__ot > :first-child{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.selx__ot em{flex:none;white-space:nowrap}
+
+/* ★ شريط الفلاتر سطر واحد دايمًا.
+   كان `flex-wrap:wrap` فأول ما الشاشة تضيق بينزل سطر تاني.
+   دلوقتي `nowrap` وكل عنصر بيقدر يضيق: النص اللي مش داخل
+   بيتقص بنقط بدل ما يكسر الصف. */
+.ltools{flex-wrap:nowrap}
+.ltools > *{min-width:0}
+.ltools .search{flex:1 1 auto;min-width:120px}
+.ltools .dr,.ltools .pick1{flex:0 1 auto;min-width:0}
+.dr__btn,.pick1__b,.ltools__more{min-width:0;overflow:hidden}
+.dr__btn > span,.dr__rg,.pick1__v{
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.ltools .vsw,.ltools__more{flex:none}
+
+/* ★ رأس المعاينة: العمود ياخد العرض كله، فالإغلاق يقع على
+   آخر السطر بالظبط مش في النص. */
+.pp__h{grid-template-columns:1fr}
+
+/* ============================================================
+   ★★ شاشة الفواتير على الموبايل والتابلت
+   ------------------------------------------------------------
+   الكلاينت بيقول إن الريسبونسيف والموبايل نفس التجربة — فالهدف
+   مش «صفحة ديسكتوب مضغوطة»، الهدف شكل تطبيق.
+
+   اللي كان بايظ فعلًا (بالقياس على ٣٩٠px):
+     • شريط الفلاتر بيفيض ٣٣٨px برّه الشاشة
+     • كل فلتر لوحده بيفيض ١٠٦ → ٣٠٨px
+     • الكارت بيفيض، واسم العميل بيتقطع
+     • رأس الصفحة بيفيض ٣٢px
+
+   القرارات:
+     ١) الفلاتر شريط **بيتسحب أفقيًا** — نمط التطبيقات: تمرّ
+        بصباعك على الفلاتر بدل ما تنزل أربع سطور وتاكل الشاشة.
+     ٢) البحث سطر لوحده بعرض كامل — هو أكتر حاجة بتتستخدم.
+     ٣) الكارت بيتفكّ لتلات صفوف: تعريف، مبلغ، أوامر. الأوامر
+        بتبان **على طول** مش بالهوفر — مفيش هوفر في اللمس.
+     ٤) الأمر الرئيسي بياخد عرض كامل في صفّه: على اللمس الهدف
+        الكبير أهم من الترتيب الأنيق.
+   ============================================================ */
+@media (max-width:900px){
+  .tophead{flex-wrap:wrap;gap:var(--sp-3)}
+  .tophead__ctrl{width:100%}
+  .tophead__ctrl .btn{width:100%;justify-content:center}
+  .pagehead__title{font-size:1.375rem}
+
+  /* ١) الفلاتر شريط أفقي بيتسحب */
+  .ltools{
+    display:flex;flex-wrap:nowrap;gap:var(--sp-2);
+    overflow-x:auto;overflow-y:visible;
+    padding:0 var(--sp-2) var(--sp-4);
+    scrollbar-width:none;-ms-overflow-style:none;
+    scroll-snap-type:x proximity;
+    -webkit-overflow-scrolling:touch
+  }
+  .ltools::-webkit-scrollbar{display:none}
+  .ltools > *{flex:none;scroll-snap-align:start}
+
+  /* ٢) البحث سطر لوحده فوق الشريط */
+  .ltools .search{
+    order:-1;flex:none;width:100%;
+    position:sticky;inset-inline-start:0
+  }
+  .doclist__all{margin-bottom:var(--sp-3)}
+}
+
+@media (max-width:760px){
+  /* ٣) الكارت بيتفكّ */
+  .ivcard{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+    gap:var(--sp-3) var(--sp-3);align-items:start;
+    padding:var(--sp-4)
+  }
+  .ivcard__ck{grid-column:1;grid-row:1;margin:0}
+  .ivcard__id{grid-column:2;grid-row:1;min-width:0}
+  .ivcard > .rmenu{grid-column:3;grid-row:1;margin:0}
+  .ivcard__amt{
+    grid-column:1 / -1;grid-row:2;min-width:0;
+    display:flex;align-items:baseline;gap:var(--sp-3);flex-wrap:wrap
+  }
+  .ivcard__due{margin-inline-start:auto}
+  .ivcard__sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ivcard__top{flex-wrap:wrap;gap:6px}
+
+  /* ٤) الأوامر: ظاهرة على طول، والأمر الرئيسي بعرض كامل */
+  .ivcard__acts{
+    grid-column:1 / -1;grid-row:3;
+    display:grid;grid-template-columns:1fr repeat(3,var(--ctl-h));
+    gap:var(--sp-2);padding-top:var(--sp-2);
+    border-top:1px solid var(--border-table)
+  }
+  .ivcard .ivt__ic,.ivcard .ivt__go{opacity:1;pointer-events:auto}
+  .ivcard .ivt__go,.ivcard .ivt__gap{width:auto}
+
+  /* الترقيم والشارات */
+  .pager{flex-direction:column;align-items:stretch;gap:var(--sp-3)}
+  .pager__side{justify-content:space-between}
+  .advchips{padding-inline:var(--sp-2)}
+}
+
+/* صف الفلاتر: على الديسكتوب شفّاف وبيكمّل نفس السطر */
+.ltools__row{
+  display:flex;align-items:center;gap:var(--sp-2);
+  flex:1 1 auto;min-width:0
+}
+
+@media (max-width:900px){
+  /* البحث سطر كامل، والفلاتر شريط بيتسحب تحته */
+  .ltools{display:grid;grid-template-columns:1fr;gap:var(--sp-2);overflow:visible}
+  .ltools .search{width:100%;order:0;position:static}
+  .ltools__row{
+    display:flex;flex-wrap:nowrap;gap:var(--sp-2);
+    overflow-x:auto;overflow-y:visible;
+    margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);
+    scrollbar-width:none;-ms-overflow-style:none;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch
+  }
+  .ltools__row::-webkit-scrollbar{display:none}
+  /* ★ الأسبقية هنا مقصودة: فيه قاعدة `.ltools .pick1{flex:0 1 auto}`
+     بكلاسين، وكانت بتكسب على `.ltools > *` — فالفلاتر كانت
+     بتتقلّص لعرض صفر وتبان فاضية. */
+  .ltools__row > *,
+  .ltools__row > .pick1,
+  .ltools__row > .dr{flex:0 0 auto;scroll-snap-align:start;min-width:0}
+}

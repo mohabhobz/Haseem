@@ -57,8 +57,14 @@ export function SelectField({
     const H = Math.min(300, list.length * 34 + (withSearch ? 48 : 0) + 12)
     const below = window.innerHeight - r.bottom
     const up = below < H + 12 && r.top > below
+    /* ★ القايمة أوسع من الحقل بـ١٥٠px.
+       الأسماء التجارية طويلة («مؤسسة درب الشرق للتوريدات»)
+       وجنبها الرقم الضريبي — فعلى عرض الحقل كانت بتنزل سطرين
+       وتلاتة والقايمة تبقى غير مقروءة. الزيادة بتخلّي السطر
+       الواحد يكفي، والقايمة مش محبوسة بعرض الحقل لأنها بورتال
+       على الـbody أصلًا. */
     setPos({
-      left: r.left, width: Math.max(r.width, 190),
+      left: r.left, width: Math.max(r.width + 150, 300),
       top: up ? undefined : r.bottom + 4,
       bottom: up ? window.innerHeight - r.top + 4 : undefined,
       maxH: Math.max(160, (up ? r.top : below) - 12),

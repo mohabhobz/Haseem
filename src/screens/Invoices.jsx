@@ -256,6 +256,11 @@ export default function Invoices() {
             <div className="ltools">
               <SearchField placeholder="البحث في الفواتير…" width={250}
                 value={q} onChange={(v) => { setQ(v); setPage(1) }} />
+
+              {/* الفلاتر في صفّها الخاص — على الموبايل بتبقى شريط
+                  بيتسحب أفقيًا تحت البحث، وعلى الديسكتوب بتفضل
+                  في نفس سطر البحث عادي */}
+              <div className="ltools__row">
               <Pick label="الحالة" value={state} options={STATES}
                 onChange={(v) => { setState(v); setPage(1) }} />
               <Pick label="العملاء" value={cust} options={CUSTS}
@@ -277,6 +282,7 @@ export default function Invoices() {
                 <button className={view === 'cards' ? 'is-on' : ''}
                   aria-pressed={view === 'cards'} title="كروت"
                   onClick={() => pickView('cards')}><Ico.viewlist size={15} /></button>
+              </div>
               </div>
             </div>
 
