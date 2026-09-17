@@ -60,7 +60,28 @@ import { TODAY as FMT_TODAY } from '../lib/format.js'
     { no:'INV-027111', c:cust(11), date:'2026-07-11', due:'2026-08-25', total: 12900.00, paid:    0.00, status:'issued',  zatca:'pending' },
     { no:'INV-027110', c:cust(0),  date:'2026-07-08', due:null,         total:  8900.00, paid:    0.00, status:'draft',   zatca:null  },
     { no:'INV-027109', c:cust(3),  date:'2026-07-02', due:'2026-08-16', total: 31200.00, paid:31200.00, status:'paid',    zatca:'ok'  },
-    { no:'INV-027108', c:cust(4),  date:'2026-06-28', due:'2026-07-28', total:  2450.00, paid:    0.00, status:'void',    zatca:'ok'  }
+    { no:'INV-027108', c:cust(4),  date:'2026-06-28', due:'2026-07-28', total:  2450.00, paid:    0.00, status:'void',    zatca:'ok'  },
+
+    /* ★ النص الأول من السنة كان فاضي خالص، فرسم اتجاه المبيعات
+       كان خط مفرود على الصفر من يناير لمايو وقمّة واحدة في يوليو.
+       الفواتير دي **مدفوعة بالكامل**، يعني بتزوّد الإيراد والنقد
+       بس ومابتلمسش الذمم ولا المتأخرات ولا عدّادات الحالات —
+       فالشاشات التانية بتفضل زي ما هي والرسم بقى له اتجاه حقيقي. */
+    { no:'INV-027107', c:cust(1),  date:'2026-06-22', due:'2026-07-22', total: 74200.00, paid:74200.00, status:'paid', zatca:'ok' },
+    { no:'INV-027106', prj:'PRJ-013', c:cust(6), date:'2026-06-14', due:'2026-07-14', total: 61350.00, paid:61350.00, status:'paid', zatca:'ok' },
+    { no:'INV-027105', c:cust(9),  date:'2026-06-05', due:'2026-07-05', total: 50900.00, paid:50900.00, status:'paid', zatca:'ok' },
+    { no:'INV-027104', c:cust(3),  date:'2026-05-27', due:'2026-06-26', total: 58400.00, paid:58400.00, status:'paid', zatca:'ok' },
+    { no:'INV-027103', c:cust(7),  date:'2026-05-19', due:'2026-06-18', total: 46750.00, paid:46750.00, status:'paid', zatca:'ok' },
+    { no:'INV-027102', prj:'PRJ-012', c:cust(0), date:'2026-05-08', due:'2026-06-07', total: 38120.00, paid:38120.00, status:'paid', zatca:'ok' },
+    { no:'INV-027101', c:cust(2),  date:'2026-04-26', due:'2026-05-26', total: 69900.00, paid:69900.00, status:'paid', zatca:'ok' },
+    { no:'INV-027100', c:cust(10), date:'2026-04-17', due:'2026-05-17', total: 55300.00, paid:55300.00, status:'paid', zatca:'ok' },
+    { no:'INV-027099', c:cust(5),  date:'2026-04-06', due:'2026-05-06', total: 39450.00, paid:39450.00, status:'paid', zatca:'ok' },
+    { no:'INV-027098', c:cust(8),  date:'2026-03-24', due:'2026-04-23', total: 52700.00, paid:52700.00, status:'paid', zatca:'ok' },
+    { no:'INV-027097', prj:'PRJ-014', c:cust(1), date:'2026-03-11', due:'2026-04-10', total: 44880.00, paid:44880.00, status:'paid', zatca:'ok' },
+    { no:'INV-027096', c:cust(4),  date:'2026-02-23', due:'2026-03-25', total: 63500.00, paid:63500.00, status:'paid', zatca:'ok' },
+    { no:'INV-027095', c:cust(11), date:'2026-02-09', due:'2026-03-11', total: 41900.00, paid:41900.00, status:'paid', zatca:'ok' },
+    { no:'INV-027094', c:cust(6),  date:'2026-01-28', due:'2026-02-27', total: 48600.00, paid:48600.00, status:'paid', zatca:'ok' },
+    { no:'INV-027093', c:cust(0),  date:'2026-01-15', due:'2026-02-14', total: 33750.00, paid:33750.00, status:'paid', zatca:'ok' }
   ];
 
   // status: draft | sent | accepted | rejected | expired | converted | cancelled

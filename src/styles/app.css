@@ -506,6 +506,9 @@ body{background:var(--surface-page)}
 .nav__name{font-size:var(--fs-lg);font-weight:var(--fw-bold);color:var(--accent);letter-spacing:-.01em}
 .nav__name span{color:var(--accent-indicator)}
 .nav__scroll{padding:0 var(--sp-3)}
+/* ★ أول عنصر («الرئيسية») كان لازق في هيدر الشركة من فوق —
+   مسافة فاصلة بتخلّي الهيدر يقرا كبلوك مستقل عن القايمة. */
+.nav__scroll{padding-top:var(--sp-4)}
 .nav__section{margin-bottom:var(--sp-5)}
 .nav__sectiontitle{
   font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--nav-section);
@@ -547,13 +550,13 @@ body{background:var(--surface-page)}
 .tophead__ctrl{display:flex;gap:var(--sp-3);align-items:center}
 .pagehead__title{font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.01em}
 .select--pill{
-  border-radius:var(--r-ctrl);min-height:44px;padding:0 var(--sp-4);gap:var(--sp-2);
+  border-radius:var(--r-ctrl);min-height:var(--ctl-h);padding:0 var(--ctl-px);gap:var(--sp-2);
   background:var(--surface-field);border:1px solid var(--border-control);box-shadow:var(--shadow-card);
   font-weight:var(--fw-semi);color:var(--ink-strong);
 }
 .select--pill .dot{width:16px;height:16px;border-radius:var(--r-full);background:var(--accent-indicator);flex:none}
 .search{
-  border-radius:var(--r-ctrl);height:44px;background:var(--surface-field);
+  border-radius:var(--r-ctrl);height:var(--ctl-h);background:var(--surface-field);
   border:1px solid var(--border-control);box-shadow:var(--shadow-card);
 }
 .search kbd{display:none}
@@ -1035,7 +1038,7 @@ body{background:var(--surface-page)}
 /* شاشات لابتوب قصيرة — إحكام تلقائي عشان الصفحة تفضل بدون سكرول */
 @media (max-height: 810px){
   .content{padding:16px 20px 16px}
-  .row2 .chart__plot{height:155px !important}
+  .row2 .chart__plot{height:180px !important}
   .row2 .needs__row,
   .row3 .distrib__row,
   .row3 .recent__row{min-height:38px;padding:2px var(--sp-2)}
@@ -1109,7 +1112,7 @@ body{background:var(--surface-page)}
 /* ---------- الرسم يملا الكارت لآخره ---------- */
 .row2 .panel__body{display:flex;flex-direction:column;min-height:0}
 .chart{display:flex;flex-direction:column;height:100%;min-height:0}
-.chart__plot.area{flex:1;min-height:120px}
+.chart__plot.area{flex:1;min-height:210px}
 .area__box{width:auto}                 /* ★ من غير كده الـmargin بيخلّيه يطلع برّه الكارت */
 .chart__xaxis{margin-top:var(--sp-1)}
 
@@ -1232,7 +1235,7 @@ body{background:var(--surface-page)}
 
 /* ---------- جرس الإشعارات في الهيدر ---------- */
 .bellbtn{
-  position:relative;width:40px;height:40px;flex:none;
+  position:relative;width:var(--ctl-h);height:var(--ctl-h);flex:none;
   display:grid;place-items:center;border-radius:var(--r-ctrl);
   background:var(--surface-raised);border:1px solid var(--border-faint);
   color:var(--ink-base);transition:var(--dur) var(--ease);
@@ -1519,20 +1522,37 @@ body{background:var(--surface-page)}
   body,html{overflow-x:hidden}
 
   /* ---------- شريط الموبايل ---------- */
+  /* الهيدر زجاجي بتدرّج نعناعي خفيف — المحتوى بيعدّي من تحته
+     مبلوّر بدل ما يختفي ورا سطح صمّم. */
   .mobar{
     display:flex;align-items:center;gap:var(--sp-3);
     position:sticky;top:0;z-index:30;
     padding:var(--sp-3) var(--sp-4);
-    background:var(--surface-raised);border-bottom:1px solid var(--border-faint);
+    background:
+      linear-gradient(to left, var(--glass-tint), transparent 62%),
+      var(--glass-surface);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    border-bottom:1px solid var(--glass-edge);
   }
-  .mobar__logo{height:24px;width:auto;flex:1;object-fit:contain;object-position:right}
-  .mobar__burger,.mobar__bell{
-    width:40px;height:40px;flex:none;border-radius:var(--r-ctrl);
+  /* اللوجو بياخد الفاضي كله فبيلزق في بداية السطر = اليمين،
+     والجرس بيتدفع لآخر السطر = الشمال. */
+  .mobar__logo{height:21px;width:auto;flex:1;object-fit:contain;object-position:right}
+  /* الجرس بنفس زرار الرئيسية: نفس المقاس والحدّ والعدّاد */
+  .mobar__bell{
+    position:relative;
+    width:var(--ctl-h);height:var(--ctl-h);flex:none;border-radius:var(--r-ctrl);
     display:grid;place-items:center;color:var(--ink-base);
-    background:var(--surface-sunken);
+    background:var(--glass-surface);border:1px solid var(--glass-edge);
   }
-  .mobar__burger{gap:4px;align-content:center;justify-items:stretch;padding:11px}
-  .mobar__burger span{display:block;height:2px;width:18px;border-radius:2px;background:currentColor}
+  .mobar__bell:active{background:var(--surface-hover)}
+  .mobar__n{
+    position:absolute;top:-5px;inset-inline-start:-5px;
+    min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-full);
+    background:var(--state-critical);color:var(--on-critical);
+    font-size:10px;font-weight:var(--fw-bold);
+    display:grid;place-items:center;border:2px solid transparent;
+  }
 
   /* ---------- القائمة off-canvas من اليمين ---------- */
   .nav{
@@ -1570,7 +1590,9 @@ body{background:var(--surface-page)}
   .pagehead__actions .btn{flex:1;justify-content:center}
 }
 @media (max-width: 900px){
-  .tophead .bellbtn{display:none}          /* الجرس موجود في شريط الموبايل */
+  /* ★ الجرس رجع لشريط `.mobar` العلوي (شمال، جنب اللوجو)،
+     فبيتخفي من هيدر الصفحة عشان مايبقاش اتنين على نفس الشاشة. */
+  .tophead .bellbtn{display:none}
   .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .tabs::-webkit-scrollbar{display:none}
   .tab{white-space:nowrap;flex:none}
@@ -8398,24 +8420,32 @@ button.tkrow:hover{background:var(--surface-hover)}
   flex:1 1 auto;min-width:0
 }
 
+/* على الديسكتوب الفلاتر الأساسية في سطرها، فالنسخة اللي في
+   الدراور مالهاش لزمة. لازم تيجي **قبل** الميديا كويري لأن
+   الاتنين بنفس الوزن — والأخير هو اللي بيكسب. */
+.advdrw__base{display:none}
+
 @media (max-width:900px){
-  /* البحث سطر كامل، والفلاتر شريط بيتسحب تحته */
-  .ltools{display:grid;grid-template-columns:1fr;gap:var(--sp-2);overflow:visible}
-  .ltools .search{width:100%;order:0;position:static}
-  .ltools__row{
-    display:flex;flex-wrap:nowrap;gap:var(--sp-2);
-    overflow-x:auto;overflow-y:visible;
-    margin-inline:calc(var(--sp-2) * -1);padding-inline:var(--sp-2);
-    scrollbar-width:none;-ms-overflow-style:none;
-    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch
-  }
-  .ltools__row::-webkit-scrollbar{display:none}
-  /* ★ الأسبقية هنا مقصودة: فيه قاعدة `.ltools .pick1{flex:0 1 auto}`
-     بكلاسين، وكانت بتكسب على `.ltools > *` — فالفلاتر كانت
-     بتتقلّص لعرض صفر وتبان فاضية. */
-  .ltools__row > *,
+  /* ★ سطر واحد: بحث عريض + أيقونة فلتر مربّعة من غير كتابة.
+     كل الفلاتر بتتطوي جوّه الدراور اللي الأيقونة بتفتحه، فالشريط
+     الأفقي اللي كان بيتسحب تحت البحث اتشال خالص.
+
+     `display:contents` بيخلّي ولاد `.ltools__row` بنفسهم عناصر
+     مرنة في `.ltools` — فزرار الفلتر بيقف جنب البحث من غير ما
+     نغيّر الـJSX. */
+  .ltools{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:nowrap;overflow:visible}
+  .ltools .search{flex:1 1 auto;width:auto;min-width:0;order:0;position:static}
+  .ltools__row{display:contents}
   .ltools__row > .pick1,
-  .ltools__row > .dr{flex:0 0 auto;scroll-snap-align:start;min-width:0}
+  .ltools__row > .dr,
+  .ltools__row > .vsw{display:none}
+  .ltools__more{
+    flex:none;width:var(--ctl-h);min-width:var(--ctl-h);
+    padding:0;justify-content:center;gap:0;overflow:visible
+  }
+  .ltools__more-t{display:none}
+  /* الفلاتر الأساسية بتبان جوّه الدراور هنا بس */
+  .advdrw__base{display:grid;gap:var(--sp-3)}
 }
 
 /* ★ حقل العميل اتوسّع — والقايمة بتمشي معاه لأنها بقت بعرضه.
@@ -8442,15 +8472,20 @@ button.tkrow:hover{background:var(--surface-hover)}
 .mobnav{display:none}
 
 @media (max-width:900px){
-  /* شريط عائم: مفصول عن الحواف، دايري بالكامل، وسطحه زجاجي */
+  /* الحاوية عايمة وشفافة: الكبسولة + دايرة الإضافة جنبها */
   .mobnav{
     position:fixed;z-index:120;
     inset-inline:12px;
     bottom:12px;
     bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-    display:flex;align-items:center;justify-content:space-between;
-    gap:0;padding:7px 8px;
-    border-radius:var(--r-full);
+    display:flex;align-items:center;gap:10px;background:none;border:0;padding:0
+  }
+
+  /* الكبسولة الزجاجية اللي فيها الروابط */
+  .mobnav__pill{
+    flex:1 1 auto;min-width:0;
+    display:flex;align-items:stretch;justify-content:space-around;gap:2px;
+    padding:8px 6px;border-radius:var(--r-full);
     background:rgba(255,255,255,.66);
     -webkit-backdrop-filter:blur(20px) saturate(180%);
     backdrop-filter:blur(20px) saturate(180%);
@@ -8458,42 +8493,34 @@ button.tkrow:hover{background:var(--surface-hover)}
     outline:1px solid var(--border-table);outline-offset:-1px
   }
 
-  .mobnav__i,.mobnav__add{
-    flex:0 0 auto;min-width:0;
-    display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;
-    height:40px;padding:0 6px;border:0;background:none;cursor:pointer;
+  .mobnav__i{
+    flex:1 1 0;min-width:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:0;border:0;background:none;cursor:pointer;
     color:var(--ink-muted);text-decoration:none;font:inherit;
-    border-radius:var(--r-full);
     -webkit-user-select:none;user-select:none
   }
-  .mobnav__ic{display:grid;place-items:center;flex:0 0 auto}
-
-  /* النص بيبان للعنصر النشط بس — جوّه الكبسولة جنب الأيقونة */
+  .mobnav__ic{
+    width:38px;height:26px;flex:none;
+    display:grid;place-items:center;border-radius:11px;
+    transition:background var(--dur) var(--ease)
+  }
   .mobnav__t{
-    display:none;
-    font-size:12px;font-weight:var(--fw-medium);line-height:1;
-    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    display:block;font-size:10px;font-weight:var(--fw-medium);line-height:1.2;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
   }
 
-  /* النشط: كبسولة مصمتة فيها أيقونة + اسم */
-  .mobnav__i.active{
-    flex:0 1 auto;padding:0 12px;
-    background:var(--accent);color:#fff
-  }
-  .mobnav__i.active .mobnav__t{display:block}
+  /* النشط: الأيقونة في مربّع مصمت، والاسم تحتها بلون الهوية */
+  .mobnav__i.active{color:var(--accent)}
+  .mobnav__i.active .mobnav__ic{background:var(--accent);color:#fff}
 
-  /* زرار الإضافة: دايرة مرفوعة فوق الشريط */
-  .mobnav__add{position:relative;flex:0 0 58px;padding:0}
-  .mobnav__fab{
-    position:absolute;top:-24px;inset-inline-start:50%;
-    transform:translateX(50%);
-    width:56px;height:56px;border-radius:var(--r-full);
-    display:grid;place-items:center;
-    background:var(--lime);color:var(--accent);
-    border:4px solid rgba(255,255,255,.9)
+  /* زرار الإضافة: دايرة منفصلة جنب الكبسولة — مش مرفوعة فوقها */
+  .mobnav__add{
+    flex:0 0 auto;width:48px;height:48px;padding:0;border:0;
+    border-radius:var(--r-full);display:grid;place-items:center;cursor:pointer;
+    background:var(--accent);color:var(--lime-on-dark)
   }
-  [dir="ltr"] .mobnav__fab{transform:translateX(-50%)}
-  .mobnav__add .mobnav__t{display:none}
+  .mobnav__add:active{transform:scale(.96)}
 
   /* المحتوى بيسيب مكان للشريط عشان ما يغطّيش آخر كارت */
   /* تصريحين: الأول مضمون، والتاني بيكسبه على الأجهزة اللي
@@ -8627,4 +8654,212 @@ button.tkrow:hover{background:var(--surface-hover)}
 }
 @media (max-width:560px){
   .sfoot__notes{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ============================================================
+   رسومات كروت الرئيسية
+   ------------------------------------------------------------
+   الرسومات شفافة (PNG بخلفية فاضية) فبتقعد على أرضية الكارت
+   على طول — من غير مربّع ولا radius ولا ظل. `contain` عشان
+   الرسمة تفضل بنِسبها من غير ما تتقص.
+   ============================================================ */
+.stat__art{
+  width:72px;height:72px;flex:none;
+  object-fit:contain;display:block
+}
+
+
+/* ============================================================
+   ★★ تجربة: قلب الأبيض والكريمي — الرئيسية بس
+   ------------------------------------------------------------
+   الصفحة بقت كريمي، واللي قاعد فوقها (الكروت، القايمة، الشيتس)
+   بقى أبيض. الحقول اتقلبت لكريمي عشان تفضل بايِنة جوه الكارت
+   الأبيض. العلامة بيحطّها سكرين الرئيسية على <html> وبيشيلها
+   لما نخرج منها — فباقي الشاشات زي ما هي.
+   للرجوع: امسح البلوك ده + الـuseEffect في Dashboard.jsx
+   ============================================================ */
+:root[data-flip="1"]{
+  --surface-page:   var(--w-25);
+  --surface-app:    var(--w-25);
+  --surface-raised: #FFFFFF;
+  --surface-field:  var(--w-50);
+  --surface-hover:  var(--w-100);
+  --nav-bg:         #FFFFFF;
+  /* ظل خفيف للكروت — مخالف لبند الـDon'ts في دليل الهوية،
+     وموجود هنا كجزء من التجربة بس. */
+  --shadow-flip:    0 1px 2px rgba(28,28,28,.04), 0 6px 16px rgba(28,28,28,.05);
+}
+/* الكروت بس — مش الحقول ولا الكنترولز */
+:root[data-flip="1"] .stat,
+:root[data-flip="1"] .panel{box-shadow:var(--shadow-flip)}
+
+/* الجراف من غير سطور — الأرقام على المحور فاضلة */
+:root[data-flip="1"] .chart__gridline{border-top:0}
+
+/* ★★ الأحمر كان مالي الشاشة فبقى بيقول «كله وحش» ومابقاش
+   بيلفت لحاجة. الجملة التفسيرية تحت الرقم والتأخير في قائمة
+   المستحقات رجعوا نبرة عادية — الأحمر فضل في إشعار الجرس
+   وأيقونة البند المرفوض بس، يعني مكانين بدل ستة. التمييز
+   بقى بالوزن مش باللون. */
+:root[data-flip="1"] .stat--alert .stat__sub{
+  color:var(--ink-faint);font-weight:var(--fw-medium)
+}
+:root[data-flip="1"] .distrib__m.is-late{
+  color:var(--ink-muted);font-weight:var(--fw-semi)
+}
+
+/* ★★ الأزرار التانوية: الأوت-لاين كان بيحطّ برواز أخضر حوالين
+   كل كارت، وبقى تقيل على شاشة كروتها بيضا وليها ظل. البديل
+   نفس لغة الحقول: تعبئة كريمية من غير برواز — بيقعد جوه الكارت
+   من غير ما يزوّد خط جديد على الشاشة. */
+:root[data-flip="1"] .btn--outline{
+  background:var(--surface-field);border-color:transparent;
+  color:var(--ink-strong);font-weight:var(--fw-semi)
+}
+:root[data-flip="1"] .btn--outline:hover{
+  background:var(--surface-hover);border-color:transparent;color:var(--accent)
+}
+
+
+/* ============================================================
+   ★★ تجربة (تكملة): خلفية متدرّجة + كروت زجاجية — الرئيسية بس
+   ------------------------------------------------------------
+   التدرّج على `.main` مش على `.content`، عشان `.content` هو
+   اللي بيسكرول: لو الخلفية عليه كانت هتمشي مع السكرول وتتكرّر.
+   الألوان كلها من سلّم حسيم — نعناعي `--chart-3` من فوق،
+   لمسة ليمونية، وتركوازي `--chart-2` من تحت. مفيش لون جديد.
+   ============================================================ */
+:root[data-flip="1"] .shell{
+  background:
+    radial-gradient(70% 55% at 100%  0%, rgba(140,199,181,.95), transparent 70%),
+    radial-gradient(55% 45% at   0%  0%, rgba(140,199,181,.65), transparent 70%),
+    radial-gradient(45% 35% at  22% -6%, rgba(231,255,37,.34),  transparent 68%),
+    radial-gradient(75% 60% at  90% 100%, rgba(0,130,103,.40),  transparent 70%),
+    radial-gradient(60% 50% at   0% 100%, rgba(140,199,181,.55), transparent 70%),
+    linear-gradient(205deg, rgba(140,199,181,.40) 0%, rgba(140,199,181,0) 38%,
+                            rgba(0,130,103,0) 60%, rgba(0,130,103,.22) 100%),
+    var(--w-25);
+  background-attachment:fixed;
+}
+:root[data-flip="1"] .main,
+:root[data-flip="1"] .content,
+:root[data-flip="1"] .topbar{background:transparent}
+
+/* الكروت **والقايمة** زجاج: شفافية + بلور، فالتدرّج بيبان من وراهم.
+   التدرّج اتنقل على `.shell` بدل `.main` عشان يمرّ تحت القايمة كمان —
+   لو فضل على `.main` كانت القايمة هتبقى زجاج على أرضية صمّاء. */
+:root[data-flip="1"] .nav,
+:root[data-flip="1"] .stat,
+:root[data-flip="1"] .panel{
+  background:rgba(255,255,255,.60);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  backdrop-filter:blur(18px) saturate(150%);
+  border-color:rgba(255,255,255,.72)
+}
+/* الحقول والأزرار جوه الكارت الزجاجي — نبرة أفتح عشان تفضل بايِنة */
+:root[data-flip="1"] .btn--outline,
+:root[data-flip="1"] .needs__ic,
+:root[data-flip="1"] .recent__ic{background:rgba(255,255,255,.72)}
+
+/* ============================================================
+   الصفحة تملا الشاشة — الصف التالت بياخد الفاضي
+   ------------------------------------------------------------
+   `.content` بقى عمود مرن، والصف التالت `flex:1` فبيتمدّد لآخر
+   الشاشة بدل ما يسيب فراغ تحته. الحد الأدنى بيمنعه ينكمش لما
+   المحتوى يزيد ويرجع يسكرول عادي.
+   ============================================================ */
+:root[data-flip="1"] .content{display:flex;flex-direction:column}
+:root[data-flip="1"] .row3{flex:1 0 auto;min-height:320px}
+
+/* ------------------------------------------------------------
+   كنترولز الهيدر بنفس زجاج الكروت
+   ------------------------------------------------------------
+   التلاتة دول قاعدين على التدرّج مباشرة (التوب بار شفاف)، فبياخدوا
+   نفس الوصفة بالحرف: ٦٠٪ أبيض + نفس البلور + حدّ أبيض شفاف.
+   عدّاد الإشعارات الأحمر بيفضل صمّم — هو إشارة مش سطح.
+   ------------------------------------------------------------ */
+:root[data-flip="1"] .tophead__ctrl .select--pill,
+:root[data-flip="1"] .tophead__ctrl .search,
+:root[data-flip="1"] .tophead__ctrl .bellbtn{
+  background:rgba(255,255,255,.60);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  backdrop-filter:blur(18px) saturate(150%);
+  border-color:rgba(255,255,255,.72)
+}
+:root[data-flip="1"] .tophead__ctrl .bellbtn:hover,
+:root[data-flip="1"] .tophead__ctrl .select--pill:hover{
+  background:rgba(255,255,255,.78)
+}
+
+
+/* ============================================================
+   بانر برنامج الشراكة في القايمة
+   ------------------------------------------------------------
+   الصورة (١٠٢٤×٣٢٠) فيها الهدية على الشمال والخلفية الخضرا
+   الغامقة، والتلتين اليمين سايبين فاضيين عن قصد — النص بيتكتب
+   فوقهم HTML مش محروق في الصورة، عشان يفضل قابل للتعديل
+   والترجمة وقارئ الشاشة يقراه.
+   ============================================================ */
+.navban{
+  flex:none;margin:0 var(--sp-3) var(--sp-2);
+  height:64px;border:0;padding-inline-start:var(--sp-3);
+  border-radius:var(--r-ctrl);cursor:pointer;overflow:hidden;
+  background:url('/banners/partner.png') center/cover no-repeat;
+  display:flex;align-items:center;justify-content:flex-start;
+  text-align:start;-webkit-user-select:none;user-select:none;
+  transition:filter var(--dur) var(--ease)
+}
+.navban:hover{filter:brightness(1.12)}
+.navban__t{
+  font-size:var(--fs-sm);font-weight:var(--fw-semi);line-height:1.3;
+  color:var(--lime-on-dark);max-width:58%
+}
+/* مقفولة: مربّع بيوريّ الهدية بس */
+.shell.collapsed .navban{
+  margin-inline:var(--sp-2);height:44px;padding:0;
+  background-position:12% center;background-size:190% auto
+}
+.shell.collapsed .navban__t{display:none}
+
+
+/* بلوك «آخر موعد للتقديم» — كان رمادي صمّم على كارت زجاجي فبان
+   زي رقعة. بقى بنفس لغة الأسطح الجوّانية: أبيض شفاف من غير برواز. */
+:root[data-flip="1"] .vat__due{
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.7)
+}
+
+
+/* ============================================================
+   طبقة بلورية متدرّجة تحت شريط التنقّل
+   ------------------------------------------------------------
+   الشريط عايم، فالمحتوى بيعدّي من تحته لحدّ حافة الشاشة وبيبان
+   مقطوع. الطبقة دي بتغطّي الشريحة اللي تحته: بلور + أبيض شفاف،
+   والـ`mask` بيخلّيها تختفي بالتدريج لفوق فمفيش خط فاصل.
+
+   • `z-index:-1` بيحطّها **ورا** خلفية الشريط نفسه — و`.mobnav`
+     عليه z-index فبيعمل stacking context، يعني الطبقة مابتنزلش
+     ورا الصفحة كلها، بتفضل جوّه الشريط.
+   • `inset-inline:-12px` بيلغي هامش الشريط عشان تمتدّ لحافة
+     الشاشة بالظبط.
+   ============================================================ */
+@media (max-width:900px){
+  .mobnav::before{
+    content:'';position:absolute;z-index:-1;pointer-events:none;
+    inset-inline:-12px;
+    top:-34px;
+    bottom:-12px;
+    bottom:calc(-12px - env(safe-area-inset-bottom, 0px));
+    background:linear-gradient(to top, var(--scrim-glass), transparent);
+    -webkit-backdrop-filter:blur(12px);
+    backdrop-filter:blur(12px);
+    -webkit-mask-image:linear-gradient(to top, #000 0%, #000 52%, transparent 100%);
+    mask-image:linear-gradient(to top, #000 0%, #000 52%, transparent 100%)
+  }
+}
+
+/* رسومات كروت الرئيسية على الموبايل — أصغر عشان الكارت ما ياخدش
+   ارتفاع زيادة على شاشة ضيقة. الديسكتوب فاضل 72px زي ما هو. */
+@media (max-width:900px){
+  .stat__art{width:52px;height:52px}
 }

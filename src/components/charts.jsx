@@ -113,9 +113,20 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
           {w > 0 && H > 0 && (
             <svg className="area__svg" width={w} height={H} aria-label="المبيعات الشهرية">
               <defs>
+                {/* ★ التعبئة بتتدرّج من الليموني فوق للأخضر تحت — سلّم
+                    الهوية نفسه. الليموني بيفضل في المساحة المفرودة بس،
+                    عمره ما بيلمس النص ولا الخط. */}
                 <linearGradient id={`g${uid}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity=".26" />
+                  <stop offset="0%"  stopColor="var(--lime)"    stopOpacity=".55" />
+                  <stop offset="38%" stopColor="var(--chart-3)" stopOpacity=".34" />
+                  <stop offset="72%" stopColor="var(--chart-2)" stopOpacity=".16" />
                   <stop offset="100%" stopColor="var(--chart-1)" stopOpacity="0" />
+                </linearGradient>
+                {/* الخط نفسه بيمشي من الأخضر الغامق للتركوازي — الليموني
+                    برّه الخط لأن تباينه على الأبيض ١٫٢:١ ومش هيتقرا. */}
+                <linearGradient id={`s${uid}`} x1="1" y1="0" x2="0" y2="0">
+                  <stop offset="0%"   stopColor="var(--chart-1)" />
+                  <stop offset="100%" stopColor="var(--chart-2)" />
                 </linearGradient>
                 <clipPath id={`c${uid}`}>
                   <rect className="area__reveal" x="0" y="0" width={w} height={H} />
@@ -125,7 +136,7 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
               <g clipPath={`url(#c${uid})`}>
                 <path className="area__fill" d={area} fill={`url(#g${uid})`} />
                 <path ref={lineRef} className="area__line" d={line} fill="none"
-                  stroke="var(--chart-1)" strokeWidth="2.5"
+                  stroke={`url(#s${uid})`} strokeWidth="2.5"
                   strokeLinecap="round" strokeLinejoin="round" />
               </g>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell, PageHeader, Panel } from '../components/layout.jsx'
 import { NotificationsDrawer, NOTIF_COUNT } from '../components/notifications.jsx'
@@ -37,16 +37,16 @@ const MSTART = `${TODAY.slice(0, 7)}-01`
 const mInc = R.incomeStatement(MSTART, TODAY)
 
 const STATS = [
-  { l: 'النقد المتاح', v: cashTotal, Ic: Ico.cash,
+  { l: 'النقد المتاح', v: cashTotal, Ic: Ico.cash, art: '/stats/cash.png?v=2',
     sub: `في ${DATA.cashAccounts.length} حسابات`, to: '/cash/accounts' },
-  { l: 'المستحق لك من العملاء', v: arTotal, Ic: Ico.receivable,
+  { l: 'المستحق لك من العملاء', v: arTotal, Ic: Ico.receivable, art: '/stats/ar.png?v=2',
     sub: lateAr > 0 ? `منها ${fmtMoney(lateAr)} متأخر` : 'مفيش متأخر',
     alert: lateAr > 0, to: '/sales/invoices?due=late' },
-  { l: 'المستحق عليك للموردين', v: apTotal, Ic: Ico.purchases,
+  { l: 'المستحق عليك للموردين', v: apTotal, Ic: Ico.purchases, art: '/stats/ap.png?v=2',
     sub: apTotal > 0 ? 'على فواتير مشتريات مرحّلة' : 'لا يوجد مستحقات',
     to: '/purchases/suppliers' },
   /* الشهر ممكن يقفل بخسارة — الكارت بيقول كده بدل ما يسمّيها «ربح» */
-  { l: mInc.net < 0 ? 'خسارة الشهر' : 'صافي الربح هذا الشهر', v: mInc.net, Ic: Ico.sales,
+  { l: mInc.net < 0 ? 'خسارة الشهر' : 'صافي الربح هذا الشهر', v: mInc.net, Ic: Ico.sales, art: '/stats/net.png?v=2',
     sub: mInc.net < 0 ? 'المصروف أكبر من الإيراد في الشهر ده' : 'الإيراد ناقص المصروف',
     alert: mInc.net < 0, to: '/reports/income-statement' },
 ]
@@ -121,6 +121,15 @@ export default function Dashboard() {
   const [attn, setAttn] = useState(false)
   const total = NOTIF_COUNT
 
+  /* ★★ تجربة مؤقتة: قلب الأبيض والكريمي في الرئيسية بس.
+     العلامة بتتحطّ على <html> وبتتشال لما نسيب الشاشة، فباقي
+     السيستم مابيتأثرش. للرجوع: امسح الـuseEffect دي وبلوك
+     `:root[data-flip="1"]` في app.css. */
+  useEffect(() => {
+    document.documentElement.dataset.flip = '1'
+    return () => { delete document.documentElement.dataset.flip }
+  }, [])
+
   return (
     <AppShell>
       <div className="tophead">
@@ -147,7 +156,9 @@ export default function Dashboard() {
             onClick={s.to ? () => nav(s.to) : undefined}
             onKeyDown={s.to ? (e) => { if (e.key === 'Enter') nav(s.to) } : undefined}
             className={`stat${s.alert ? ' stat--alert' : ''}${s.to ? ' stat--go' : ''}`}>
-            <div className="stat__icon" ><s.Ic size={19} /></div>
+            {s.art
+              ? <img className="stat__art" src={s.art} alt="" aria-hidden="true" />
+              : <div className="stat__icon"><s.Ic size={19} /></div>}
             <div className="stat__t">
               <div className="stat__l">{s.l}</div>
               <div className="stat__v"><SAR v={s.v} dec /></div>

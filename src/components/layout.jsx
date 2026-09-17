@@ -8,6 +8,7 @@ import * as DATA from '../data/mock.js'
 import { getTheme, setTheme } from '../lib/theme.js'
 import { getBrand } from '../lib/brand.js'
 import { Drawer } from './drawer.jsx'
+import { NotificationsDrawer, NOTIF_COUNT } from './notifications.jsx'
 
 /* خريطة التنقل — قائمة واحدة متصلة، من غير تقسيمات */
 const NAV = [
@@ -289,6 +290,16 @@ export function Sidebar({ collapsed, onToggle }) {
       <div className="nav__scroll">
         {NAV.map(renderItem)}
       </div>
+      {/* ★ بانر برنامج الشراكة — صورة واحدة فيها الهدية والخلفية،
+          والنص فوقها HTML عشان يفضل قابل للتغيير والقراءة. لما
+          القايمة تتقفل بيتحوّل لمربّع بيوريّ الهدية بس. */}
+      <button className="navban" data-component="PartnerBanner"
+        onClick={() => toast.info('برنامج الشراكة جاي قريب',
+          { sub: 'هتكسب عمولة على كل عميل بيسجّل من لينكك' })}
+        aria-label="اربح مع برنامج الشراكة">
+        <span className="navban__t">اربح مع برنامج الشراكة</span>
+      </button>
+
       <div className="nav__foot">
         {menu && (
           <div className="pmenu" data-component="ProfileMenu" onClick={(e) => e.stopPropagation()}>
@@ -444,17 +455,19 @@ function NavRail({ collapsed, width, onWidth, onToggle }) {
    تحت، والشيت بيفتح من نفس المكان اللي الصباع فيه. القايمة
    المنسدلة من فوق بتخلّي المستخدم يمدّ إيده لأعلى الشاشة.
    ============================================================ */
+/* ★ خمس خانات بالظبط، **زرار الإضافة و«المزيد» محسوبين فيهم**:
+   الرئيسية · المبيعات · [+] · المشتريات · المزيد.
+   يعني تلات روابط بس — والباقي كله جوّه «المزيد». */
 const MOBE = [
   { Ic: Ico.dashboard, label: 'الرئيسية',  to: '/dashboard' },
   { Ic: Ico.invoice,   label: 'المبيعات',  to: '/sales/invoices' },
   { Ic: Ico.purchases, label: 'المشتريات', to: '/purchases/bills' },
-  null,                                     /* مكان زرار الإضافة */
-  { Ic: Ico.bank,      label: 'المعاملات', to: '/cash/accounts' },
-  { Ic: Ico.reports,   label: 'التقارير',  to: '/reports/sales' },
 ]
 
 /* الموديولات اللي مش في الشريط — بتتفتح من «المزيد» */
 const MORE = [
+  { Ic: Ico.bank,      label: 'المعاملات',           to: '/cash/accounts' },
+  { Ic: Ico.reports,   label: 'التقارير',            to: '/reports/sales' },
   { Ic: Ico.customers, label: 'العملاء',            to: '/sales/customers' },
   { Ic: Ico.items,     label: 'المنتجات والخدمات',  to: '/inventory/items' },
   { Ic: Ico.ledger,    label: 'المحاسبة',           to: '/accounting/journal' },
@@ -518,24 +531,27 @@ function MobileNav() {
   return (
     <>
       <nav className="mobnav" data-component="MobileNav" aria-label="التنقل الرئيسي">
-        {MOBE.map((it, i) => it ? (
+        {/* الكبسولة فيها الروابط بس — زرار الإضافة دايرة منفصلة
+            جنبها، زي المرجع، مش مرفوع فوق الشريط. */}
+        <div className="mobnav__pill">
+        {MOBE.map((it) => (
           <NavLink key={it.label} to={it.to}
             className={() => 'mobnav__i' + (on(it.to) ? ' active' : '')}>
-            <span className="mobnav__ic"><it.Ic size={20} /></span>
+            <span className="mobnav__ic"><it.Ic size={17} /></span>
             <span className="mobnav__t">{it.label}</span>
           </NavLink>
-        ) : (
-          <button key="add" className="mobnav__add" onClick={() => setAdd(true)}
-            aria-label="إضافة سريعة">
-            <span className="mobnav__fab"><Ico.plus size={26} /></span>
-            <span className="mobnav__t">إضافة سريعة</span>
-          </button>
         ))}
 
         <button className={'mobnav__i' + (inMore || more ? ' active' : '')}
           aria-expanded={more} onClick={() => setMore(true)}>
-          <span className="mobnav__ic"><Ico.more size={20} /></span>
+          <span className="mobnav__ic"><Ico.menu size={17} /></span>
           <span className="mobnav__t">المزيد</span>
+        </button>
+        </div>
+
+        <button className="mobnav__add" onClick={() => setAdd(true)}
+          aria-label="إضافة سريعة" title="إضافة سريعة">
+          <Ico.plus size={22} />
         </button>
       </nav>
 
@@ -560,6 +576,8 @@ export function AppShell({ children, search }) {
   const [navW, setNavW] = useState(() => {
     try { return +localStorage.getItem('nav:w') || 252 } catch { return 252 }
   })
+  /* دراور الإشعارات — بيتفتح من جرس الشريط العلوي في الموبايل */
+  const [notif, setNotif] = useState(false)
 
   /* ★ الكتابة بتحصل **من فعل المستخدم بس**، مش في `useEffect`
      بيشتغل مع كل بناء للمكوّن. الفرق مهم: الشاشة بتتبني من أول
@@ -589,13 +607,17 @@ export function AppShell({ children, search }) {
       className={`shell${collapsed ? ' collapsed' : ''}${navOpen ? ' navopen' : ''}`}>
 
       {/* شريط الموبايل — بيظهر تحت 900px بس */}
+      {/* ★ الشريط العلوي: اللوجو على اليمين (بداية السطر في RTL)
+          والجرس على الشمال. البرجر اتشال — التنقّل كله بقى من
+          شريط التحت و«المزيد». */}
       <header className="mobar" data-component="MobileBar">
-        <button className="mobar__burger" onClick={() => setNavOpen(true)} aria-label="القائمة">
-          <span /><span /><span />
-        </button>
         <img className="mobar__logo nav__logo--light" src="/haseem-logo-ar.svg" alt="حسيم" />
         <img className="mobar__logo nav__logo--dark" src="/haseem-logo-ar-dark.svg" alt="" aria-hidden="true" />
-        <button className="mobar__bell" aria-label="الإشعارات"><Ico.bell size={18} /></button>
+        <button className="mobar__bell" onClick={() => setNotif(true)}
+          aria-label="الإشعارات" title="الإشعارات">
+          <Ico.bell size={16} />
+          <span className="mobar__n num">{NOTIF_COUNT}</span>
+        </button>
       </header>
 
       <div className="navscrim" onClick={() => setNavOpen(false)} />
@@ -612,6 +634,7 @@ export function AppShell({ children, search }) {
       </main>
 
       <MobileNav />
+      <NotificationsDrawer open={notif} onClose={() => setNotif(false)} />
 
       {/* طبقة الرد على الأمر — مرة واحدة للتطبيق كله */}
       <Toaster />

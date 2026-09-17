@@ -269,7 +269,7 @@ export default function Invoices() {
               <Pick label="التاريخ" value={sort} options={SORTS} onChange={setSort} />
               <button className={'ltools__more' + (advOn.length ? ' is-on' : '')}
                 aria-expanded={advOpen} onClick={() => setAdvOpen(true)}>
-                <Ico.filter size={14} />مزيد من الفلاتر
+                <Ico.filter size={14} /><span className="ltools__more-t">مزيد من الفلاتر</span>
                 {advOn.length > 0 && <b className="ltools__n">{advOn.length}</b>}
               </button>
 
@@ -352,6 +352,34 @@ export default function Invoices() {
           </div>
         )}>
         <div className="advdrw">
+          {/* ★ الفلاتر الأساسية بتتكرّر هنا **للموبايل بس** — شريطها
+              الأفقي بيتخفي تحت ٩٠٠px، فلو مش هنا المستخدم مش هيقدر
+              يفلتر أصلًا. على الديسكتوب البلوك ده مخفي بالـCSS
+              لأن الفلاتر ظاهرة في سطرها عادي. */}
+          <div className="advdrw__base">
+            <label className="advdrw__f1">
+              <span className="fld__l">الحالة</span>
+              <SelectField value={state} ariaLabel="الحالة"
+                options={STATES.map((o) => ({ id: o.id, label: o.id === 'all' ? 'كل الحالات' : o.label }))}
+                onChange={(v) => { setState(v); setPage(1) }} />
+            </label>
+            <label className="advdrw__f1">
+              <span className="fld__l">العميل</span>
+              <SelectField value={cust} ariaLabel="العميل" search
+                options={CUSTS.map((o) => ({ id: o.id, label: o.id === 'all' ? 'كل العملاء' : o.label }))}
+                onChange={(v) => { setCust(v); setPage(1) }} />
+            </label>
+            <div className="advdrw__f1">
+              <span className="fld__l">الفترة</span>
+              <DateRange value={period} onChange={(v) => { setPeriod(v); setPage(1) }} today={TODAY} />
+            </div>
+            <label className="advdrw__f1">
+              <span className="fld__l">الترتيب</span>
+              <SelectField value={sort} ariaLabel="الترتيب" options={SORTS}
+                onChange={setSort} />
+            </label>
+          </div>
+
           {ADV.map((f) => (
             <label key={f.id} className="advdrw__f1">
               <span className="fld__l">{f.label}</span>
