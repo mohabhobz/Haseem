@@ -57,14 +57,18 @@ export function SelectField({
     const H = Math.min(300, list.length * 34 + (withSearch ? 48 : 0) + 12)
     const below = window.innerHeight - r.bottom
     const up = below < H + 12 && r.top > below
-    /* ★ القايمة أوسع من الحقل بـ١٥٠px.
-       الأسماء التجارية طويلة («مؤسسة درب الشرق للتوريدات»)
-       وجنبها الرقم الضريبي — فعلى عرض الحقل كانت بتنزل سطرين
-       وتلاتة والقايمة تبقى غير مقروءة. الزيادة بتخلّي السطر
-       الواحد يكفي، والقايمة مش محبوسة بعرض الحقل لأنها بورتال
-       على الـbody أصلًا. */
+    /* ★★ القايمة **بعرض الحقل بالظبط**.
+       جرّبت أوسّعها لوحدها ١٥٠px عشان الأسماء الطويلة تدخل في
+       سطر — والنتيجة إنها بقت أعرض من الحقل وفاضت برّه الكارت
+       وبرّه الشاشة. الحل مش في القايمة، الحل إن **الحقل نفسه
+       يتوسّع** (في CSS الشاشة) والقايمة تمشي معاه.
+
+       والـleft بيتقصّ على حدود الشاشة عشان أي حقل قريب من
+       الحافة ما تطلعش قايمته برّه. */
+    const W = r.width
+    const left = Math.min(Math.max(8, r.left), window.innerWidth - W - 8)
     setPos({
-      left: r.left, width: Math.max(r.width + 150, 300),
+      left, width: W,
       top: up ? undefined : r.bottom + 4,
       bottom: up ? window.innerHeight - r.top + 4 : undefined,
       maxH: Math.max(160, (up ? r.top : below) - 12),
@@ -145,8 +149,11 @@ export function SelectField({
                 aria-selected={String(o.id) === String(value)}
                 className={`selx__o${String(o.id) === String(value) ? ' is-on' : ''}${i === hi ? ' is-hi' : ''}`}
                 onMouseEnter={() => setHi(i)} onClick={() => choose(o)}>
+                {/* الاسم في span خاص به — من غيره بيبقى عقدة نص
+                    مجهولة جوّه الفليكس، وماينفعش يتقصّ بنقط لأن
+                    CSS ما بتقدرش تمسك عقدة نص. */}
                 <span className="selx__ot">
-                  {o.label}
+                  <span className="selx__ol">{o.label}</span>
                   {o.sub && <em>{o.sub}</em>}
                 </span>
                 {String(o.id) === String(value) && <Ico.check size={14} />}

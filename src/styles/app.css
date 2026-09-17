@@ -5781,7 +5781,8 @@ button.tkrow:hover{background:var(--surface-hover)}
   font-size:var(--fs-base);font-weight:var(--fw-semi);color:var(--accent)
 }
 .scust__add:hover{text-decoration:underline;text-underline-offset:3px}
-.scust__sel{max-width:340px}
+/* ★ الحد الأقصى ٣٤٠ اتشال — هو اللي كان مانع الحقل يوصل
+   لعرض عموده (٤٧٠) والقايمة بتمشي معاه. */
 .scust{display:grid;gap:3px;justify-items:start;font-size:var(--fs-xs);color:var(--ink-muted)}
 .scust__n{
   display:flex;align-items:center;gap:9px;
@@ -8281,8 +8282,8 @@ button.tkrow:hover{background:var(--surface-hover)}
 }
 .pp__h .pp__ctrl{flex:none}
 
-/* ★ القايمة اتوسّعت — والسطر جوّاها ما ينزلش تاني */
-.selx__p{max-width:min(92vw,520px)}
+/* السطر جوّه القايمة ما ينزلش تاني — الاسم بيتقصّ بنقط لو طال
+   جدًا، والرقم الضريبي بيفضل كامل لأنه هو اللي بيفرّق */
 .selx__ot{
   display:flex;align-items:baseline;justify-content:space-between;
   gap:var(--sp-4);min-width:0
@@ -8416,3 +8417,134 @@ button.tkrow:hover{background:var(--surface-hover)}
   .ltools__row > .pick1,
   .ltools__row > .dr{flex:0 0 auto;scroll-snap-align:start;min-width:0}
 }
+
+/* ★ حقل العميل اتوسّع — والقايمة بتمشي معاه لأنها بقت بعرضه.
+   ده اللي كان مطلوب من الأول: الاتنين يكبروا مع بعض، مش
+   القايمة لوحدها. */
+.sheet__cust{grid-template-columns:minmax(320px,470px) 1fr}
+@media (max-width:760px){
+  .sheet__cust{grid-template-columns:1fr}
+}
+
+/* اسم الخيار بيتقصّ بنقط، والرقم الضريبي بيفضل كامل */
+.selx__ol{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.selx__ot{align-items:baseline}
+
+/* ============================================================
+   ★★ شريط التنقّل التحتاني — الموبايل
+   ------------------------------------------------------------
+   المقاسات مأخوذة من سيستم العميل: الشريط ٧٢px، وزرار الإضافة
+   دايرة ٦٤px مرفوعة فوق الشريط بحلقة بلون الخلفية عشان تفصلها
+   عنه. اللون ليموني — وده **المكان التاني في المنتج اللي
+   يستاهل الليموني**: هو على أرضية غامقة أو محاط بحلقة بيضا،
+   مش على سطح فاتح (تباينه على الأبيض ١٫٢:١).
+   ============================================================ */
+.mobnav{display:none}
+
+@media (max-width:900px){
+  .mobnav{
+    position:fixed;inset-inline:0;bottom:0;z-index:120;
+    display:flex;align-items:stretch;justify-content:space-around;
+    gap:0;padding:8px 4px;
+    padding-bottom:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+    background:var(--surface-page);
+    border-top:1px solid var(--border-table)
+  }
+  .mobnav__i,.mobnav__add{
+    flex:1 1 0;min-width:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    padding:6px 2px;border:0;background:none;cursor:pointer;
+    color:var(--ink-muted);text-decoration:none;font:inherit;
+    border-radius:var(--r-ctrl);
+    -webkit-user-select:none;user-select:none
+  }
+  .mobnav__t{
+    font-size:10px;font-weight:var(--fw-medium);line-height:1.2;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+  }
+  .mobnav__ic{display:grid;place-items:center}
+
+  /* النشط: مربّع مصمت بالأخضر من غير نص — زي سيستمهم */
+  .mobnav__i.active{color:var(--accent)}
+  .mobnav__i.active .mobnav__ic{
+    background:var(--accent);color:#fff;
+    width:44px;height:36px;border-radius:12px
+  }
+  .mobnav__i.active .mobnav__t{display:none}
+
+  /* زرار الإضافة مرفوع فوق الشريط */
+  .mobnav__add{position:relative;justify-content:flex-end}
+  .mobnav__fab{
+    position:absolute;top:-30px;inset-inline-start:50%;
+    transform:translateX(50%);
+    width:60px;height:60px;border-radius:var(--r-full);
+    display:grid;place-items:center;
+    background:var(--lime);color:var(--accent);
+    border:4px solid var(--surface-page)
+  }
+  [dir="ltr"] .mobnav__fab{transform:translateX(-50%)}
+  .mobnav__add .mobnav__t{margin-top:34px}
+
+  /* المحتوى بيسيب مكان للشريط عشان ما يغطّيش آخر كارت */
+  /* تصريحين: الأول مضمون، والتاني بيكسبه على الأجهزة اللي
+     فيها منطقة آمنة. لو `env()` مش مدعومة المتصفّح بيتجاهل
+     السطر التاني بس والأول بيفضل شغّال. */
+  /* ★ `.main .content` مش `.content` لوحدها: فيه قاعدة تانية
+     تحت ٥٢٠px بتحدّد الحشو بالكامل، وهي بتكسب على أي تصريح
+     بنفس الوزن. الوزن الأعلى بيضمن إن المساحة اللي الشريط
+     بيقعد فيها متتاكلش على الشاشات الصغيرة. */
+  .main .content{padding-bottom:86px}
+  .main .content{padding-bottom:calc(86px + env(safe-area-inset-bottom, 0px))}
+  .savebar,.bulkbar{bottom:80px}
+  .savebar,.bulkbar{bottom:calc(80px + env(safe-area-inset-bottom, 0px))}
+}
+
+/* ---------- الشيت اللي بيطلع من تحت ---------- */
+.mosheet__root{position:fixed;inset:0;z-index:130}
+.mosheet__scrim{
+  position:absolute;inset:0;background:rgba(28,28,28,.45);
+  animation:fadeIn .18s var(--ease) both
+}
+.mosheet{
+  position:absolute;inset-inline:0;bottom:0;
+  background:var(--surface-page);
+  border-start-start-radius:22px;border-start-end-radius:22px;
+  padding:10px var(--sp-5) var(--sp-5);
+  padding-bottom:calc(var(--sp-5) + env(safe-area-inset-bottom, 0px));
+  max-height:78vh;overflow:auto;
+  animation:sheetUp .22s var(--ease) both
+}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.mosheet__grip{
+  display:block;width:38px;height:4px;border-radius:var(--r-full);
+  background:var(--w-300);margin:0 auto var(--sp-4)
+}
+.mosheet__h{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--sp-3);margin-bottom:var(--sp-3)
+}
+.mosheet__h b{font-size:var(--fs-base);font-weight:var(--fw-semi);color:var(--ink-strong)}
+.mosheet__x{
+  width:var(--ctl-h);height:var(--ctl-h);display:grid;place-items:center;
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);color:var(--ink-muted);cursor:pointer
+}
+.mosheet__l{display:grid;gap:2px}
+.mosheet__i{
+  display:flex;align-items:center;gap:var(--sp-4);width:100%;
+  padding:13px var(--sp-3);border:0;background:none;cursor:pointer;
+  border-radius:var(--r-ctrl);font:inherit;font-size:var(--fs-sm);
+  color:var(--ink-base);text-align:start
+}
+.mosheet__i:active{background:var(--surface-hover)}
+.mosheet__ic{
+  width:38px;height:38px;flex:none;border-radius:var(--r-ctrl);
+  display:grid;place-items:center;
+  background:var(--surface-sunken);color:var(--ink-muted)
+}
+
+/* ★ `env()` من غير قيمة احتياطية بتبوّظ التصريح كله في أي
+   سياق مش داعم للـsafe-area (سطح المكتب مثلًا) — فالحشو
+   التحتاني كان بيسقط والشريط يغطّي آخر كارت. القيمة
+   الاحتياطية `0px` بتخلّي الحسبة صالحة في كل الحالات. */

@@ -430,6 +430,123 @@ function NavRail({ collapsed, width, onWidth, onToggle }) {
   )
 }
 
+/* ============================================================
+   MobileNav — شريط التنقّل التحتاني (تحت ٩٠٠px).
+   ------------------------------------------------------------
+   الهيكل منقول من سيستم العميل بالحرف بعد قراءته من الصفحة
+   نفسها: ستة عناصر وزرار إضافة مرفوع في النص، والشريط ٧٢px.
+
+   اللي اتغيّر بطلب منك: آخر عنصر بقى **المزيد** بدل الإعدادات —
+   وبيفتح شيت فيه الموديولات اللي مش في الشريط، بدل ما تبقى
+   مدفونة ورا البرجر فوق.
+
+   ★ ليه شيت من تحت مش قايمة منسدلة؟ لأن الإيد على الموبايل
+   تحت، والشيت بيفتح من نفس المكان اللي الصباع فيه. القايمة
+   المنسدلة من فوق بتخلّي المستخدم يمدّ إيده لأعلى الشاشة.
+   ============================================================ */
+const MOBE = [
+  { Ic: Ico.dashboard, label: 'الرئيسية',  to: '/dashboard' },
+  { Ic: Ico.invoice,   label: 'المبيعات',  to: '/sales/invoices' },
+  { Ic: Ico.purchases, label: 'المشتريات', to: '/purchases/bills' },
+  null,                                     /* مكان زرار الإضافة */
+  { Ic: Ico.bank,      label: 'المعاملات', to: '/cash/accounts' },
+  { Ic: Ico.reports,   label: 'التقارير',  to: '/reports/sales' },
+]
+
+/* الموديولات اللي مش في الشريط — بتتفتح من «المزيد» */
+const MORE = [
+  { Ic: Ico.customers, label: 'العملاء',            to: '/sales/customers' },
+  { Ic: Ico.items,     label: 'المنتجات والخدمات',  to: '/inventory/items' },
+  { Ic: Ico.ledger,    label: 'المحاسبة',           to: '/accounting/journal' },
+  { Ic: Ico.projects,  label: 'المشاريع',           to: '/projects' },
+  { Ic: Ico.help,      label: 'المساعدة',           to: '/help' },
+  { Ic: Ico.settings,  label: 'الإعدادات',          to: '/settings/organization' },
+]
+
+/* اختصارات الإضافة السريعة — نفس أفعال «إضافة سريعة» عندهم */
+const QUICK = [
+  { Ic: Ico.invoice,   label: 'فاتورة مبيعات',  to: '/sales/invoices/new' },
+  { Ic: Ico.reports,   label: 'عرض سعر',        to: '/sales/quotations' },
+  { Ic: Ico.purchases, label: 'فاتورة مشتريات', to: '/purchases/bills/new' },
+  { Ic: Ico.customers, label: 'عميل جديد',      to: '/sales/customers/new' },
+  { Ic: Ico.items,     label: 'صنف جديد',       to: '/inventory/items/new' },
+  { Ic: Ico.wallet,    label: 'سند قبض',        to: '/cash/receipts' },
+]
+
+function MoSheet({ open, onClose, title, items, nav }) {
+  useEffect(() => {
+    if (!open) return
+    const esc = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', esc)
+    return () => document.removeEventListener('keydown', esc)
+  }, [open, onClose])
+  if (!open) return null
+
+  return (
+    <div className="mosheet__root" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="mosheet__scrim" onClick={onClose} />
+      <div className="mosheet">
+        <span className="mosheet__grip" aria-hidden="true" />
+        <div className="mosheet__h">
+          <b>{title}</b>
+          <button className="mosheet__x" onClick={onClose} aria-label="إغلاق">
+            <Ico.close size={16} />
+          </button>
+        </div>
+        <div className="mosheet__l">
+          {items.map((it) => (
+            <button key={it.label} className="mosheet__i"
+              onClick={() => { onClose(); nav(it.to) }}>
+              <span className="mosheet__ic"><it.Ic size={19} /></span>
+              <span>{it.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MobileNav() {
+  const nav = useNavigate()
+  const { pathname } = useLocation()
+  const [add, setAdd] = useState(false)
+  const [more, setMore] = useState(false)
+  const on = (to) => pathname === to || pathname.startsWith(to + '/')
+  const inMore = MORE.some((m) => on(m.to))
+
+  return (
+    <>
+      <nav className="mobnav" data-component="MobileNav" aria-label="التنقل الرئيسي">
+        {MOBE.map((it, i) => it ? (
+          <NavLink key={it.label} to={it.to}
+            className={() => 'mobnav__i' + (on(it.to) ? ' active' : '')}>
+            <span className="mobnav__ic"><it.Ic size={20} /></span>
+            <span className="mobnav__t">{it.label}</span>
+          </NavLink>
+        ) : (
+          <button key="add" className="mobnav__add" onClick={() => setAdd(true)}
+            aria-label="إضافة سريعة">
+            <span className="mobnav__fab"><Ico.plus size={26} /></span>
+            <span className="mobnav__t">إضافة سريعة</span>
+          </button>
+        ))}
+
+        <button className={'mobnav__i' + (inMore || more ? ' active' : '')}
+          aria-expanded={more} onClick={() => setMore(true)}>
+          <span className="mobnav__ic"><Ico.more size={20} /></span>
+          <span className="mobnav__t">المزيد</span>
+        </button>
+      </nav>
+
+      <MoSheet open={add} onClose={() => setAdd(false)} nav={nav}
+        title="إضافة سريعة" items={QUICK} />
+      <MoSheet open={more} onClose={() => setMore(false)} nav={nav}
+        title="المزيد" items={MORE} />
+    </>
+  )
+}
+
 export function AppShell({ children, search }) {
   /* ★★ حالة القايمة بتتخزّن.
      كل شاشة بترسم `<AppShell>` بتاعها، فالتنقّل بيهدّ المكوّن
@@ -493,6 +610,8 @@ export function AppShell({ children, search }) {
       <main className="main">
         <div className="content">{children}</div>
       </main>
+
+      <MobileNav />
 
       {/* طبقة الرد على الأمر — مرة واحدة للتطبيق كله */}
       <Toaster />
