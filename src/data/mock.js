@@ -235,6 +235,19 @@ export const reps = [
   { id: 'SP-02', ar: 'سعد الحربي' },
   { id: 'SP-03', ar: 'نورة العتيبي' },
 ]
+
+/* ---------- أبعاد المستند المشتقّة ----------
+   الفرع والمندوب ومركز التكلفة مش متخزّنين على الفاتورة في
+   الموك. بنشتقّهم من رقم المستند بنفس أسلوب `whOf` الموجود
+   فوق: **ثابت لنفس الفاتورة** في كل رندر، فالفلترة بتدّي نفس
+   النتيجة كل مرة بدل ما الأرقام ترقص.
+
+   لما البيانات الحقيقية تيجي، الحقول دي بتتحط على المستند
+   والدوال دي بتتشال — الواجهة مش هتتغيّر. */
+const docSeed = (no) => Math.abs(+String(no).replace(/\D/g, '') || 0)
+export const repOfDoc    = (no) => reps[docSeed(no) % reps.length]
+export const branchOfDoc = (no) => branches[(docSeed(no) >> 1) % branches.length]
+export const ccOfDoc     = (no) => costCenters[(docSeed(no) >> 2) % costCenters.length]
 /* `logo`: مسار صورة في public/ (مثلًا '/banks/rajhi.svg').
    سايبينه null عمدًا لحد ما تتوفّر الشعارات — والواجهة بتحط
    أيقونة بنك مكانه، فمفيش حالة «صورة مكسورة». */

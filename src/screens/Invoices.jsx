@@ -12,6 +12,8 @@ import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import { toast } from '../components/feedback.jsx'
 import { PrintPreview } from '../components/printpreview.jsx'
+import { Drawer } from '../components/drawer.jsx'
+import { SelectField } from '../components/selectfield.jsx'
 
 /* ============================================================
    فواتير المبيعات — **منقولة من سيستم الكلاينت بالحرف**.
@@ -124,6 +126,27 @@ export default function Invoices() {
 
   const all = useDocs('invoices')
 
+  /* ---------- الفلاتر الإضافية ----------
+     أربع أبعاد مش في الشريط الرئيسي عشان مش كل يوم بتتفلتر
+     بيها. مكانها دراور — زي أي عرض معلومات في السيستم — والشريط
+     بيقول كام واحدة منها شغّالة، وفوق الجدول بتبان كشارات
+     تتشال بنقرة. من غير الشارات دي المستخدم ممكن ينسى إن
+     الجدول مفلتر ويقرا رقم ناقص على إنه الرقم الكامل. */
+  const ADV = [
+    { id: 'branch', label: 'الفرع',         opts: DATA.branches.map((x) => ({ id: x.id, label: x.ar })),
+      of: (v) => DATA.branchOfDoc(v.no)?.id },
+    { id: 'rep',    label: 'المندوب',        opts: DATA.reps.map((x) => ({ id: x.id, label: x.ar })),
+      of: (v) => DATA.repOfDoc(v.no)?.id },
+    { id: 'wh',     label: 'المستودع',       opts: DATA.warehouses.map((x) => ({ id: x.id, label: x.ar })),
+      of: (v) => DATA.whOf(v.no)?.id },
+    { id: 'cc',     label: 'مركز التكلفة',   opts: DATA.costCenters.map((x) => ({ id: x.id, label: x.ar })),
+      of: (v) => DATA.ccOfDoc(v.no)?.id },
+  ]
+  const [advOpen, setAdvOpen] = useState(false)
+  const [adv, setAdv] = useState({})
+  const advOn = ADV.filter((f) => adv[f.id])
+  const advLabel = (f) => f.opts.find((o) => o.id === adv[f.id])?.label
+
   const rows = useMemo(() => {
     const st = STATES.find((s) => s.id === state)
     const cu = CUSTS.find((c) => c.id === cust)
@@ -134,8 +157,9 @@ export default function Invoices() {
       .filter((v) => (st?.test ? st.test(v) : true))
       .filter((v) => (cu?.test ? cu.test(v) : true))
       .filter((v) => (needle ? docText(v).includes(needle) : true))
+      .filter((v) => ADV.every((f) => !adv[f.id] || f.of(v) === adv[f.id]))
       .sort(cmp)
-  }, [all, period, state, cust, sort, q])
+  }, [all, period, state, cust, sort, q, adv])
 
   const [PER, setPER] = useState(12)
   const pages = Math.max(1, Math.ceil(rows.length / PER))
@@ -238,10 +262,10 @@ export default function Invoices() {
                 onChange={(v) => { setCust(v); setPage(1) }} />
               <DateRange value={period} onChange={(v) => { setPeriod(v); setPage(1) }} today={TODAY} />
               <Pick label="التاريخ" value={sort} options={SORTS} onChange={setSort} />
-              <button className="ltools__more"
-                onClick={() => toast.info('مزيد من الفلاتر',
-                  { sub: 'الفرع · المندوب · المستودع · مركز التكلفة' })}>
+              <button className={'ltools__more' + (advOn.length ? ' is-on' : '')}
+                aria-expanded={advOpen} onClick={() => setAdvOpen(true)}>
                 <Ico.filter size={14} />مزيد من الفلاتر
+                {advOn.length > 0 && <b className="ltools__n">{advOn.length}</b>}
               </button>
 
               {/* مبدّل العرض — آخر الشريط، بعيد عن الفلاتر عشان
@@ -255,6 +279,19 @@ export default function Invoices() {
                   onClick={() => pickView('cards')}><Ico.viewlist size={15} /></button>
               </div>
             </div>
+
+            {advOn.length > 0 && (
+              <div className="advchips">
+                {advOn.map((f) => (
+                  <button key={f.id} className="advchip"
+                    onClick={() => setAdv((a) => ({ ...a, [f.id]: '' }))}>
+                    <span>{f.label}: <b>{advLabel(f)}</b></span>
+                    <Ico.close size={12} />
+                  </button>
+                ))}
+                <button className="advchips__x" onClick={() => setAdv({})}>مسح الكل</button>
+              </div>
+            )}
 
             {rows.length === 0 ? (
               <div className="sect__empty">
@@ -297,6 +334,28 @@ export default function Invoices() {
           </>
         )}
       </div>
+
+      <Drawer open={advOpen} onClose={() => setAdvOpen(false)}
+        title="مزيد من الفلاتر" meta="أبعاد إضافية على نفس القائمة"
+        footer={(
+          <div className="advdrw__f">
+            <button className="btn btn--sec" onClick={() => setAdv({})}>مسح الكل</button>
+            <button className="btn btn--primary" onClick={() => setAdvOpen(false)}>
+              عرض {rows.length} فاتورة
+            </button>
+          </div>
+        )}>
+        <div className="advdrw">
+          {ADV.map((f) => (
+            <label key={f.id} className="advdrw__f1">
+              <span className="fld__l">{f.label}</span>
+              <SelectField value={adv[f.id] || ''} placeholder="الكل" ariaLabel={f.label}
+                options={[{ id: '', label: 'الكل' }, ...f.opts]}
+                onChange={(val) => { setAdv((a) => ({ ...a, [f.id]: val })); setPage(1) }} />
+            </label>
+          ))}
+        </div>
+      </Drawer>
 
       {peek && <PrintPreview doc={peekDoc(peek)} onClose={() => setPeek(null)} />}
 

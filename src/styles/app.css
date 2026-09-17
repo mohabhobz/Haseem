@@ -8147,3 +8147,48 @@ button.tkrow:hover{background:var(--surface-hover)}
   background:var(--surface-hover);
   border-color:var(--accent);color:var(--accent)
 }
+
+/* ============================================================
+   ★ مزيد من الفلاتر — بقى شغّال
+   ------------------------------------------------------------
+   أربع أبعاد في دراور جانبي (زي أي عرض معلومات في السيستم)،
+   والزرار بيعدّ الشغّال منها، وفوق الجدول بتبان **كشارات
+   تتشال بنقرة**.
+
+   الشارات مش زينة: من غيرها المستخدم ممكن ينسى إن الجدول
+   مفلتر، ويقرا رقم ناقص على إنه الرقم الكامل — وده في شاشة
+   فواتير غلطة بتوصل لقرار مالي.
+   ============================================================ */
+.ltools__more.is-on{border-color:var(--accent);color:var(--accent);background:var(--accent-quiet)}
+.ltools__more.is-on svg{color:var(--accent)}
+.ltools__n{
+  min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-full);
+  display:grid;place-items:center;
+  background:var(--accent);color:#fff;
+  font-size:var(--fs-micro);font-weight:var(--fw-semi);line-height:1
+}
+
+.advchips{
+  display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;
+  padding:0 var(--sp-2) var(--sp-4)
+}
+.advchip{
+  display:inline-flex;align-items:center;gap:7px;
+  height:30px;padding:0 10px;border-radius:var(--r-full);
+  border:1px solid var(--accent);background:var(--accent-quiet);
+  color:var(--accent);font:inherit;font-size:var(--fs-micro);cursor:pointer
+}
+.advchip b{font-weight:var(--fw-semi)}
+.advchip svg{color:var(--accent);opacity:.7}
+.advchip:hover svg{opacity:1}
+.advchips__x{
+  border:0;background:none;padding:0 6px;cursor:pointer;font:inherit;
+  font-size:var(--fs-micro);color:var(--ink-muted)
+}
+.advchips__x:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+
+.advdrw{display:grid;gap:var(--sp-5)}
+.advdrw__f1{display:grid;gap:var(--sp-2)}
+.advdrw__f1 .selx{width:100%}
+.advdrw__f{display:flex;gap:var(--sp-3);justify-content:flex-end}
+.advdrw__f .btn{flex:1}
