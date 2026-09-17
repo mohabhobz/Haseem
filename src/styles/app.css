@@ -8442,48 +8442,58 @@ button.tkrow:hover{background:var(--surface-hover)}
 .mobnav{display:none}
 
 @media (max-width:900px){
+  /* شريط عائم: مفصول عن الحواف، دايري بالكامل، وسطحه زجاجي */
   .mobnav{
-    position:fixed;inset-inline:0;bottom:0;z-index:120;
-    display:flex;align-items:stretch;justify-content:space-around;
-    gap:0;padding:8px 4px;
-    padding-bottom:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom, 0px));
-    background:var(--surface-page);
-    border-top:1px solid var(--border-table)
+    position:fixed;z-index:120;
+    inset-inline:12px;
+    bottom:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+    display:flex;align-items:center;justify-content:space-between;
+    gap:0;padding:7px 8px;
+    border-radius:var(--r-full);
+    background:rgba(255,255,255,.66);
+    -webkit-backdrop-filter:blur(20px) saturate(180%);
+    backdrop-filter:blur(20px) saturate(180%);
+    border:1px solid rgba(255,255,255,.55);
+    outline:1px solid var(--border-table);outline-offset:-1px
   }
+
   .mobnav__i,.mobnav__add{
-    flex:1 1 0;min-width:0;
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-    padding:6px 2px;border:0;background:none;cursor:pointer;
+    flex:0 0 auto;min-width:0;
+    display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;
+    height:40px;padding:0 6px;border:0;background:none;cursor:pointer;
     color:var(--ink-muted);text-decoration:none;font:inherit;
-    border-radius:var(--r-ctrl);
+    border-radius:var(--r-full);
     -webkit-user-select:none;user-select:none
   }
+  .mobnav__ic{display:grid;place-items:center;flex:0 0 auto}
+
+  /* النص بيبان للعنصر النشط بس — جوّه الكبسولة جنب الأيقونة */
   .mobnav__t{
-    font-size:10px;font-weight:var(--fw-medium);line-height:1.2;
-    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+    display:none;
+    font-size:12px;font-weight:var(--fw-medium);line-height:1;
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
   }
-  .mobnav__ic{display:grid;place-items:center}
 
-  /* النشط: مربّع مصمت بالأخضر من غير نص — زي سيستمهم */
-  .mobnav__i.active{color:var(--accent)}
-  .mobnav__i.active .mobnav__ic{
-    background:var(--accent);color:#fff;
-    width:44px;height:36px;border-radius:12px
+  /* النشط: كبسولة مصمتة فيها أيقونة + اسم */
+  .mobnav__i.active{
+    flex:0 1 auto;padding:0 12px;
+    background:var(--accent);color:#fff
   }
-  .mobnav__i.active .mobnav__t{display:none}
+  .mobnav__i.active .mobnav__t{display:block}
 
-  /* زرار الإضافة مرفوع فوق الشريط */
-  .mobnav__add{position:relative;justify-content:flex-end}
+  /* زرار الإضافة: دايرة مرفوعة فوق الشريط */
+  .mobnav__add{position:relative;flex:0 0 58px;padding:0}
   .mobnav__fab{
-    position:absolute;top:-30px;inset-inline-start:50%;
+    position:absolute;top:-24px;inset-inline-start:50%;
     transform:translateX(50%);
-    width:60px;height:60px;border-radius:var(--r-full);
+    width:56px;height:56px;border-radius:var(--r-full);
     display:grid;place-items:center;
     background:var(--lime);color:var(--accent);
-    border:4px solid var(--surface-page)
+    border:4px solid rgba(255,255,255,.9)
   }
   [dir="ltr"] .mobnav__fab{transform:translateX(-50%)}
-  .mobnav__add .mobnav__t{margin-top:34px}
+  .mobnav__add .mobnav__t{display:none}
 
   /* المحتوى بيسيب مكان للشريط عشان ما يغطّيش آخر كارت */
   /* تصريحين: الأول مضمون، والتاني بيكسبه على الأجهزة اللي
@@ -8548,3 +8558,73 @@ button.tkrow:hover{background:var(--surface-hover)}
    سياق مش داعم للـsafe-area (سطح المكتب مثلًا) — فالحشو
    التحتاني كان بيسقط والشريط يغطّي آخر كارت. القيمة
    الاحتياطية `0px` بتخلّي الحسبة صالحة في كل الحالات. */
+
+/* ============================================================
+   ★★ صفحة إنشاء الفاتورة على الموبايل
+   ------------------------------------------------------------
+   الورقة مبنية على شبكات بأعمدة ليها حد أدنى ثابت (كرت العميل
+   ٣٢٠px، عمود المجاميع ٣٠٠px، كرت المجاميع ٢٧٠px) — ودي كلها
+   أوسع من شاشة ٣٩٠px، فكانت بتدفع الصفحة كلها ٣٧٧px برّه.
+
+   القاعدة هنا: **كل الشبكات بتبقى عمود واحد**، وكل حد أدنى
+   بيتلغي. الورقة بتتقري من فوق لتحت زي المستند الحقيقي.
+   ============================================================ */
+@media (max-width:900px){
+  /* شريط الأوامر فوق */
+  .tophead__ctrl.docact{width:100%;flex-wrap:wrap;gap:var(--sp-2)}
+  .docact .splitb{flex:1 1 100%}
+  .docact .splitb__m{flex:1}
+  .docact > .btn{flex:1}
+
+  /* الورقة: عمود واحد في كل مكان */
+  .sheet__head,.sheet__foot,.sfoot__side,.sfoot__col{grid-template-columns:1fr}
+  .sheet__cust{grid-template-columns:1fr}
+  .sfoot__notes,.sfoot__bank,.sfoot__tot,.sfoot__att,.sfoot__opt,.sheet--att{
+    min-width:0;max-width:none;flex:none;width:auto
+  }
+  .sheet__org{flex-wrap:wrap;gap:var(--sp-4)}
+  /* تلات خانات في الصف: اللِيبل · القيمة · «تغيير».
+     لو خليناها خانتين، الزرار بينزل سطر لوحده وكل سطر بيتفكّ. */
+  .sheet__meta{grid-template-columns:max-content minmax(0,1fr) max-content}
+  .sheet__meta .smeta__k{justify-self:start}
+  .sheet__meta .smeta__p{justify-self:end}
+
+  /* جدول البنود بيتسحب أفقيًا جوّه كارته — أفضل من ضغط سبع
+     أعمدة على ٣٩٠px لحد ما تبقى غير مقروءة */
+  .ltable{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  /* ٧٠٥ = مجموع أقل عرض مقروء للأعمدة + الفجوات. أقل من كده
+     الأعمدة بتتضغط تحت حدها وتفيض برّه صفّها. */
+  .ltable__h,.ltable__r{min-width:705px}
+  .ltable .ltable__add{min-width:calc(705px - 27px)}
+
+  /* عنوان البنود وأدواته تحت بعض */
+  .slhead{align-items:stretch}
+  .slhead .sltools{justify-content:flex-start;overflow-x:auto;padding-bottom:2px}
+  .slhead .sltools::-webkit-scrollbar{display:none}
+  .slhead .sltools > *{flex:none}
+}
+
+@media (max-width:560px){
+  /* الملاحظات والختم تحت بعض */
+  .sfoot__notes{grid-template-columns:1fr}
+  .sstamp{justify-items:stretch}
+
+}
+
+/* ★★ العمود الواحد لازم يكون `minmax(0,1fr)` مش `1fr`.
+   الشبكة بتحسب عرض العمود من **أوسع محتوى جوّاه**، وجدول
+   البنود عرضه الأدنى ٦٨٠px — فالعمود طلع ٧٤٥px ودفع الورقة
+   كلها برّه الشاشة، حتى وهي عمود واحد. `minmax(0,…)` بتقول
+   للعمود «تقدر تضيق تحت محتواك»، والجدول بيتسحب جوّه كارته
+   بدل ما يوسّع الصفحة. */
+.sheet{grid-template-columns:minmax(0,1fr)}
+.sheet > *,.sheet__lines,.ltable{min-width:0}
+
+@media (max-width:900px){
+  .sheet__head,.sheet__foot,.sfoot__side,.sfoot__col,
+  .sheet__cust,.sfoot__notes{grid-template-columns:minmax(0,1fr)}
+  .sheet__head > *,.sheet__foot > *,.sfoot__side > *,.sfoot__col > *{min-width:0}
+}
+@media (max-width:560px){
+  .sfoot__notes{grid-template-columns:minmax(0,1fr)}
+}
