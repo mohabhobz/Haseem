@@ -13,6 +13,18 @@ import { fmtMoney } from '../lib/format.js'
    • يترسم متحرّك أول ما الصفحة تفتح (كشف من اليمين للشمال)
    • نفس أرقام المحور الرأسي زي ما هي
    • بالهوفر على أي شهر: نقطة + رقم الشهر فوقها مباشرة   */
+/* ★★ المنحنى كان **بيتخطّى** النقط.
+   ده Catmull-Rom عادي: نقاط التحكّم بتتحسب من ميل الجيران،
+   فلما تيجي من سلسلة أصفار لقمة عالية، الميل بيدفع المنحنى
+   **تحت خط الصفر** قبل ما يطلع. النتيجة إن خط المبيعات كان
+   بينزل لتحت القاع ويتقصّ عند حافة الرسم — وده اللي كان باين
+   كأن الجراف مقطوع.
+
+   الحل: نحبس ‏y‏ بتاعة نقطتَي التحكّم جوّه المدى بين النقطتين
+   اللي بيوصل بينهم. المنحنى بيفضل ناعم، بس عمره ما يعدّي
+   أعلى نقطة ولا أقل نقطة في المقطع — يعني صفر بيفضل صفر. */
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+
 function smoothPath(pts) {
   if (pts.length < 2) return ''
   let d = `M ${pts[0].x} ${pts[0].y}`
@@ -22,10 +34,12 @@ function smoothPath(pts) {
     const p2 = pts[i + 1]
     const p3 = pts[i + 2] || p2
     const t = 0.2
+    const lo = Math.min(p1.y, p2.y)
+    const hi = Math.max(p1.y, p2.y)
     const c1x = p1.x + (p2.x - p0.x) * t
-    const c1y = p1.y + (p2.y - p0.y) * t
+    const c1y = clamp(p1.y + (p2.y - p0.y) * t, lo, hi)
     const c2x = p2.x - (p3.x - p1.x) * t
-    const c2y = p2.y - (p3.y - p1.y) * t
+    const c2y = clamp(p2.y - (p3.y - p1.y) * t, lo, hi)
     d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`
   }
   return d
@@ -63,7 +77,10 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
   const max = Math.max(...data.map((d) => d.v))
   const ticks = [1, 0.75, 0.5, 0.25, 0]
   const padT = 18
-  const padB = 0
+  /* ★ مساحة تحت خط الصفر بقدر نص سُمك الخط + شوية.
+     من غيرها الخط بيتركن على حافة الرسم بالظبط، ونص سُمكه
+     بيقع بره صندوق الـSVG فيتقصّ — وشهر الصفر بيبان نص خط. */
+  const padB = 4
   const n = data.length
   const w = box.w
   const H = height ?? box.h

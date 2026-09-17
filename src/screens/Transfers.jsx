@@ -11,6 +11,7 @@ import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import { toast } from '../components/feedback.jsx'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    نقل المخزون بين المستودعات.
@@ -62,11 +63,11 @@ function Form({ sku, onClose }) {
 
         <label className="fld">
           <span className="fld__l">الصنف</span>
-          <select className={`fld__i${show('item') ? ' is-bad' : ''}`} value={item}
+          <Select className={`fld__i${show('item') ? ' is-bad' : ''}`} value={item}
             onChange={(e) => setItem(e.target.value)}>
             <option value="">اختر صنفًا يتتبع المخزون…</option>
             {prods.map((p) => <option key={p.sku} value={p.sku}>{p.ar}</option>)}
-          </select>
+          </Select>
           {show('item') && <em className="fld__e">{show('item')}</em>}
         </label>
 
@@ -74,17 +75,17 @@ function Form({ sku, onClose }) {
         <div className="frow frow--2" style={{ marginTop: 14 }}>
           <label className="fld">
             <span className="fld__l">من المستودع</span>
-            <select className="fld__i" value={from} onChange={(e) => setFrom(e.target.value)}>
+            <Select className="fld__i" value={from} onChange={(e) => setFrom(e.target.value)}>
               {DATA.stores.map((s) => <option key={s.id} value={s.id}>{s.ar}</option>)}
-            </select>
+            </Select>
             {it && <em className="fld__h">المتاح: <b className="num">{have}</b> {it.unitName}</em>}
           </label>
           <label className="fld">
             <span className="fld__l">إلى المستودع</span>
-            <select className={`fld__i${show('to') ? ' is-bad' : ''}`} value={to}
+            <Select className={`fld__i${show('to') ? ' is-bad' : ''}`} value={to}
               onChange={(e) => setTo(e.target.value)}>
               {DATA.stores.map((s) => <option key={s.id} value={s.id}>{s.ar}</option>)}
-            </select>
+            </Select>
             {show('to') && <em className="fld__e">{show('to')}</em>}
           </label>
         </div>

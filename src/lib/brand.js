@@ -53,7 +53,7 @@ export const FONTS_EN = [
 
 /* ---------- الألوان: ١٢ لون جاهز ---------- */
 export const SWATCHES = [
-  { id: 'haseem',  ar: 'أخضر حسيم',   hex: '#0F5C43' },
+  { id: 'haseem',  ar: 'أخضر حسيم',   hex: '#003E31' },
   { id: 'emerald', ar: 'زمرّدي',      hex: '#0B7A5A' },
   { id: 'teal',    ar: 'تركوازي',     hex: '#0E6E72' },
   { id: 'ocean',   ar: 'أزرق محيطي',  hex: '#14587F' },
@@ -68,7 +68,7 @@ export const SWATCHES = [
 ]
 
 export const DEFAULT_BRAND = {
-  color: '#0F5C43',
+  color: '#003E31',
   fontAr: 'plexar',
   fontEn: 'inter',
   logo: '/tenant-logo.svg',
@@ -273,8 +273,11 @@ export function applyBrand(b = getBrand()) {
   const en = FONTS_EN.find((f) => f.id === b.fontEn) || FONTS_EN[0]
   const stack = `${en.css}, ${ar.css}, system-ui, sans-serif`
   root.style.setProperty('--font-ui', stack)
-  root.style.setProperty('--font-display', stack)
   root.style.setProperty('--font-mono', `${en.css}, system-ui, sans-serif`)
+  /* ★ `--font-display` مش بيتغيّر مع هوية المنشأة.
+     Fustat هو صوت **حسيم** نفسه في العناوين — زي ما الجايد لاين
+     بتفصل: Fustat للعناوين، وخط النص للمحتوى. المنشأة بتختار خط
+     المحتوى، وعناوين المنتج بتفضل بصوت المنتج. */
   root.style.setProperty('--brand-logo', `url("${b.logo || DEFAULT_BRAND.logo}")`)
 
   /* خلفية صفحة الدخول: صورة المستخدم لو رفع واحدة، وإلا `none`

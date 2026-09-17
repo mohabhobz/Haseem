@@ -5,6 +5,7 @@ import { toast } from './feedback.jsx'
 import { fmtMoney, amountInWords } from '../lib/format.js'
 import * as R from '../lib/reports.js'
 import * as DATA from '../data/mock.js'
+import { Select } from './selectfield.jsx'
 
 /* ============================================================
    فورم سند القبض أو الصرف.
@@ -118,20 +119,20 @@ export function VoucherForm({ kind = 'receipts', onClose }) {
             <input className={err(!pname.trim())} value={pname} placeholder="اسم الجهة زي ما هيتكتب في السند"
               onChange={(e) => setPname(e.target.value)} />
           ) : (
-            <select className={err(!pid)} value={pid} onChange={(e) => setPid(e.target.value)}>
+            <Select className={err(!pid)} value={pid} onChange={(e) => setPid(e.target.value)}>
               <option value="">اختر…</option>
               {(pk === 'customer' ? DATA.customers : DATA.suppliers)
                 .map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-            </select>
+            </Select>
           )}
           {touched && !partyOk && <em className="fld__e">لازم تحدّد الطرف — السند من غير طرف ما ينفعش</em>}
         </label>
 
         <label className="fld">
           <span className="fld__l">{rec ? 'الحساب اللي بيتقفل' : 'الحساب اللي بياخد المبلغ'}</span>
-          <select className="fld__i" value={to} onChange={(e) => setTo(e.target.value)}>
+          <Select className="fld__i" value={to} onChange={(e) => setTo(e.target.value)}>
             {opts.map((a) => <option key={a.id} value={a.id}>{DATA.accName(a.id)}</option>)}
-          </select>
+          </Select>
           <em className="fld__h">
             {pk === 'customer' ? 'القبض من عميل بيقلّل ذمته'
               : pk === 'supplier' ? 'الصرف لمورد بيقلّل المستحق له'
@@ -153,11 +154,11 @@ export function VoucherForm({ kind = 'receipts', onClose }) {
 
         <label className="fld">
           <span className="fld__l">{rec ? 'الفلوس داخلة فين' : 'الفلوس خارجة من فين'}</span>
-          <select className="fld__i" value={acc} onChange={(e) => setAcc(e.target.value)}>
+          <Select className="fld__i" value={acc} onChange={(e) => setAcc(e.target.value)}>
             {DATA.cashAccounts.map((a) => (
               <option key={a.acc} value={a.acc}>{a.ar}</option>
             ))}
-          </select>
+          </Select>
           <em className={`fld__h${!rec && n > bal ? ' is-warn' : ''}`}>
             {DATA.CASH_KIND_AR[DATA.cashAccountOf(acc)?.kind]} · الرصيد الحالي{' '}
             <b className="num">{fmtMoney(bal)}</b>
@@ -169,9 +170,9 @@ export function VoucherForm({ kind = 'receipts', onClose }) {
       <div className="frow frow--2" style={{ marginTop: 12 }}>
         <label className="fld">
           <span className="fld__l">طريقة الدفع</span>
-          <select className="fld__i" value={way} onChange={(e) => setWay(e.target.value)}>
+          <Select className="fld__i" value={way} onChange={(e) => setWay(e.target.value)}>
             {WAYS.map((w) => <option key={w} value={w}>{w}</option>)}
-          </select>
+          </Select>
         </label>
         <DateField label="التاريخ" value={date} onChange={setDate} />
       </div>

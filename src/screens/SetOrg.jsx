@@ -3,6 +3,7 @@ import { SettingsShell } from '../components/settingsshell.jsx'
 import { Ico } from '../components/icons.jsx'
 import { toast } from '../components/feedback.jsx'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    إعدادات المنشأة — الهوية والتسجيل الضريبي والعنوان.
@@ -141,10 +142,10 @@ export default function SetOrg() {
         <div className="frow frow--2" style={{ marginTop: 14 }}>
           <label className="fld">
             <span className="fld__l">هوية بديلة للمنشأة <em className="fld__opt">اختياري</em></span>
-            <select className="fld__i" value={idType}
+            <Select className="fld__i" value={idType}
               onChange={(e) => { setIdType(e.target.value); if (!e.target.value) setIdNo('') }}>
               {ID_TYPES.map((t) => <option key={t.id || 'none'} value={t.id}>{t.ar}</option>)}
-            </select>
+            </Select>
             <em className="fld__h">تُستخدم فقط عند عدم وجود سجل تجاري</em>
           </label>
           <div className="fld">

@@ -9,6 +9,7 @@ import { fmtDate, fmtMoney, TODAY } from '../lib/format.js'
 import * as R from '../lib/reports.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    دفتر الأستاذ.
@@ -66,14 +67,14 @@ export default function Ledger() {
         <header className="sect__h">
           <h2 className="sect__t">الحساب</h2>
           <div className="sect__ctrl">
-            <select className="fld__i" style={{ minWidth: 320 }} value={acc}
+            <Select className="fld__i" style={{ minWidth: 320 }} value={acc}
               onChange={(e) => setAcc(e.target.value)} aria-label="اختر الحساب">
               {options.map((x) => (
                 <option key={x.id} value={x.id}>
                   {x.id} — {DATA.accLabel(x)}{x.n === 0 ? ' (ما اتحركش)' : ''}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </header>
 

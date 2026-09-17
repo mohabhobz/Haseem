@@ -164,7 +164,9 @@ export default function Dashboard() {
             onClick={() => toast.info('العرض الشهري هو المتاح دلوقتي',
               { sub: 'الأسبوعي والربعي جايين مع موديول التقارير' })}>
             <span>شهري</span><Ico.chevron size={15} className="chev" /></button>}>
-          <AreaChart data={MONTHS} highlightIndex={7} />
+          {/* آخر شهر فيه بيانات — كان رقم ثابت (٧) بيقع بره المصفوفة
+              لما الشهور تقل، فالنقطة والرقم مكانوش بيظهروا خالص */}
+          <AreaChart data={MONTHS} highlightIndex={MONTHS.length - 1} />
         </Panel>
 
         <Panel title="محتاج تصرّف منك" action={<Ico.more size={18} className="dots" />}>

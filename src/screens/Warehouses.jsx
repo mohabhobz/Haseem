@@ -6,6 +6,7 @@ import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
 import { toast, confirmAction } from '../components/feedback.jsx'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    المستودعات.
@@ -74,9 +75,9 @@ function Form({ init, onClose }) {
           </label>
           <label className="fld">
             <span className="fld__l">الفرع</span>
-            <select className="fld__i" value={branch} onChange={(e) => setBranch(e.target.value)}>
+            <Select className="fld__i" value={branch} onChange={(e) => setBranch(e.target.value)}>
               {DATA.branches.map((b) => <option key={b.id} value={b.id}>{b.ar}</option>)}
-            </select>
+            </Select>
             <em className="fld__h">الفرع اللي المستودع تابع له في التقارير.</em>
           </label>
         </div>

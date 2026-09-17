@@ -717,10 +717,26 @@ export const monthLabel = (k) => {
 }
 
 /* كل الشهور بين تاريخين — بما فيها الفاضية */
+/* ★★ حساب بالأرقام مش بكائن `Date`.
+   النسخة القديمة كانت بتعمل `new Date('2026-01-01')` — ودي
+   بتتقري **UTC** — وبعدين `setMonth` اللي بيشتغل بالتوقيت
+   **المحلي**، وترجّع بـ`toISOString` اللي بيرجّع UTC تاني.
+   الخلط ده بين التوقيتين كان بيضيّع شهر ويكرّر شهر: على
+   توقيت الرياض (+٣) الناتج كان
+   يناير · فبراير · مارس · **أبريل · أبريل** · مايو · يونيو ·
+   يوليو — وأغسطس بيختفي خالص. عشان كده الرسم كان بيوقف عند
+   يوليو ومبيعات أغسطس (٣٨٬٥١٣) مكانتش بتبان.
+
+   السنة والشهر أرقام صحيحة، والزيادة عليهم حسبة عادية —
+   فمفيش توقيت يدخل في الموضوع أصلًا. */
 function monthsBetween(from, to) {
+  const [ay, am] = monthKey(from).split('-').map(Number)
+  const [by, bm] = monthKey(to).split('-').map(Number)
   const out = []
-  const a = new Date(`${monthKey(from)}-01`), b = new Date(`${monthKey(to)}-01`)
-  for (let d = a; d <= b; d.setMonth(d.getMonth() + 1)) out.push(monthKey(d.toISOString()))
+  for (let y = ay, m = am; y < by || (y === by && m <= bm);) {
+    out.push(`${y}-${String(m).padStart(2, '0')}`)
+    if (++m > 12) { m = 1; y++ }
+  }
   return out
 }
 

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal } from './modal.jsx'
 import { toast } from './feedback.jsx'
 import * as DATA from '../data/mock.js'
+import { Select } from './selectfield.jsx'
 
 /* ============================================================
    إنشاء حساب نقدي أو بنكي.
@@ -96,12 +97,12 @@ export function AccountForm({ onClose }) {
 
         <label className="fld">
           <span className="fld__l">العملة</span>
-          <select className="fld__i" value={cur} onChange={(e) => setCur(e.target.value)}>
+          <Select className="fld__i" value={cur} onChange={(e) => setCur(e.target.value)}>
             <option value="SAR">SAR — ريال سعودي</option>
             <option value="USD">USD — دولار أمريكي</option>
             <option value="AED">AED — درهم إماراتي</option>
             <option value="EUR">EUR — يورو</option>
-          </select>
+          </Select>
           {cur !== 'SAR' && (
             <em className="fld__h">التحويل من وإلى الحساب ده هياخد سعر صرف</em>
           )}
@@ -122,12 +123,12 @@ export function AccountForm({ onClose }) {
             : 'الحساب هيبان في الفرع المختار بس'}
         </em>
         {!allBranches && (
-          <select className="fld__i" style={{ marginTop: 8 }} value={branch}
+          <Select className="fld__i" style={{ marginTop: 8 }} value={branch}
             onChange={(e) => setBranch(e.target.value)}>
             {DATA.branches.map((b) => (
               <option key={b.id} value={b.id}>{b.code} — {b.ar}</option>
             ))}
-          </select>
+          </Select>
         )}
       </div>
 
@@ -141,9 +142,9 @@ export function AccountForm({ onClose }) {
           <div className="frow frow--2">
             <label className="fld">
               <span className="fld__l">البنك</span>
-              <select className="fld__i" value={bank} onChange={(e) => setBank(e.target.value)}>
+              <Select className="fld__i" value={bank} onChange={(e) => setBank(e.target.value)}>
                 {DATA.banks.map((b) => <option key={b.id} value={b.id}>{b.ar}</option>)}
-              </select>
+              </Select>
             </label>
             <label className="fld">
               <span className="fld__l">اسم صاحب الحساب</span>
@@ -182,12 +183,12 @@ export function AccountForm({ onClose }) {
       {settles && (
         <label className="fld" style={{ marginTop: 14 }}>
           <span className="fld__l">مدة التسوية</span>
-          <select className="fld__i" value={settle} onChange={(e) => setSettle(e.target.value)}>
+          <Select className="fld__i" value={settle} onChange={(e) => setSettle(e.target.value)}>
             <option value="0">نفس اليوم</option>
             <option value="1">يوم عمل</option>
             <option value="2">يومين عمل</option>
             <option value="3">٣ أيام عمل</option>
-          </select>
+          </Select>
           <em className="fld__h">
             الفلوس بتوصل الحساب البنكي بعد المدة دي — عشان «المتاح فورًا» يبان صح
           </em>

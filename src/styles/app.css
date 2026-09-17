@@ -45,7 +45,9 @@ table{border-collapse:collapse;width:100%}
 .nav{
   background:var(--nav-bg);color:var(--nav-ink);
   display:flex;flex-direction:column;overflow:hidden;
-  border-left:1px solid var(--nav-border);
+  /* منطقي مش فيزيائي: الـinline-end هي الناحية اللي ناحية المحتوى
+     في الاتجاهين — شمال القايمة في RTL ويمينها في LTR. */
+  border-inline-end:1px solid var(--nav-border);
 }
 .nav__brand{
   height:var(--topbar-h);display:flex;align-items:center;gap:var(--sp-3);
@@ -125,12 +127,12 @@ table{border-collapse:collapse;width:100%}
 /* ---------- SEARCH ---------- */
 .search{
   display:flex;align-items:center;gap:var(--sp-2);min-width:300px;
-  height:36px;padding:0 var(--sp-3);border:1px solid var(--border-base);
-  border-radius:var(--r-ctrl);background:var(--surface-page);color:var(--ink-muted);font-size:var(--fs-sm);
+  height:36px;padding:0 var(--sp-3);border:1px solid var(--border-control);
+  border-radius:var(--r-ctrl);background:var(--surface-field);color:var(--ink-muted);font-size:var(--fs-sm);
 }
-.search:focus-within{border-color:var(--ink-strong);background:var(--surface-raised)}
+.search:focus-within{border-color:var(--ink-strong);background:var(--surface-field)}
 .search input{flex:1;border:none;background:none;outline:none;font-size:var(--fs-sm)}
-.search kbd{font-family:var(--font-mono);font-size:var(--fs-micro);border:1px solid var(--border-base);border-radius:4px;padding:1px 5px;color:var(--ink-faint);background:var(--surface-raised)}
+.search kbd{font-family:var(--font-mono);font-size:var(--fs-micro);border:1px solid var(--border-control);border-radius:4px;padding:1px 5px;color:var(--ink-faint);background:var(--surface-field)}
 
 /* ---------- SCROLL AREA ---------- */
 .content{flex:1;overflow-y:auto;padding:var(--sp-5) var(--sp-5) var(--sp-7);background:var(--surface-app)}
@@ -153,12 +155,10 @@ table{border-collapse:collapse;width:100%}
 .btn--primary{background:var(--surface-inverse);border-color:var(--surface-inverse);color:var(--ink-inverse)}
 .btn--primary:hover{opacity:.88}
 .btn--accent{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.btn--ghost{background:var(--surface-raised);border-color:var(--border-base);color:var(--ink-strong)}
-.btn--ghost:hover{border-color:var(--ink-strong)}
 .btn--quiet{background:none;color:var(--ink-muted);border-color:transparent}
 .btn--quiet:hover{background:var(--surface-hover);color:var(--ink-strong)}
 .btn--sm{min-height:34px;padding:0 var(--sp-3);font-size:var(--fs-xs)}
-.btn--danger{background:var(--surface-raised);border-color:var(--border-strong);color:var(--ink-strong)}
+.btn--danger{background:var(--surface-raised);border-color:var(--border-control);color:var(--ink-strong)}
 
 /* ---------- TABS ---------- */
 .tabs{display:flex;gap:var(--sp-5);border-bottom:1px solid var(--border-base);margin-bottom:var(--sp-4)}
@@ -175,10 +175,10 @@ table{border-collapse:collapse;width:100%}
 .filterbar{display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;margin-bottom:var(--sp-4)}
 .select{
   display:inline-flex;align-items:center;gap:var(--sp-2);min-height:36px;padding:0 var(--sp-3);
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);background:var(--surface-raised);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);background:var(--surface-field);
   font-size:var(--fs-sm);color:var(--ink-base);transition:var(--dur) var(--ease);
 }
-.select:hover{border-color:var(--border-strong)}
+.select:hover{border-color:var(--border-control)}
 .select.on{border-color:var(--ink-strong);background:var(--surface-selected);color:var(--ink-strong);font-weight:var(--fw-semi)}
 .select .chev{font-size:9px;color:var(--ink-faint)}
 .select .val{color:var(--ink-strong);font-weight:var(--fw-semi)}
@@ -242,7 +242,10 @@ table{border-collapse:collapse;width:100%}
 .dt tbody tr.selected td:first-child{box-shadow:inset -3px 0 0 var(--accent-indicator)}
 .dt td.n{text-align:left}
 .dt .checkcell{width:44px}
-.dt .actcell{width:182px}
+/* ★ الجدول أعرض من الحاوية على الشاشات الصغيرة — يسكرول أفقي.
+   كان `overflow:hidden` فعمود الأوامر كان **بيتقص** من غير ما
+   يبان إن فيه حاجة مقصوصة: الزرار كان بيظهر «تسجيل…». */
+.dt .actcell{width:222px}
 .dt thead th.actcell{text-align:right}
 
 .cell-doc{font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:var(--fw-medium);color:var(--ink-strong);white-space:nowrap}
@@ -255,8 +258,12 @@ table{border-collapse:collapse;width:100%}
 .cell-money.muted{color:var(--ink-faint)}
 
 /* أفعال الصف — تظهر عند الـhover فقط، مش 6 أزرار في كل صف */
-.rowacts{display:grid;grid-template-columns:1fr 30px;align-items:center;gap:4px}
-.rowacts .dots{grid-column:2}
+/* ★ عنقود أوامر الصف — سطر واحد لا يلتف.
+   كان `grid` بعمودين، فالأيقونات الزيادة كانت بتنزل سطر تحت
+   والزرار الرئيسي بيتخنق ويطلع «ت…». الصف لازم يفضل صف. */
+.rowacts{display:flex;align-items:center;justify-content:flex-end;gap:3px;flex-wrap:nowrap}
+.rowacts .act{flex:none;white-space:nowrap}
+.rowacts .dots{flex:none;margin-inline-start:2px}
 .rowacts .iconbtn{width:34px;height:34px}
 
 /* ---------- STATUS (ثنائي البُعد) ---------- */
@@ -385,11 +392,11 @@ table{border-collapse:collapse;width:100%}
 .field__label{display:block;font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--ink-muted);margin-bottom:var(--sp-2)}
 .field__input{
   width:100%;min-height:var(--tap-min);padding:0 var(--sp-3);
-  border:1.5px solid var(--border-base);border-radius:var(--r-ctrl);
-  background:var(--surface-raised);font-size:var(--fs-base);outline:none;
+  border:1.5px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);font-size:var(--fs-base);outline:none;
   transition:var(--dur) var(--ease);
 }
-.field__input:hover{border-color:var(--border-strong)}
+.field__input:hover{border-color:var(--border-control)}
 .field__input:focus{border-color:var(--ink-strong);box-shadow:0 0 0 3px var(--surface-selected)}
 .field__input::placeholder{color:var(--ink-faint)}
 .field__hint{font-size:var(--fs-xs);color:var(--ink-muted);margin-top:var(--sp-2)}
@@ -403,8 +410,8 @@ table{border-collapse:collapse;width:100%}
 .otp input{
   width:52px;height:60px;text-align:center;font-family:var(--font-mono);
   font-size:var(--fs-xl);font-weight:var(--fw-semi);
-  border:1.5px solid var(--border-base);border-radius:var(--r-ctrl);
-  background:var(--surface-raised);outline:none;transition:var(--dur) var(--ease);
+  border:1.5px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);outline:none;transition:var(--dur) var(--ease);
 }
 .otp input:focus{border-color:var(--ink-strong);box-shadow:0 0 0 3px var(--surface-selected)}
 .otp input.filled{border-color:var(--ink-strong);background:var(--surface-selected)}
@@ -490,7 +497,10 @@ body{background:var(--surface-page)}
 .content{padding:var(--sp-6) var(--sp-6) var(--sp-7);background:var(--surface-app)}
 
 /* ---------- الشريط الجانبي ---------- */
-.nav{background:var(--nav-bg);border-left:none;padding:0}
+/* ★ مفيش حد ومفيش ظل — الجايد لاين بتمنع الظلال صراحةً
+   (صفحة الـDon'ts، بند ٢). الفصل جاي من فرق النبرة بين
+   `--w-25` للقايمة والأبيض للمحتوى. */
+.nav{background:var(--nav-bg);border-inline-end:0;padding:0}
 .nav__brand{height:auto;padding:var(--sp-6) var(--sp-5) var(--sp-5);gap:var(--sp-2)}
 .nav__mark{width:26px;height:26px;border-radius:7px;background:var(--accent-deeper);color:var(--lime);font-size:var(--fs-sm)}
 .nav__name{font-size:var(--fs-lg);font-weight:var(--fw-bold);color:var(--accent);letter-spacing:-.01em}
@@ -538,13 +548,13 @@ body{background:var(--surface-page)}
 .pagehead__title{font-size:var(--fs-xl);font-weight:var(--fw-bold);letter-spacing:-.01em}
 .select--pill{
   border-radius:var(--r-ctrl);min-height:44px;padding:0 var(--sp-4);gap:var(--sp-2);
-  background:var(--surface-raised);border:1px solid var(--border-faint);box-shadow:var(--shadow-card);
+  background:var(--surface-field);border:1px solid var(--border-control);box-shadow:var(--shadow-card);
   font-weight:var(--fw-semi);color:var(--ink-strong);
 }
 .select--pill .dot{width:16px;height:16px;border-radius:var(--r-full);background:var(--accent-indicator);flex:none}
 .search{
-  border-radius:var(--r-ctrl);height:44px;background:var(--surface-raised);
-  border:1px solid var(--border-faint);box-shadow:var(--shadow-card);
+  border-radius:var(--r-ctrl);height:44px;background:var(--surface-field);
+  border:1px solid var(--border-control);box-shadow:var(--shadow-card);
 }
 .search kbd{display:none}
 .dots{color:var(--ink-faint);cursor:pointer}
@@ -1455,11 +1465,11 @@ body{background:var(--surface-page)}
 .otp input{
   width:52px;height:58px;text-align:center;
   font-size:var(--fs-xl);font-weight:var(--fw-bold);color:var(--ink-strong);
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
-  background:var(--surface-raised);transition:var(--dur) var(--ease);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);transition:var(--dur) var(--ease);
 }
 .otp input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-quiet)}
-.otp input.filled{border-color:var(--border-strong);background:var(--surface-sunken)}
+.otp input.filled{border-color:var(--border-control);background:var(--surface-sunken)}
 .otp__timer{margin-top:var(--sp-4);text-align:center;font-size:var(--fs-xs);color:var(--ink-faint)}
 
 /* ---------- ريسبونسيف ---------- */
@@ -1967,6 +1977,7 @@ body{background:var(--surface-page)}
 .st--attention{background:var(--state-attention-bg);color:var(--state-attention)}
 .st--critical{background:var(--state-critical-bg);color:var(--state-critical)}
 .st--info{background:var(--state-info-bg);color:var(--state-info)}
+.st--issued{background:var(--state-issued-bg);color:var(--state-issued)}
 /* المسودة لسه مش حالة حقيقية — تاج مفرّغ، أهدى من إخواته */
 .st--neutral{background:transparent;border-color:var(--border-strong);color:var(--ink-muted)}
 
@@ -2462,7 +2473,11 @@ body{background:var(--surface-page)}
 .sect__empty b{font-size:.9375rem;color:var(--ink-strong)}
 .sect__empty span{font-size:.8125rem;color:var(--ink-muted);max-width:62ch}
 /* الجدول جوّه القسم بياخد شكل الكارت من غير Panel */
-.sect .tablewrap{border-radius:var(--r-card) var(--r-card) 0 0;overflow:hidden}
+/* ★ `overflow:hidden` هنا كان بيقصّ عمود الأوامر من غير ما يبان
+   إن فيه حاجة مقصوصة — الزرار كان بيظهر «تسجيل…» والباقي راح.
+   الريديَس محتاج قص، بس على المحور الرأسي بس. */
+.sect .tablewrap{border-radius:var(--r-card) var(--r-card) 0 0;
+  overflow-x:auto;overflow-y:hidden}
 .sect .pager{
   background:var(--surface-raised);border-radius:0 0 var(--r-card) var(--r-card);
   border-top:1px solid var(--border-faint)
@@ -2478,13 +2493,13 @@ body{background:var(--surface-page)}
 .dr{position:relative;flex:none}
 .dr__btn{
   display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 var(--sp-4);
-  border:1px solid var(--border-faint);border-radius:var(--r-ctrl);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
   background:var(--surface-raised);color:var(--ink-strong);
   font:inherit;font-size:var(--fs-sm);font-weight:var(--fw-semi);cursor:pointer;white-space:nowrap;
   transition:border-color 150ms var(--ease),color 150ms var(--ease)
 }
 .dr__btn svg:first-child{color:var(--ink-faint)}
-.dr__btn:hover{border-color:var(--border-strong)}
+.dr__btn:hover{border-color:var(--border-control)}
 .dr__btn.is-open{border-color:var(--ink-strong)}
 .dr__chev{color:var(--ink-faint);transition:transform 180ms var(--ease)}
 .dr__btn.is-open .dr__chev{transform:rotate(180deg)}
@@ -2495,7 +2510,7 @@ body{background:var(--surface-page)}
 .dr__pop{
   position:absolute;top:calc(100% + 8px);right:0;z-index:50;
   min-width:210px;white-space:nowrap;
-  background:var(--surface-raised);border:1px solid var(--border-base);
+  background:var(--surface-raised);border:1px solid var(--border-control);
   border-radius:var(--r-card);box-shadow:var(--shadow-pop);padding:6px;
   display:flex;flex-direction:column;gap:1px;
   animation:pfIn .16s var(--ease) both
@@ -2560,6 +2575,9 @@ body{background:var(--surface-page)}
 .docmenu__i.is-crit:hover{background:var(--state-critical-bg)}
 .btn--danger2{background:var(--state-critical);border-color:var(--state-critical);color:var(--on-critical)}
 .btn--danger2:hover{filter:brightness(.94)}
+/* ★ الغوست = **نص من غير برواز**. كان فيه تعريف تاني فوق في الملف
+   بيقول العكس (خلفية وبرواز) وما كانش بيشتغل ولا مرة — اتشال.
+   اللي عايز زرار تاني بـبرواز بيستخدم `.btn--sec`. */
 .btn--ghost{background:transparent;border-color:transparent;color:var(--ink-muted)}
 .btn--ghost:hover{background:var(--surface-sunken);color:var(--ink-strong)}
 
@@ -2758,8 +2776,8 @@ input.fld__i[type="date"]::-webkit-calendar-picker-indicator{
 input.fld__i[type="date"]::-webkit-calendar-picker-indicator:hover{opacity:1}
 .fld__i{
   width:100%;min-height:44px;padding:0 14px;font:inherit;font-size:var(--fs-sm);
-  color:var(--ink-strong);background:var(--surface-raised);
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);outline:none;
+  color:var(--ink-strong);background:var(--surface-field);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);outline:none;
   transition:border-color 150ms var(--ease),box-shadow 150ms var(--ease)
 }
 .fld__i:focus{border-color:var(--ink-strong);box-shadow:0 0 0 3px var(--surface-selected)}
@@ -2829,7 +2847,7 @@ select.fld__i::-ms-expand{display:none}
 .lines__x:disabled{opacity:.3;cursor:default;background:transparent;color:var(--ink-faint)}
 .lines__add{
   display:inline-flex;align-items:center;gap:7px;margin-top:14px;
-  border:1px dashed var(--border-strong);background:transparent;cursor:pointer;font:inherit;
+  border:1px dashed var(--border-control);background:transparent;cursor:pointer;font:inherit;
   font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--ink-base);
   height:40px;padding:0 14px;border-radius:var(--r-ctrl);
   transition:border-color 150ms var(--ease),color 150ms var(--ease),background 150ms var(--ease)
@@ -2892,7 +2910,7 @@ select.fld__i::-ms-expand{display:none}
 .dr__btn.is-on{border-color:var(--accent);color:var(--accent)}
 .dr__btn.is-on svg:first-child{color:var(--accent)}
 .dr__btn span{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dr__sep{height:1px;background:var(--border-faint);margin:5px 4px}
+.dr__sep{height:1px;background:var(--border-control);margin:5px 4px}
 .dr__chev.is-up{transform:rotate(180deg)}
 .dr__custom{
   display:flex;flex-direction:column;gap:10px;
@@ -2905,8 +2923,8 @@ select.fld__i::-ms-expand{display:none}
 }
 .dr__f input{
   flex:1;min-width:0;height:38px;padding:0 10px;font:inherit;font-size:.8125rem;
-  color:var(--ink-strong);background:var(--surface-raised);
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);outline:none;
+  color:var(--ink-strong);background:var(--surface-field);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);outline:none;
   transition:border-color 150ms var(--ease)
 }
 .dr__f input:focus{border-color:var(--ink-strong)}
@@ -2919,9 +2937,9 @@ select.fld__i::-ms-expand{display:none}
 }
 .dr__go{flex:1;border:0;background:var(--accent);color:var(--accent-ink)}
 .dr__go:hover{filter:brightness(1.06)}
-.dr__go:disabled{background:var(--border-base);color:var(--ink-faint);cursor:default;filter:none}
-.dr__clr{flex:none;border:1px solid var(--border-base);background:transparent;color:var(--ink-muted)}
-.dr__clr:hover{border-color:var(--border-strong);color:var(--ink-strong)}
+.dr__go:disabled{background:var(--border-control);color:var(--ink-faint);cursor:default;filter:none}
+.dr__clr{flex:none;border:1px solid var(--border-control);background:transparent;color:var(--ink-muted)}
+.dr__clr:hover{border-color:var(--border-control);color:var(--ink-strong)}
 .dr__clr:disabled{opacity:.45;cursor:default}
 
 /* ---------- فورم المستند: الحقول الإضافية والأخطاء والبنود الواسعة ---------- */
@@ -2933,15 +2951,15 @@ select.fld__i::-ms-expand{display:none}
 .segs--sm button{padding:5px 10px;font-size:.75rem}
 .gbtn2{
   display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
   background:var(--surface-raised);color:var(--ink-muted);
   font:inherit;font-size:.75rem;font-weight:var(--fw-semi);cursor:pointer;white-space:nowrap;
   transition:border-color 150ms var(--ease),color 150ms var(--ease),background 150ms var(--ease)
 }
-.gbtn2:hover{border-color:var(--border-strong);color:var(--ink-strong)}
+.gbtn2:hover{border-color:var(--border-control);color:var(--ink-strong)}
 .gbtn2.on{border-color:var(--accent);color:var(--accent);background:var(--surface-selected)}
 .gbtn2:disabled{opacity:.45;cursor:default}
-.gbtn2:disabled:hover{border-color:var(--border-base);color:var(--ink-muted)}
+.gbtn2:disabled:hover{border-color:var(--border-control);color:var(--ink-muted)}
 
 .fld__opt{font-style:normal;font-weight:400;color:var(--ink-faint)}
 /* سطر تفسيري صغير جوّه الحقل نفسه — مش سطر لوحده تحت الصف كله */
@@ -3032,10 +3050,10 @@ select.fld__i::-ms-expand{display:none}
   padding-inline-start:2px
 }
 .crow__rate{min-width:0}
-.crow .fld__i,.crow .crate{background:var(--surface-raised)}
+.crow .fld__i,.crow .crate{background:var(--surface-field)}
 .crate{
   display:flex;align-items:center;min-height:44px;
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
   transition:border-color 150ms var(--ease),box-shadow 150ms var(--ease)
 }
 .crate:focus-within{border-color:var(--ink-strong);box-shadow:0 0 0 3px var(--surface-selected)}
@@ -3144,7 +3162,7 @@ select.fld__i::-ms-expand{display:none}
 .colmenu__i input{position:absolute;opacity:0;pointer-events:none}
 .sw{
   width:36px;height:20px;flex:none;border-radius:var(--r-full);
-  background:var(--border-base);position:relative;
+  background:var(--border-control);position:relative;
   transition:background 180ms var(--ease)
 }
 .sw::after{
@@ -3182,14 +3200,14 @@ select.fld__i::-ms-expand{display:none}
 .brandrow{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
 .updrop{
   width:108px;height:108px;flex:none;position:relative;
-  border:1.5px dashed var(--border-strong);border-radius:var(--r-md);
+  border:1.5px dashed var(--border-control);border-radius:var(--r-md);
   background:transparent;cursor:pointer;display:grid;place-items:center;gap:4px;
   color:var(--ink-faint);font:inherit;align-content:center;
   transition:border-color 150ms var(--ease),background 150ms var(--ease)
 }
 .updrop:hover{border-color:var(--accent);background:var(--surface-selected)}
 .updrop em{font-style:normal;font-size:.6875rem}
-.updrop.is-set{border-style:solid;border-color:var(--border-base);background:var(--surface-raised)}
+.updrop.is-set{border-style:solid;border-color:var(--border-control);background:var(--surface-raised)}
 .updrop img{width:56px;height:56px;border-radius:var(--r-chip);display:block}
 .updrop__l{
   position:absolute;top:-9px;inset-inline-start:10px;padding:0 6px;
@@ -3237,12 +3255,12 @@ select.fld__i::-ms-expand{display:none}
 .segs--full button{width:100%}
 .rcard__pc{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px}
 .rcard__pc button{
-  height:38px;padding:0 14px;border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  height:38px;padding:0 14px;border:1px solid var(--border-control);border-radius:var(--r-ctrl);
   background:var(--surface-raised);color:var(--ink-base);font:inherit;
   font-size:.8125rem;font-weight:var(--fw-semi);cursor:pointer;
   transition:border-color 150ms var(--ease),color 150ms var(--ease),background 150ms var(--ease)
 }
-.rcard__pc button:hover{border-color:var(--border-strong)}
+.rcard__pc button:hover{border-color:var(--border-control)}
 .rcard__pc button.on{border-color:var(--accent);color:var(--accent);background:var(--surface-selected)}
 .rcard__pc .fld__i{min-height:38px}
 /* كارت صافي المستحق أبيض زي باقي كروت الريل — التمييز بيجي من الخط مش من لون خلفية */
@@ -3255,14 +3273,55 @@ select.fld__i::-ms-expand{display:none}
 .rail__sum .is-tot dd{color:var(--ink-strong);font-weight:var(--fw-bold);font-size:.9375rem}
 
 /* ---------- معاينة الطباعة ---------- */
-.pp{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:24px}
-.pp__scrim{position:absolute;inset:0;background:rgba(12,16,20,.5)}
-.pp__box{
-  position:relative;z-index:1;width:min(250mm,100%);max-height:calc(100vh - 48px);
-  display:flex;flex-direction:column;
-  background:var(--surface-app);border-radius:var(--r-lg);overflow:hidden;
-  box-shadow:var(--shadow-pop);animation:pfIn .18s var(--ease) both
+/* ============================================================
+   معاينة الطباعة — **دروار من الجنب، مش بوب أب في النص**.
+
+   ★ ليه الفرق مهم؟
+
+   البوب أب في النص بيقول «وقّف اللي إنت فيه وبص هنا». المعاينة
+   مش كده — هي **مرجع بتقارن بيه وإنت بتشتغل**: تبص على الشكل
+   المطبوع، ترجع تعدّل بند، تبص تاني. سيستم الكلاينت بيطلّعها
+   دروار من الشمال والمستند ورا **بيفضل مكانه ومقروء**، وزرار
+   «معاينة» نفسه بيتحوّل لـ«غلق المعاينة».
+
+   عشان كده هنا: مفيش سكرين مظلمة تقيلة، والدروار على الحافة،
+   والصفحة ورا لسه شغّالة.
+   ============================================================ */
+.pp{position:fixed;inset:0;z-index:200;pointer-events:none}
+
+/* ★ مفيش سكرين خالص — ومفيش قفل سكرول.
+   السكرين معناها «وقّف واقرا ده»؛ والمعاينة هنا العكس: إنت
+   بتقارن بيها وإنت شغّال. الصفحة بتضيق بعرض الدروار بدل ما
+   تتغطى، زي سيستم الكلاينت بالظبط — والقفل من «غلق المعاينة»
+   أو ✕ أو Esc. */
+body[data-pp] .main{
+  padding-inline-end:min(620px,92vw);
+  transition:padding-inline-end .22s var(--ease)
 }
+.main{transition:padding-inline-end .22s var(--ease)}
+.pp__box{
+  /* ★ `inset-inline-end` مش `start`: في RTL الـstart هي **اليمين**،
+     والدروار المفروض يطلع من **الشمال** زي سيستم الكلاينت.
+     الـend هي الشمال في RTL واليمين في LTR — فالسطر ده صح في
+     الاتجاهين من غير ما أكتب اتجاه بإيدي. */
+  position:absolute;inset-block:0;inset-inline-start:auto;inset-inline-end:0;
+  z-index:1;pointer-events:auto;
+  width:min(620px,92vw);max-height:100vh;
+  display:flex;flex-direction:column;
+  background:var(--surface-app);overflow:hidden;
+  /* الحد على الناحية اللي ناحية المستند، مش الناحية البرّانية */
+  border-inline-start:1px solid var(--border-base);
+  box-shadow:var(--shadow-app);
+  animation:ppSlide .22s var(--ease) both
+}
+@keyframes ppFade{from{opacity:0}to{opacity:1}}
+/* بيزحف من برّه الحافة اللي هو ملزوق فيها — في RTL دي الشمال
+   (‎-100%‎) وفي LTR اليمين (‎+100%‎). */
+@keyframes ppSlide{
+  from{transform:translateX(calc(100% * var(--pp-dir,1)))}
+  to{transform:translateX(0)}
+}
+[dir="rtl"] .pp__box{--pp-dir:-1}
 .pp__h{
   display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
   padding:12px 16px;background:var(--surface-raised);border-bottom:1px solid var(--border-base)
@@ -3280,7 +3339,7 @@ select.fld__i::-ms-expand{display:none}
   transition:background 150ms var(--ease),color 150ms var(--ease)
 }
 .pp__x:hover{background:var(--surface-sunken);color:var(--ink-strong)}
-.pp__body{flex:1;overflow:auto;padding:20px;display:grid;justify-items:center;align-content:start}
+.pp__body{flex:1;overflow:auto;padding:18px 16px;display:grid;justify-items:center;align-content:start}
 .pp__paper{
   background:var(--paper-bg);color:var(--paper-ink);
   border-radius:var(--r-md);font-size:.75rem;line-height:1.6;
@@ -3288,16 +3347,34 @@ select.fld__i::-ms-expand{display:none}
 }
 /* ------- الورقة بمقاسها الحقيقي: A4 = ٢١٠ × ٢٩٧ مم بهوامش ١٥مم -------
    الأبعاد بالمليمتر مش بالبكسل، عشان اللي على الشاشة يبقى هو اللي هيتطبع. */
+/* ------- الورقة جوه الدروار: **مرنة، مش A4 ثابتة** -------
+
+   ★ كانت `width:210mm` — مقاس A4 الحقيقي — عشان اللي على الشاشة
+   يبقى هو اللي هيتطبع. الفكرة دي كانت منطقية وهي مودال بعرض
+   ٢٥٠مم. جوه دروار بعرض ٦٢٠px مستحيلة: ٢١٠مم = ٧٩٤px، فالورقة
+   كانت بتطلع بره الدروار والجدول بيتقص.
+
+   وسيستم الكلاينت نفسه **مش بيعمل A4 في الدروار** — بيخلّي
+   المستند يملا عرض الدروار وأعمدة الجدول بتضيق. المعاينة هنا
+   وظيفتها «تشوف الشكل والترتيب»، والمقاس الحقيقي مكانه الطباعة
+   نفسها (`@media print`) مش الشاشة.
+
+   نسبة A4 محفوظة بـ`aspect-ratio` عشان الورقة تفضل شكلها ورقة. */
 .pp__paper--full{
-  width:210mm;min-height:297mm;padding:15mm;
+  width:100%;max-width:210mm;
+  aspect-ratio:210 / 297;min-height:0;
+  padding:clamp(16px, 4.2%, 15mm);
   box-shadow:0 1px 3px rgba(12,16,20,.14)
 }
-/* الشاشة أضيق من الورقة؟ نصغّرها كلها بنسبة واحدة بدل ما نقصّها */
-@media (max-width:900px){
-  .pp__paper--full{transform:scale(.62);transform-origin:top center;margin-bottom:-113mm}
+/* الجدول بيضيق مع الورقة بدل ما يفيض — الأرقام أهم من الوصف
+   فالوصف هو اللي بياخد الضغط. */
+.pp__paper--full .pp__lines{table-layout:fixed}
+.pp__paper--full .pp__lines th,
+.pp__paper--full .pp__lines td{
+  padding:5px 6px;overflow:hidden;text-overflow:ellipsis
 }
 /* ------- الفاتورة الحرارية: عرض ٨٠مم زي ورق الكاشير ------- */
-.pp__paper--thermal{width:80mm;padding:6mm 5mm;font-size:.6875rem;color:var(--paper-ink);
+.pp__paper--thermal{padding:6mm 5mm;font-size:.6875rem;color:var(--paper-ink);
   box-shadow:0 1px 3px rgba(12,16,20,.14)}
 .th__title{margin:0 0 16px;text-align:center;font-size:.9375rem;font-weight:800;color:var(--paper-ink)}
 .th__meta{display:grid;gap:5px;margin:0 0 14px;padding-bottom:14px;border-bottom:1px solid var(--paper-line)}
@@ -3387,13 +3464,24 @@ select.fld__i::-ms-expand{display:none}
   padding:12px 16px;background:var(--surface-raised);border-top:1px solid var(--border-base);
   display:flex;justify-content:flex-end
 }
-.pp__tpl{display:flex;align-items:center;gap:10px}
+/* ★ مبدّل القالب كبسولة **عايمة فوق الورقة** زي السيستم،
+   مش شريط تحت. عشان ما ياخدش سطر من ارتفاع الدروار الضيّق. */
+.pp__f{position:relative;pointer-events:none}
+.pp__f > *{pointer-events:auto}
+.pp__tpl{
+  position:absolute;bottom:14px;inset-inline-start:16px;
+  display:flex;align-items:center;gap:10px;
+  padding:7px 12px;border-radius:var(--r-full);
+  background:var(--surface-raised);border:1px solid var(--border-base);
+  box-shadow:var(--shadow-pop)
+}
 .pp__tpl span{font-size:.75rem;font-weight:var(--fw-semi);color:var(--ink-muted);flex:none}
-.pp__tpl .fld__i{min-height:38px;min-width:190px}
+.pp__tpl .fld__i{min-height:32px;min-width:168px;font-size:var(--fs-xs)}
+/* مبدّل مقاس الورق الحراري — تحت الإيصال على طول */
+.pp__mm{margin-top:14px}
 
 @media (max-width:760px){
-  .pp{padding:0}
-  .pp__box{max-height:100vh;border-radius:0;width:100%}
+  .pp__box{width:100%;border-inline-end:0}
   .pp__parties{grid-template-columns:1fr}
   .pp__paper{padding:20px 16px}
   .pp__lines{font-size:.625rem}
@@ -3412,8 +3500,8 @@ select.fld__i::-ms-expand{display:none}
   .pp__box{width:auto;max-height:none;box-shadow:none;border-radius:0;background:var(--paper-bg)}
   .pp__body{padding:0;overflow:visible}
   .pp__paper{border-radius:0;box-shadow:none}
-  .pp__paper--full{width:210mm;min-height:297mm;transform:none;margin:0}
-  .pp__paper--thermal{width:80mm}
+  /* الورقة بتتقاس بالنسبة للدروار مش بمقاس A4 ثابت — الدروار أضيق */
+.pp__paper--full{max-width:100%;width:210mm;min-height:297mm;transform:none;margin:0}
 }
 
 /* ============================================================
@@ -3581,11 +3669,11 @@ select.fld__i::-ms-expand{display:none}
 }
 .swatch{
   display:flex;align-items:center;gap:9px;padding:8px 10px;
-  border:1px solid var(--border-faint);border-radius:var(--r-ctrl);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
   background:var(--surface-raised);cursor:pointer;text-align:start;
   transition:border-color var(--dur) var(--ease)
 }
-.swatch:hover{border-color:var(--border-strong)}
+.swatch:hover{border-color:var(--border-control)}
 .swatch i{
   width:22px;height:22px;flex:none;border-radius:var(--r-full);
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)
@@ -3777,8 +3865,10 @@ select.fld__i::-ms-expand{display:none}
 /* «إلغاء» بيتباعد لوحده على الطرف التاني — مش زرار تالت بيزاحم
    الحفظ. والتدرّج: أساسي مليان · ثانوي بحدود رمادية · إلغاء هادي. */
 .cfm__acts .btn--quiet{margin-inline-end:auto;min-width:0}
-.btn--sec{background:var(--surface-raised);border-color:var(--border-strong);color:var(--ink-strong)}
+.btn--sec{background:var(--surface-raised);border-color:var(--border-control);color:var(--ink-strong)}
 .btn--sec:hover{border-color:var(--ink-strong);background:var(--surface-hover)}
+/* الزرار اللي بيفتح لوح — بيفضل مضغوط طول ما اللوح مفتوح */
+.btn--sec.is-on{border-color:var(--accent);color:var(--accent);background:var(--accent-quiet)}
 
 @media (max-width:600px){
   .toasts{left:16px;right:16px;max-width:none}
@@ -3921,8 +4011,8 @@ select.fld__i::-ms-expand{display:none}
 /* حقل مبلغ برمز الريال جوّه */
 .amtin,.qtyin{
   display:flex;align-items:center;min-height:44px;
-  background:var(--surface-raised);
-  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  background:var(--surface-field);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
   transition:border-color 150ms var(--ease),box-shadow 150ms var(--ease)
 }
 .amtin:focus-within,.qtyin:focus-within{
@@ -4828,7 +4918,7 @@ select.fld__i::-ms-expand{display:none}
 .jlines__head span{font-size:var(--fs-micro);color:var(--ink-faint);padding-inline:2px}
 .jlines__head .n,.jlines__row .num{text-align:start}
 .jlines__add{display:flex;margin-top:2px}
-.jlines__row.is-bad .fld__i{border-color:var(--state-critical,var(--border-strong))}
+.jlines__row.is-bad .fld__i{border-color:var(--state-critical,var(--border-control))}
 
 .jbal{
   display:flex;align-items:center;gap:var(--sp-4);flex-wrap:wrap;margin-top:14px;
@@ -4925,11 +5015,11 @@ select.fld__i::-ms-expand{display:none}
 .datef{
   display:flex;align-items:center;gap:9px;width:100%;
   min-height:var(--tap-min);padding:0 13px;border-radius:var(--r-ctrl);
-  border:1.5px solid var(--border-base);background:var(--surface-raised);
+  border:1.5px solid var(--border-control);background:var(--surface-field);
   color:var(--ink-strong);font-size:var(--fs-sm);text-align:start;
   transition:border-color var(--dur) var(--ease)
 }
-.datef:hover{border-color:var(--border-strong)}
+.datef:hover{border-color:var(--border-control)}
 .datef.is-open{border-color:var(--accent)}
 .datef.is-bad{border-color:var(--state-critical)}
 .datef > span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -5294,3 +5384,2766 @@ button.tkrow:hover{background:var(--surface-hover)}
     color-mix(in oklab, var(--accent) 2%, #fff);
 }
 .updrop--bg .updrop__lbl{color:#fff;background:linear-gradient(180deg,transparent,rgba(6,8,10,.72))}
+
+/* ============================================================
+   قايمة المستندات — تركيب سيستم الكلاينت
+
+   تبويبان فوق · شريط أدوات فيه قوايم مستقلة · جدول مسطّح.
+   كل الألوان من التوكنز، فالهوية الجديدة بتوصلها لوحدها.
+   ============================================================ */
+
+/* ---------- التبويبان ---------- */
+.dtabs{
+  display:flex;align-items:center;gap:var(--sp-5);
+  padding:0 var(--sp-2);margin-bottom:var(--sp-4);
+  border-bottom:1px solid var(--border-base)
+}
+.dtabs__t{
+  position:relative;display:flex;align-items:center;gap:7px;
+  padding:0 0 12px;background:none;border:0;cursor:pointer;font:inherit;
+  font-family:var(--font-display);
+  font-size:var(--fs-md);font-weight:var(--fw-semi);color:var(--ink-muted);
+  transition:color var(--dur) var(--ease)
+}
+.dtabs__t:hover{color:var(--ink-strong)}
+.dtabs__t.is-on{color:var(--ink-strong)}
+/* الشريط تحت التبويب النشط — الأخضر الأساسي، بعرض التبويب */
+.dtabs__t.is-on::after{
+  content:'';position:absolute;bottom:-1px;inset-inline:0;height:2.5px;
+  background:var(--accent);border-radius:var(--r-full)
+}
+.dtabs__n{
+  min-width:22px;padding:2px 7px;border-radius:var(--r-full);
+  background:var(--surface-sunken);color:var(--ink-muted);
+  font-size:var(--fs-micro);font-weight:var(--fw-semi);
+  font-family:var(--font-ui)
+}
+.dtabs__t.is-on .dtabs__n{background:var(--accent-quiet);color:var(--accent)}
+
+/* ---------- شريط الأدوات ---------- */
+.ltools{
+  display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap;
+  padding:0 var(--sp-2) var(--sp-4)
+}
+.ltools__more{
+  display:inline-flex;align-items:center;gap:7px;
+  height:38px;padding:0 13px;border-radius:var(--r-ctrl);
+  border:1px solid var(--border-control);background:var(--surface-raised);
+  font:inherit;font-size:var(--fs-xs);font-weight:var(--fw-medium);
+  color:var(--ink-muted);cursor:pointer;
+  transition:border-color var(--dur) var(--ease),color var(--dur) var(--ease)
+}
+.ltools__more:hover{border-color:var(--border-control);color:var(--ink-strong)}
+.ltools__more svg{color:var(--ink-faint)}
+
+/* ---------- قايمة واحدة: «الحالة ▾» ---------- */
+.pick1{position:relative}
+.pick1__b{
+  display:inline-flex;align-items:center;gap:7px;
+  height:38px;padding:0 11px 0 13px;border-radius:var(--r-ctrl);
+  border:1px solid var(--border-control);background:var(--surface-field);
+  font:inherit;font-size:var(--fs-xs);cursor:pointer;color:var(--ink-strong);
+  transition:border-color var(--dur) var(--ease)
+}
+.pick1__b:hover{border-color:var(--border-control)}
+.pick1__b.is-open{border-color:var(--accent)}
+/* الفلتر الشغّال بيتعلّم — عشان المستخدم يعرف إن القايمة مفلترة */
+.pick1__b.is-on{border-color:var(--accent);background:var(--accent-quiet)}
+.pick1__l{color:var(--ink-faint);font-size:var(--fs-micro)}
+.pick1__b b{font-weight:var(--fw-semi);max-width:150px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.pick1__b.is-on b{color:var(--accent)}
+.pick1__b svg{color:var(--ink-faint);flex:none}
+.pick1__p{
+  position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:40;
+  min-width:210px;max-height:340px;overflow:auto;padding:6px;
+  background:var(--surface-raised);border:1px solid var(--border-base);
+  border-radius:var(--r-md);box-shadow:var(--shadow-pop)
+}
+.pick1__o{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:9px 10px;border-radius:var(--r-sm);
+  background:none;border:0;cursor:pointer;font:inherit;text-align:start;
+  font-size:var(--fs-xs);color:var(--ink-base)
+}
+.pick1__o:hover{background:var(--surface-hover)}
+.pick1__o.is-on{background:var(--accent-quiet);color:var(--accent);
+  font-weight:var(--fw-semi)}
+.pick1__o svg{color:var(--accent);flex:none}
+
+/* ---------- عنقود أوامر الصف ---------- */
+.iact{
+  width:30px;height:30px;flex:none;display:grid;place-items:center;
+  border-radius:var(--r-sm);border:1px solid transparent;
+  background:none;cursor:pointer;color:var(--ink-muted);
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease)
+}
+.iact:hover:not(:disabled){background:var(--surface-sunken);color:var(--ink-strong)}
+.iact:disabled{opacity:.34;cursor:not-allowed}
+
+/* الاستحقاق ومعاه علامة «متأخرة» — العلامة بُعد منفصل مش حالة */
+.duecell{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+
+
+/* ============================================================
+   قايمة الفواتير ككروت — **منقولة من سيستم الكلاينت بالحرف**.
+   المرجع: التصوير المباشر من الـstaging (دوك ١٩).
+
+   الفرق عن الجدول مش شكلي. الجدول بيدّي **أعمدة متحاذية**:
+   عينك بتنزل عمود المبلغ لوحده. الكارت بيدّي **وحدات مستقلة**:
+   عينك بتاخد الفاتورة كلها مرة واحدة. الكلاينت متمسّك بالتاني
+   لأن مستخدمه بيقرا الفاتورة مش بيقارن فواتير.
+   ============================================================ */
+.doclist{padding-inline:var(--sp-2)}
+
+/* التبويبان — خط تحتاني بلا عدّادات، زي السيستم */
+.dtabs--line{gap:var(--sp-6);margin-bottom:var(--sp-3)}
+
+/* سطر الفترة — فوق الأدوات على اليمين، هادي ومقروء */
+.doclist__period{
+  margin:0 0 var(--sp-2);text-align:start;
+  font-size:var(--fs-xs);color:var(--ink-muted)
+}
+.doclist__period b{font-weight:var(--fw-semi);color:var(--ink-base)}
+
+/* شريط «تحديد كل الصفحة» — بوكس مستقل فوق الكروت، مش جوه أولهم */
+.doclist__all{
+  display:flex;align-items:center;gap:9px;
+  padding:11px var(--sp-4);margin-bottom:var(--sp-2);
+  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  background:var(--surface-raised);
+  font-size:var(--fs-xs);color:var(--ink-muted);cursor:pointer
+}
+.doclist__all input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+
+/* ---------- القايمة ---------- */
+.ivlist{list-style:none;margin:0 0 var(--sp-4);padding:0;display:grid;gap:9px}
+
+/* ---------- الكارت ----------
+   الترتيب في الـDOM من الشمال لليمين (⋮ → المبلغ → الأوامر →
+   التعريف → الشيك بوكس) عشان تسلسل الـTab يمشي مع العين في RTL. */
+.ivcard{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:13px var(--sp-4);
+  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  background:var(--surface-raised);
+  transition:border-color var(--dur) var(--ease)
+}
+.ivcard:hover{border-color:var(--border-strong)}
+
+/* ★ الكارت المتأخر بيتلوّن — مش تزويق.
+   ده اللي بيخلّي المتأخرات تبان وإنت بتنزل بعينك من غير ما تقرا. */
+.ivcard.is-late{
+  border-color:color-mix(in srgb,var(--state-critical) 34%,transparent);
+  background:color-mix(in srgb,var(--state-critical) 5%,var(--surface-raised))
+}
+
+/* ---------- يمين: التعريف ---------- */
+.ivcard__id{flex:1;min-width:0;order:2;text-align:start;display:grid;gap:3px}
+.ivcard__top{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap
+}
+.ivcard__no{
+  background:none;border:0;padding:0;cursor:pointer;
+  font:inherit;font-family:var(--font-mono);direction:ltr;
+  font-size:var(--fs-base);font-weight:var(--fw-bold);
+  color:var(--ink-strong);letter-spacing:-.01em
+}
+.ivcard__no:hover{text-decoration:underline;text-underline-offset:3px}
+.ivcard__top .st{height:21px;padding:0 8px;font-size:var(--fs-micro)}
+
+.ivcard__sub{
+  display:flex;align-items:center;gap:8px;
+  font-size:var(--fs-xs);color:var(--ink-muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.ivcard__sub .ltr{color:var(--ink-faint);font-size:var(--fs-micro)}
+
+.ivcard__wh{
+  justify-self:start;
+  padding:2px 8px;border-radius:var(--r-chip);
+  background:var(--surface-sunken);color:var(--ink-muted);
+  font-size:var(--fs-micro);width:fit-content
+}
+.ivcard__wh:empty{display:none}
+
+/* ---------- عنقود الأوامر ---------- */
+.ivcard__acts{order:3;display:flex;align-items:center;gap:7px;flex:none}
+.ivcard__acts .gbtn2{height:31px}
+/* الأمر الرئيسي — بارز بلون البراند بس من غير ما يبقى زرار مصمت،
+   عشان ما يسحبش العين من المبلغ. */
+.gbtn2--go{
+  border-color:color-mix(in srgb,var(--accent) 38%,transparent);
+  background:var(--accent-quiet);color:var(--accent)
+}
+.gbtn2--go:hover{border-color:var(--accent);color:var(--accent)}
+.ivcard__eye{
+  display:grid;place-items:center;width:30px;height:30px;flex:none;
+  border:0;border-radius:var(--r-ctrl);background:none;
+  color:var(--ink-faint);cursor:pointer;
+  transition:var(--dur) var(--ease)
+}
+.ivcard__eye:hover{background:var(--surface-hover);color:var(--ink-strong)}
+
+/* ---------- شمال: المبلغ ---------- */
+.ivcard__amt{
+  order:4;flex:none;display:grid;gap:1px;justify-items:start;
+  min-width:126px;text-align:start
+}
+/* المبلغ الأصلي مشطوب فوق الحالي — السيستم بيقولك «كان كذا وبقى كذا» */
+.ivcard__was{
+  display:flex;align-items:center;gap:3px;
+  font-family:var(--font-mono);font-size:var(--fs-micro);
+  color:var(--ink-faint);text-decoration-thickness:1px
+}
+.ivcard__was svg{width:9px;height:9px}
+.ivcard__now{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:var(--fs-xl);
+  font-weight:var(--fw-bold);color:var(--ink-strong);letter-spacing:-.025em
+}
+.ivcard__now svg{width:13px;height:13px}
+.ivcard__due{font-size:var(--fs-micro);color:var(--ink-muted);white-space:nowrap}
+
+/* ---------- الحواف ---------- */
+.ivcard > .rmenu{order:5;flex:none}
+.ivcard__ck{order:1;flex:none;display:grid;place-items:center;cursor:pointer}
+.ivcard__ck input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+
+/* ---------- شاشة ضيّقة: الأوامر بتنزل سطر تحت ---------- */
+@media (max-width:1180px){
+  .ivcard{flex-wrap:wrap;row-gap:var(--sp-3)}
+  .ivcard__ck{order:1}
+  .ivcard__id{order:2;flex-basis:auto}
+  .ivcard__amt{order:3;min-width:0;flex-basis:100%}
+  .ivcard__acts{order:4;flex-wrap:wrap}
+  .ivcard > .rmenu{order:5;margin-inline-start:auto}
+}
+
+/* ============================================================
+   ورقة المستند — شاشة إنشاء الفاتورة، **منقولة من سيستم الكلاينت**.
+
+   الفكرة اللي الكلاينت متمسّك بيها: الفورم مش فورم، هو **الفاتورة
+   نفسها وإنت بتكتب فيها**. عشان كده مفيش كروت منفصلة ولا رَيل
+   جانبي — ورقة واحدة، أقسامها يفصلها خط، وكل حاجة واقفة في المكان
+   اللي هتتطبع فيه.
+   ============================================================ */
+.sheet{
+  background:var(--surface-raised);
+  border:1px solid var(--border-base);border-radius:var(--r-card);
+  padding:var(--sp-6) var(--sp-7);margin:0 var(--sp-2) var(--sp-4)
+}
+/* الخط الفاصل — هو اللي بيعمل «الأقسام» من غير كروت */
+.sheet__sec{padding-block:var(--sp-5);border-bottom:1px solid var(--border-base)}
+.sheet__sec:first-child{padding-top:0}
+.sheet__sec:last-child{padding-bottom:0;border-bottom:0}
+
+.sheet__lbl{
+  display:block;font-size:var(--fs-xs);color:var(--ink-muted);margin-bottom:6px
+}
+.sheet__err{
+  display:flex;align-items:center;gap:8px;margin:0 var(--sp-2) var(--sp-6);
+  padding:11px var(--sp-4);border-radius:var(--r-ctrl);
+  background:var(--state-critical-bg);color:var(--state-critical);
+  font-size:var(--fs-sm);font-weight:var(--fw-medium)
+}
+
+/* ---------- الأوامر فوق على الشمال ---------- */
+.docact{display:flex;align-items:center;gap:var(--sp-2)}
+
+/* ---------- زرار بشقّين: الأمر الأساسي + سهم بيفتح الباقي ----------
+
+   ★ كان مكسور: كنت بشيل الراديوس بخصائص منطقية
+   (`border-start-start-radius`) — و«start» في RTL هي **اليمين**،
+   يعني كنت بشيل الراديوس من الناحية البرّانية لكل شق بدل الناحية
+   اللي بينهم. فكل شق فضل مدوّر من جوّه، وطلع النتوء اللي في النص.
+
+   الحل مش إني أعكس الخصائص — الحل إني **ما أعتمدش على الاتجاه
+   أصلًا**: الراديوس على الأب، `overflow:hidden` بيقص الولاد،
+   والولاد راديوسهم صفر. كده الزرار سليم في RTL وLTR من غير
+   ولا سطر شرطي. */
+/* ★ باگ اتصلّح: كان `overflow:hidden` على الأب عشان يقصّ الشقّين —
+   وهو كمان كان **بيقصّ القايمة المنسدلة** اللي جوّاه، فالسهم
+   بيتقلب والقايمة ما بتظهرش خالص.
+
+   الحل من غير قص: كل شق بيصفّر الراديوس من الناحية اللي على
+   أخوه بس. والاتجاه مضمون من **ترتيب الـDOM** مش من اللغة —
+   الزرار أول عنصر فبيقع على الـinline-start، والسهم تاني
+   فبيقع على الـinline-end. */
+.splitb{position:relative;display:inline-flex;align-items:stretch}
+.splitb .btn{
+  border:0;
+  border-start-end-radius:0;border-end-end-radius:0
+}
+.splitb__t{
+  display:grid;place-items:center;width:36px;flex:none;
+  border:0;
+  /* السهم تاني عنصر في الـDOM → بيقع على الـinline-end.
+     فبيحتفظ براديوس ناحيته البرّانية ويصفّر اللي على الزرار. */
+  border-radius:var(--r-ctrl);
+  border-start-start-radius:0;border-end-start-radius:0;
+  /* الفاصل بين الشقّين — منطقي مش فيزيائي، فبيقع صح في الاتجاهين */
+  box-sizing:border-box;
+  border-inline-start:1px solid rgba(255,255,255,.24);
+  background:var(--accent);color:var(--accent-ink);cursor:pointer
+}
+.splitb__t:hover{background:var(--accent-deep)}
+.splitb__t:focus-visible{outline:2px solid var(--lime);outline-offset:-3px}
+/* السهم بيتقلب لما القايمة تفتح — إشارة إن ده مبدّل مش أمر */
+.splitb__t[aria-expanded="true"] svg{transform:rotate(180deg)}
+.splitb__t svg{transition:transform var(--dur) var(--ease)}
+.splitb__p{
+  position:absolute;top:calc(100% + 6px);inset-inline-start:0;z-index:40;
+  min-width:186px;padding:5px;display:grid;gap:2px;
+  background:var(--surface-raised);border:1px solid var(--border-control);
+  border-radius:var(--r-ctrl);box-shadow:var(--shadow-pop)
+}
+.splitb__p button{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:9px 10px;border:0;border-radius:var(--r-sm);background:none;
+  font:inherit;font-size:var(--fs-sm);color:var(--ink-base);
+  cursor:pointer;text-align:start
+}
+.splitb__p button:hover{background:var(--surface-hover);color:var(--ink-strong)}
+.splitb__p svg{color:var(--ink-faint);flex:none}
+
+/* ---------- ١) الرأس ---------- */
+.sheet__head{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:var(--sp-6);flex-wrap:wrap
+}
+.sheet__meta{display:grid;gap:5px;justify-items:start}
+/* سطر «مفتاح: قيمة ✎» — ده شكل بيانات الفاتورة المطبوعة */
+.smeta{display:flex;align-items:center;gap:7px;margin:0;min-height:26px}
+.smeta__k{font-size:var(--fs-xs);color:var(--ink-muted)}
+.smeta__v{
+  font-family:var(--font-mono);font-size:var(--fs-base);
+  font-weight:var(--fw-bold);color:var(--ink-strong)
+}
+.smeta__v.is-bad{color:var(--state-critical)}
+.smeta__hint{margin:-2px 0 4px;font-size:var(--fs-micro);color:var(--ink-faint)}
+/* القلم — بيفضل باهت لحد ما تعدّي عليه، عشان ما يزحمش الرأس */
+.smeta__p{
+  display:inline-flex;align-items:center;gap:4px;
+  border:0;background:none;padding:2px;border-radius:var(--r-sm);
+  color:var(--ink-faint);cursor:pointer;font:inherit;font-size:var(--fs-micro)
+}
+.smeta__p:hover{color:var(--accent);background:var(--surface-hover)}
+.smeta__edit{display:flex;align-items:center;gap:7px}
+.smeta__edit .fld__i{height:32px;width:170px}
+.smeta__in,.smeta__sel{
+  height:28px;padding:0 8px;border:1px solid transparent;border-radius:var(--r-sm);
+  background:none;font:inherit;font-size:var(--fs-sm);color:var(--ink-strong);
+  min-width:150px
+}
+.smeta__in:hover,.smeta__sel:hover{border-color:var(--border-base);background:var(--surface-field)}
+.smeta__in:focus,.smeta__sel:focus{
+  outline:none;border-color:var(--accent);background:var(--surface-field)
+}
+
+/* «حقول إضافية» — قايمة تشييك بوكس */
+.xtra{position:relative;margin-top:4px}
+.xtra__b{
+  padding:5px 10px;border:1px solid transparent;border-radius:var(--r-sm);
+  background:none;font:inherit;font-size:var(--fs-xs);
+  color:var(--ink-muted);cursor:pointer
+}
+.xtra__b:hover,.xtra__b.on{border-color:var(--border-base);color:var(--ink-strong)}
+.xtra__p{
+  position:absolute;top:calc(100% + 5px);inset-inline-start:0;z-index:30;
+  min-width:186px;padding:6px;display:grid;gap:1px;
+  background:var(--surface-raised);border:1px solid var(--border-base);
+  border-radius:var(--r-ctrl);box-shadow:var(--shadow-pop)
+}
+.xtra__i{
+  display:flex;align-items:center;gap:9px;padding:8px 9px;
+  border-radius:var(--r-sm);font-size:var(--fs-sm);color:var(--ink-base);cursor:pointer
+}
+.xtra__i:hover{background:var(--surface-hover)}
+.xtra__i input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+
+/* المنشأة والشعار على الشمال */
+.sheet__org{display:flex;align-items:flex-start;gap:var(--sp-4)}
+.sorg__tx{display:grid;gap:2px;text-align:end;font-size:var(--fs-xs);color:var(--ink-muted)}
+.sorg__tx b{
+  display:flex;align-items:center;gap:6px;justify-content:flex-end;
+  font-size:var(--fs-base);color:var(--ink-strong);margin-bottom:2px
+}
+
+/* ---------- ٢) العميل ---------- */
+.sheet__cust{
+  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  padding:var(--sp-4);margin-block:var(--sp-5);background:var(--surface-sunken)
+}
+.sheet__cust.is-bad{border-color:var(--state-critical)}
+.scust__add{
+  border:0;background:none;padding:0;cursor:pointer;font:inherit;
+  font-size:var(--fs-base);font-weight:var(--fw-semi);color:var(--accent)
+}
+.scust__add:hover{text-decoration:underline;text-underline-offset:3px}
+.scust__sel{max-width:340px}
+.scust{display:grid;gap:3px;justify-items:start;font-size:var(--fs-xs);color:var(--ink-muted)}
+.scust__n{
+  display:flex;align-items:center;gap:9px;
+  font-size:var(--fs-base);color:var(--ink-strong)
+}
+
+/* ---------- ٣) البنود ---------- */
+.sltools{
+  display:flex;align-items:center;gap:7px;flex-wrap:wrap;
+  justify-content:flex-end;margin-bottom:var(--sp-3)
+}
+/* كبسولة بسهم — المستودع وطريقة السعر */
+.ptag{position:relative}
+.ptag__b{
+  display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 11px;
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);font:inherit;font-size:.75rem;
+  font-weight:var(--fw-medium);color:var(--ink-base);cursor:pointer;white-space:nowrap
+}
+.ptag__b:hover{border-color:var(--border-control);color:var(--ink-strong)}
+.ptag__b svg{color:var(--ink-faint)}
+.ptag__p{
+  position:absolute;top:calc(100% + 5px);inset-inline-end:0;z-index:30;
+  min-width:190px;padding:5px;display:grid;gap:1px;
+  background:var(--surface-raised);border:1px solid var(--border-base);
+  border-radius:var(--r-ctrl);box-shadow:var(--shadow-pop)
+}
+.ptag__p--up{top:auto;bottom:calc(100% + 5px);inset-inline-start:0;inset-inline-end:auto}
+.ptag__p button{
+  padding:8px 10px;border:0;border-radius:var(--r-sm);background:none;
+  font:inherit;font-size:var(--fs-sm);color:var(--ink-base);cursor:pointer;text-align:start
+}
+.ptag__p button:hover{background:var(--surface-hover);color:var(--ink-strong)}
+.ptag__p button.on{background:var(--surface-selected);color:var(--accent);font-weight:var(--fw-semi)}
+
+/* جدول البنود — نفس نِسَب أعمدة السيستم */
+/* --lc بييجي من الكومبوننت — بيتبني من الأعمدة الظاهرة */
+.ltable{overflow-x:auto;overflow-y:hidden}
+/* ★ min-width رقم ثابت مش max-content.
+   مع max-content الرأس والصف كانوا بيتحسبوا كل واحد على محتواه هو،
+   فبينتج بينهم فرق ١٫٤px والعناوين بتزحلق عن خاناتها. الرقم الثابت
+   بيخلّي الاتنين يفيضوا بنفس المقدار بالظبط. */
+.ltable__h,.ltable__r{display:grid;grid-template-columns:var(--lc);gap:9px;align-items:start;min-width:900px}
+.ltable__h{
+  padding:0 0 9px;border-bottom:1px solid var(--border-base);
+  font-size:var(--fs-xs);color:var(--ink-muted)
+}
+.ltable__h .is-n{text-align:end}
+.ltable__r{padding-block:11px;border-bottom:1px solid var(--border-faint)}
+.ltable__r:last-child{border-bottom:0}
+.ltable__i{
+  padding-top:9px;font-family:var(--font-mono);font-size:var(--fs-xs);color:var(--ink-faint)
+}
+.ltable__img{
+  display:grid;place-items:center;height:36px;border-radius:var(--r-sm);
+  background:var(--surface-sunken);color:var(--ink-faint)
+}
+.ltable__t{
+  display:flex;align-items:center;justify-content:flex-end;gap:4px;padding-top:9px;
+  font-family:var(--font-mono);font-size:var(--fs-base);
+  font-weight:var(--fw-semi);color:var(--ink-strong)
+}
+.ltable__t svg{width:11px;height:11px}
+.ltable__x{
+  display:grid;place-items:center;width:30px;height:32px;margin-top:2px;
+  border:0;border-radius:var(--r-sm);background:none;
+  color:var(--ink-faint);cursor:pointer
+}
+.ltable__x:hover{background:var(--state-critical-bg);color:var(--state-critical)}
+/* ★ الكمية والوحدة **جنب بعض** مش فوق بعض.
+   الاتنين بيوصفوا حاجة واحدة («٢ كرتونة»)، فالعين لازم تقراهم
+   في مسح أفقي واحد. لما كانوا فوق بعض كان الصف بيطول والرقم
+   بيتفصل عن وحدته. */
+.qcell{display:flex;align-items:center;gap:6px}
+.qcell .fld__i{flex:0 0 56px;min-width:0;text-align:center;padding-inline:6px}
+.qcell__u{flex:1;min-width:0}
+.qcell__u .selx__v{font-size:var(--fs-xs)}
+
+/* السعر و«آخر بيع» تحته — دول فعلًا فوق بعض: التاني تعليق على الأول */
+.pcell{display:grid;gap:4px}
+/* «آخر بيع» تحت السعر — المستخدم بيسعّر وهو شايف آخر سعر */
+.pcell__h{font-size:var(--fs-micro);color:var(--ink-faint);font-style:normal;line-height:1.4}
+
+/* ---------- ٤) السطر السفلي ---------- */
+.sheet__foot{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:var(--sp-6);flex-wrap:wrap
+}
+.sfoot__notes{flex:1 1 240px;max-width:340px;display:grid;gap:4px;justify-items:start}
+.sfoot__notes .fld__i--area{width:100%;min-height:74px}
+.sfoot__bank{
+  position:relative;flex:0 1 210px;display:grid;gap:3px;justify-items:end;
+  text-align:end;font-size:var(--fs-xs);color:var(--ink-muted)
+}
+.sfoot__bank b{font-size:var(--fs-sm);color:var(--ink-strong)}
+.sfoot__bank .sheet__lbl{justify-self:end}
+.sfoot__tot{flex:0 1 290px;min-width:270px;display:grid;gap:7px}
+
+/* سطر إجمالي — بوكس بحد، زي السيستم بالظبط */
+.stot{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4);
+  padding:9px 13px;border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  font-size:var(--fs-sm);color:var(--ink-muted)
+}
+.stot b{
+  display:flex;align-items:center;gap:4px;
+  font-family:var(--font-mono);font-size:var(--fs-base);color:var(--ink-strong)
+}
+.stot b svg{width:11px;height:11px}
+.stot .is-minus{color:var(--state-critical)}
+.stot .is-dash{color:var(--state-critical);font-size:var(--fs-lg)}
+/* الإجمالي — نفس البوكس بحد غامق، مش لون تاني */
+.stot--grand{border-color:var(--ink-strong);border-width:1.5px}
+.stot--grand b{font-size:var(--fs-lg);font-weight:var(--fw-bold)}
+/* السطر الهادي — جوّه بلوك، من غير برواز */
+.stot--q{border:0;padding:3px 2px;font-size:var(--fs-xs)}
+.stot--q b{font-size:var(--fs-sm)}
+.stot--disc{padding-block:5px}
+.sdisc{display:flex;align-items:center;gap:6px}
+.sdisc .fld__i{height:30px;width:96px}
+
+/* «إضافة خصم» و«+ ملاحظات» و«+ إرفاق ملف» — نفس الزرار الخفيف */
+.sfoot__add{
+  display:inline-flex;align-items:center;gap:6px;
+  border:0;background:none;padding:2px 0;cursor:pointer;font:inherit;
+  font-size:var(--fs-sm);color:var(--ink-muted)
+}
+.sfoot__add:hover{color:var(--accent)}
+.sfoot__add svg{color:var(--ink-faint)}
+
+/* سطر «+ إظهار حالة الدفع» و«+ إضافة حسن تنفيذ» — بوكس زي سطر الإجمالي */
+.sfoot__row{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:10px 13px;border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:none;font:inherit;font-size:var(--fs-sm);color:var(--ink-muted);
+  cursor:pointer;text-align:start
+}
+.sfoot__row:hover{border-color:var(--accent);color:var(--accent)}
+.sfoot__row svg{color:var(--ink-faint);flex:none}
+.sfoot__row:hover svg{color:var(--accent)}
+.sfoot__row i{margin-inline-start:auto;font-style:normal;font-size:var(--fs-lg);line-height:1}
+
+/* البلوك اللي بيتفتح من الزرار */
+.sblock{
+  display:grid;gap:8px;padding:13px;
+  border:1px solid var(--border-base);border-radius:var(--r-ctrl);
+  background:var(--surface-sunken)
+}
+.sblock__h{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
+.sblock__h b{
+  display:flex;align-items:center;gap:7px;
+  font-size:var(--fs-sm);color:var(--ink-strong)
+}
+.sblock__s{margin:0;font-size:var(--fs-micro);color:var(--ink-muted)}
+
+/* ---------- المرفقات ---------- */
+.sheet--att{padding:var(--sp-5) var(--sp-7)}
+.satt__h{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-4)}
+.satt__h .sheet__lbl{margin:0}
+
+/* ---------- شاشة ضيّقة ---------- */
+@media (max-width:1100px){
+  .sheet{padding:var(--sp-5) var(--sp-4)}
+  .sheet__foot{gap:var(--sp-5)}
+  .sfoot__notes,.sfoot__bank,.sfoot__tot{flex-basis:100%;max-width:none}
+  .sfoot__bank{justify-items:start;text-align:start}
+  .sfoot__bank .sheet__lbl{justify-self:start}
+}
+
+/* ============================================================
+   تلميع الواجهة — **لون ووزن بس. مفيش حاجة اتحركت من مكانها.**
+
+   الشاشة كانت مزحومة مش لأن فيها عناصر كتير، لأن **كل عنصر
+   بيتكلم بنفس الصوت**: الكارت ليه برواز، والقسم ليه خط، والحقل
+   ليه برواز، والزرار ليه برواز — كلهم بنفس اللون ونفس السُمك.
+   لما كل حاجة مهمة، مفيش حاجة مهمة.
+
+   اللي تحت بيرتّب الأصوات على تلات مستويات وبس:
+     ١) **الهيكل** — الورقة والأقسام: خط واضح
+     ٢) **الحقول** — خط خافت، بيوضح بس لما تقف عليه
+     ٣) **الحالة** — الأخضر: بيظهر وقت التركيز والاختيار بس
+   ============================================================ */
+
+/* ---------- ١) الحقول بتهدى لحد ما تلمسها ----------
+   الحقل مش محتاج يصرّخ إنه حقل — شكله وموضعه بيقولوا كده.
+   البرواز الخافت بيرسم الخانة، والوقوف عليه بيوضّحه، والتركيز
+   بيدّيه حلقة خضرا. تلات حالات مقروءة بدل برواز تقيل ثابت. */
+.fld__i{border-color:var(--border-control)}
+.fld__i:hover:not(:disabled){border-color:var(--border-control)}
+.fld__i:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)
+}
+.fld__i.is-bad{border-color:var(--state-critical)}
+.fld__i.is-bad:focus{
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--state-critical) 14%,transparent)
+}
+
+/* ---------- ٢) المقفول بيبقى هادي، مش مغبّش ----------
+   `opacity:.45` بتغبّش النص والبرواز مع بعض، فالزرار بيبقى صعب
+   القراءة ومش باين إنه مقفول — باين إنه **مكسور**. الصح إن النص
+   يهدى والبرواز يخفّ، والوضوح يفضل. */
+.gbtn2:disabled,
+.savebar .btn:disabled,
+.dr__clr:disabled{
+  opacity:1;
+  color:var(--ink-faint);border-color:var(--border-control);
+  background:transparent;cursor:default
+}
+.gbtn2:disabled svg{color:var(--ink-faint)}
+
+/* ---------- ٣) حلقة تركيز واحدة في المنتج كله ----------
+   كانت كل شاشة بتعمل حلقتها: أخضر هنا، ليموني هناك، وفي أماكن
+   مفيش. التنقّل بالكيبورد لازم يبقى ليه شكل واحد يتعرف عليه. */
+.btn:focus-visible,
+.gbtn2:focus-visible,
+.ptag__b:focus-visible,
+.ivcard__no:focus-visible,
+.ivcard__eye:focus-visible,
+.dtabs__t:focus-visible,
+.sfoot__row:focus-visible,
+.sfoot__add:focus-visible,
+.smeta__p:focus-visible,
+.xtra__b:focus-visible,
+.lnk:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-sm)
+}
+.splitb__t:focus-visible{outline-color:var(--lime)}
+
+/* ---------- ٤) شريط العميل **أبيض** ----------
+   الورقة كريمي، فالأبيض هنا بيرفع الخانة مش بيغطّسها — وبيقول
+   «دي خانة بتتملا» زي الحقول بالظبط، مش بلوك بيتقرا. */
+.sheet__cust{background:var(--surface-field);border-color:transparent}
+.sheet__cust.is-bad{border-color:var(--state-critical)}
+
+/* ---------- ٥) شريط «تحديد كل الصفحة» ----------
+   كان بوكس بنفس وزن كارت الفاتورة وهو مش كارت — هو أداة.
+   البرواز اتشال، فضل السطح بس. */
+.doclist__all{border-color:transparent;background:var(--surface-hover)}
+
+/* ---------- ٦) الأيقونات الهادية بصوت واحد ----------
+   كانت الأيقونة جوه الزرار الهادي مرة `--ink-muted` ومرة
+   `--ink-faint` حسب الشاشة. الأيقونة المساعدة **دايمًا** أخفت
+   من النص اللي جنبها — ده اللي بيخلّيها مساعدة. */
+.gbtn2 svg,.ltools__more svg,.ptag__b svg,
+.sfoot__add svg,.sfoot__row svg,.smeta__p svg{color:var(--ink-faint)}
+.gbtn2:hover svg,.ltools__more:hover svg,.ptag__b:hover svg{color:var(--ink-muted)}
+
+/* ---------- ٧) ★ خطوط الجدول رجعت ----------
+   الجدول استثنى نفسه من قاعدة «مفيش بروايز»: صفوف تحت بعض
+   بنفس اللون وبنفس المسافة، والنبرة لوحدها مش بتفرّقهم.
+   رأس الجدول أغمق من الصف — الرأس بيفصل، والصف بيرتّب. */
+.ltable__r{border-bottom:1px solid var(--border-table)}
+.ltable__r:last-child{border-bottom:0}
+.ltable__h{border-bottom:1px solid var(--border-control)}
+/* وجداول المنتج التانية معاها */
+.dt thead th,.lines__h{border-bottom:1px solid var(--border-control)}
+.dt tbody td,.lines__r{border-bottom:1px solid var(--border-table)}
+.dt tbody tr:last-child td{border-bottom:0}
+
+/* ---------- ٨) الكارت بيرد لما تعدّي عليه ----------
+   الرد ده مش تزويق: هو اللي بيقول «الصف ده تحت مؤشّرك».
+   من غيره العين بتضيع في قايمة كروت متشابهة. */
+.ivcard{transition:border-color var(--dur) var(--ease),background var(--dur) var(--ease)}
+.ivcard:hover{background:var(--surface-hover)}
+.ivcard.is-late:hover{
+  background:color-mix(in srgb,var(--state-critical) 8%,var(--surface-raised))
+}
+
+
+/* ---------- ★ أي خانة فيها أكشن → أبيض ----------
+   قاعدة واحدة بتفرّق نوعين على الورقة الكريمية:
+     • **بيتقرا** — بيفضل على لون الورقة
+     • **بيتداس أو بيتملا** — بياخد أبيض فيرتفع عنها
+   الأبيض هنا مش تزويق، هو **إشارة إن الحاجة دي بتتعمل**. */
+.sblock,.doclist__all{background:var(--surface-field)}
+
+/* ---------- ★ صفّا الأكشن بقوا زي سطور الملخّص ----------
+   كانوا بوكسين بيض على ورقة كريمية، فبيتقروا كـ«حاجتين تانيين»
+   مركونين تحت الملخّص. وهما مش تانيين — هما **امتداد لنفس
+   العمود**: مجموع فرعي · خصم · ضريبة · إجمالي · وبعدين الحاجات
+   اللي ممكن تضيفها للمستند.
+
+   فبقوا بنفس الحشو ونفس المقاس ونفس الحبر، من غير سطح ولا برواز.
+   العمود كله بقى ستاك واحد، و**الإجمالي هو البوكس الوحيد فيه** —
+   وده اللي بيخلّيه يبان من غير ما يصرّخ. */
+.sfoot__row{
+  padding:9px 13px;border:0;background:none;
+  font-size:var(--fs-sm);color:var(--ink-muted)
+}
+.sfoot__row:hover{background:none;color:var(--accent)}
+/* الـ+ بيفضل خافت — هو دعوة مش أمر */
+.sfoot__row i{color:var(--ink-faint);font-size:var(--fs-base)}
+.sfoot__row:hover i{color:var(--accent)}
+
+/* ============================================================
+   حقل الاختيار — نفس شكل `.fld__i` بالظبط، عشان الصف يفضل
+   متحاذي والحقل ما يبانش إنه نوع تاني.
+   ============================================================ */
+.selx{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  width:100%;min-height:44px;padding:0 14px;
+  font:inherit;font-size:var(--fs-sm);text-align:start;
+  color:var(--ink-strong);background:var(--surface-field);
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  cursor:pointer;transition:border-color 150ms var(--ease),box-shadow 150ms var(--ease)
+}
+.selx:hover:not(:disabled){border-color:var(--border-strong)}
+.selx[aria-expanded="true"],.selx:focus-visible{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 14%,transparent)
+}
+.selx:disabled{color:var(--ink-faint);cursor:default}
+.selx svg{color:var(--ink-faint);flex:none;transition:transform var(--dur) var(--ease)}
+.selx[aria-expanded="true"] svg{transform:rotate(180deg)}
+.selx__v{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* القيمة الفاضية بلون التلميح — نفس فرق الـplaceholder في الإنبوت */
+.selx__v.is-ph{color:var(--ink-faint)}
+.selx.is-bad{border-color:var(--state-critical)}
+
+/* القايمة — في بورتال على الـbody، فموضعها inline من الكومبوننت */
+.selx__p{
+  position:fixed;z-index:300;display:flex;flex-direction:column;
+  background:var(--surface-field);border-radius:var(--r-ctrl);
+  box-shadow:var(--shadow-pop);overflow:hidden;
+  animation:pfIn .14s var(--ease) both
+}
+.selx__s{
+  display:flex;align-items:center;gap:8px;padding:10px 12px;flex:none;
+  border-bottom:1px solid var(--border-table)
+}
+.selx__s svg{color:var(--ink-faint);flex:none}
+.selx__s input{
+  flex:1;min-width:0;border:0;background:none;outline:none;
+  font:inherit;font-size:var(--fs-sm);color:var(--ink-strong)
+}
+.selx__l{overflow-y:auto;padding:5px;display:grid;gap:1px}
+.selx__o{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;padding:9px 10px;border:0;border-radius:var(--r-sm);
+  background:none;font:inherit;font-size:var(--fs-sm);
+  color:var(--ink-base);cursor:pointer;text-align:start
+}
+/* is-hi = اللي المؤشّر أو الكيبورد عليه · is-on = المختار فعلًا.
+   الاتنين لازم يبقوا مختلفين، وإلا المستخدم ما يعرفش هو فين. */
+.selx__o.is-hi{background:var(--surface-hover);color:var(--ink-strong)}
+.selx__o.is-on{color:var(--accent);font-weight:var(--fw-semi)}
+.selx__o svg{color:var(--accent);flex:none}
+.selx__ot{display:grid;gap:1px;min-width:0}
+.selx__ot em{font-style:normal;font-size:var(--fs-micro);color:var(--ink-faint)}
+.selx__none{margin:0;padding:14px 10px;text-align:center;
+  font-size:var(--fs-xs);color:var(--ink-faint)}
+
+/* المقاسات الصغيرة جوه صف البنود */
+.qcell .selx,.taxcell .selx{min-height:38px;padding:0 11px;font-size:var(--fs-xs)}
+.ltable__r .selx{min-height:40px}
+.smeta__sel.selx{min-height:28px;padding:0 8px;border-color:transparent;background:none;min-width:150px}
+.smeta__sel.selx:hover{border-color:var(--border-control);background:var(--surface-field)}
+
+/* ============================================================
+   باص «مودرن · منيمال» — لون ووزن ومقاس. مفيش عنصر اتحرك.
+
+   ★ المبدأ: **الفرق بالحجم، مش بالوزن.**
+   الواجهة كانت بتستخدم البولد عشان تقول «ده مهم» — والنتيجة إن
+   نص الشاشة بولد، فمفيش حاجة بقت مهمة. المودرن بيعكسها: حجم
+   أكبر وحبر أغمق للمهم، ووزن عادي لكل الباقي.
+   ============================================================ */
+
+/* ---------- ١) الكنترولز: أقصر وأهدى ----------
+   ٤٤px كان مقاس لمسة على موبايل. على ديسكتوب في فورم فيه عشرة
+   حقول في صف، بيبقى تقيل. ٤٠ بيفضل فوق الحد المطلوب بكتير
+   وبيدّي الفورم نَفَس. */
+.fld__i,.selx{min-height:40px;padding-inline:12px}
+.fld__i--area{min-height:76px;padding:10px 12px}
+.btn{min-height:42px}
+.btn--sm{min-height:34px}
+.ltable__r .selx,.ltable__r .fld__i{min-height:38px}
+.qcell .selx,.taxcell .selx{min-height:36px}
+
+/* الـplaceholder بلون التلميح في كل حتة — مش رمادي عشوائي */
+.fld__i::placeholder,.selx__s input::placeholder{color:var(--ink-faint);opacity:1}
+
+/* ---------- ٢) اللِيبل: أصغر وأخف ----------
+   كان ٦٠٠ — يعني بنفس وزن القيمة اللي تحته. اللِيبل بيشرح
+   القيمة، مش بينافسها. */
+.fld__l,.sheet__lbl{
+  font-size:var(--fs-micro);font-weight:var(--fw-regular);
+  color:var(--ink-faint);letter-spacing:.01em
+}
+
+/* ---------- ٣) العناوين: الحجم هو اللي بيفرّق ---------- */
+.pagehead h1,.dochead__no{letter-spacing:-.02em}
+.fcard__t,.sect__t{font-weight:var(--fw-semi);letter-spacing:-.01em}
+
+/* ---------- ٤) الإجمالي: خط واحد، مش تقيل ----------
+   ١٫٥px كان بيخلّيه يصرّخ. هو الوحيد المبرّز في العمود أصلًا،
+   فخط عادي كفاية — والحجم هو اللي بيقول إنه الإجمالي. */
+.stot--grand{border-width:1px}
+.stot--grand b{font-size:var(--fs-xl)}
+
+/* ---------- ٥) بوكسات الرفع: الخط المنقّط يخف ----------
+   المنقّط بطبعه بيشد العين. هو دعوة هادية، مش تنبيه. */
+.updrop{border-color:var(--w-300);border-radius:var(--r-ctrl)}
+.updrop:hover{border-color:var(--accent);background:var(--accent-quiet)}
+.updrop em{font-size:var(--fs-micro);color:var(--ink-faint)}
+
+/* ---------- ٦) الشارات: أنحف ----------
+   الشارة معلومة تانوية. كانت بنفس ثقل النص الأساسي. */
+.st{height:22px;padding:0 9px;font-weight:var(--fw-medium);font-size:var(--fs-micro)}
+
+/* ---------- ٧) نَفَس بين أقسام الورقة ----------
+   المسافة هي أرخص أداة فصل، وأهدى من أي خط أو سطح. */
+.sheet{padding:var(--sp-6) var(--sp-7)}
+.sheet__sec{padding-block:var(--sp-6)}
+.sheet__sec:first-child{padding-top:0}
+.sheet__sec:last-child{padding-bottom:0}
+
+/* ---------- ٨) جدول البنود: صفوف أهدى ---------- */
+.ltable__h{
+  padding-bottom:10px;font-size:var(--fs-micro);
+  font-weight:var(--fw-regular);color:var(--ink-faint);letter-spacing:.01em
+}
+.ltable__r{padding-block:10px}
+
+/* ---------- ٩) الأدوات فوق الجدول والفلاتر: أخف ---------- */
+.gbtn2,.ltools__more,.ptag__b{
+  font-weight:var(--fw-medium);border-color:var(--border-control)
+}
+.ltools__more{height:40px}
+
+/* ============================================================
+   ★ الورقة اتفكّت لسكشنز مستقلة.
+
+   كانت **كارت كريمي واحد** لافّ المستند كله وجوّاه حشو كبير.
+   المشكلة إن الكارت الكبير ده بيحمل معلومة واحدة بس — «دول مع
+   بعض» — وإحنا عارفين كده أصلًا من الترتيب. فهو بياخد مساحة
+   ولون وحدود من غير ما يضيف.
+
+   دلوقتي: مفيش خلفية ومفيش حشو لافّ، وكل جزء **سكشن قايم بذاته**
+   على الصفحة البيضا. واللي بيفصلهم **المسافة** — وهي أرخص أداة
+   فصل وأهدى من أي سطح أو خط.
+
+   والمعلومة ما ضاعتش لأن كل سكشن **بيعرّف نفسه**: الرأس فيه
+   الأرقام والمنشأة، والعميل فوقه لِيبل، والبنود فوقها رأس جدول،
+   والسفلي فيه لِيبل لكل عمود. الكارت ما كانش بيقول أي حاجة من دول.
+   ============================================================ */
+.sheet{
+  background:none;border:0;border-radius:0;
+  padding:0;margin:0 var(--sp-2) var(--sp-7);
+  display:grid;gap:var(--sp-8)
+}
+.sheet__sec{padding:0;border:0}
+.sheet__sec:first-child,.sheet__sec:last-child{padding:0}
+
+/* ★ شريط العميل بقى على صفحة بيضا — والأبيض على أبيض مش بيبان.
+   فبياخد برواز الكنترول: وده صح دلالةً كمان، لأنه **خانة بتتملا**
+   زي أي حقل، مش بلوك بيتقرا. */
+.sheet__cust{
+  border:1px solid var(--border-control);
+  padding:var(--sp-4) var(--sp-5);margin:0
+}
+
+/* المرفقات سكشن زيهم، مش كارت */
+.sheet--att{padding:0;margin-bottom:var(--sp-7);gap:var(--sp-3)}
+
+/* السطر السفلي: مسافة أوسع بين أعمدته دلوقتي إنها مش جوه كارت */
+.sheet__foot{gap:var(--sp-7)}
+
+/* ============================================================
+   ★ كل سكشن بقى **كارت بذاته** بسطح السيستم.
+
+   الفرق عن اللي كان قبل كده: مش كارت واحد كبير لافّ المستند —
+   دي كروت مستقلة بعدد الأجزاء. كل واحد بيقول «أنا وحدة كاملة»،
+   والفراغ الأبيض اللي بينهم بيقول «ودي وحدة تانية».
+
+   الكارت اللافّ كان بيقول «دول مع بعض» وبس. الكروت المستقلة
+   بتقول حاجة أنفع: **دي أربع خطوات** — رأس المستند · العميل ·
+   البنود · الإجماليات. والمستخدم بيقدر يركّز في واحدة.
+   ============================================================ */
+.sheet{gap:var(--gap)}
+.sheet__sec{
+  background:var(--surface-raised);
+  border-radius:var(--r-card);
+  padding:var(--sp-5) var(--sp-6)
+}
+/* الحشو الأول والأخير اترجّع — كل كارت بقى ليه حشوه الكامل */
+.sheet__sec:first-child,.sheet__sec:last-child{padding:var(--sp-5) var(--sp-6)}
+
+/* شريط العميل بقى كارت زي إخواته — فمحتاجش برواز يعرّفه تاني */
+.sheet__cust{border:0;padding:var(--sp-5) var(--sp-6);margin:0}
+
+/* المرفقات كارت برضه */
+.sheet--att{
+  background:var(--surface-raised);border-radius:var(--r-card);
+  padding:var(--sp-5) var(--sp-6);margin:0 var(--sp-2) var(--sp-7)
+}
+
+/* الأعمدة السفلية ترجع لمسافتها الطبيعية جوه الكارت */
+.sheet__foot{gap:var(--sp-6)}
+
+/* ============================================================
+   ★ رأس المستند: عمود لِيبل واحد بعرض **أطول لِيبل**.
+
+   كانت كل سطر flex لوحده، فعرض اللِيبل بيتغيّر مع طول كلمته
+   (٦٣ · ٦٥ · ٨٢px) — والنتيجة إن القيم بتقع في تلات أماكن
+   مختلفة وبينها ١٩px فرق. العين بتلاحظ الرجفة دي حتى لو مش
+   عارفة سببها.
+
+   الحل: الرأس كله **جريد واحد** بتلات أعمدة —
+   لِيبل · قيمة · قلم — وعرض عمود اللِيبل `max-content`، يعني
+   بياخد عرض أطول واحد فيهم تلقائيًا. تضيف حقل جديد بلِيبل أطول،
+   العمود بيتوسّع لوحده والباقي يفضل متحاذي.
+
+   و`display:contents` على السطر بيخلّي ولاده يدخلوا الجريد
+   مباشرة، من غير ما نلغي السطر نفسه من الـDOM.
+   ============================================================ */
+.sheet__meta{
+  display:grid;grid-template-columns:max-content max-content auto;
+  column-gap:8px;row-gap:5px;align-items:center;justify-items:start
+}
+.smeta{display:contents}
+/* اللي مش جزء من الشبكة بياخد السطر كله */
+.sheet__meta > .smeta__hint,
+.sheet__meta > .xtra{grid-column:1 / -1}
+.smeta__edit{grid-column:2 / -1}
+/* الحقول القابلة للكتابة تملا عمود القيمة بالكامل */
+.smeta__in,.smeta__sel.selx{grid-column:2 / -1;justify-self:stretch}
+
+/* ============================================================
+   ★ السطر السفلي اتفكّ لتلات سكشنز منفصلة.
+
+   كان كارت واحد جوّاه تلات أعمدة — والعمود التالت (الإجماليات)
+   كان بينتهي عند نُصّ الكارت، فالنُصّ التاني بيفضل فاضي وباين
+   إنه فاضي. الكارت الواحد بيلزمك بارتفاع أطول عمود فيه.
+
+   دلوقتي تلاتة مستقلين، كل واحد بارتفاع محتواه:
+     • ملاحظات والختم — بتكتبه إنت
+     • بيانات البنك — بيتطبع على المستند
+     • الإجماليات — بتتحسب لوحدها
+   تلات حاجات مالهمش علاقة ببعض أصلًا، وكانوا متلزّقين في بوكس
+   واحد لأنهم بيقعوا في نفس السطر من المستند المطبوع وبس.
+   ============================================================ */
+.sheet__foot{
+  background:none;padding:0;border-radius:0;
+  display:grid;gap:var(--gap);align-items:start;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr) minmax(286px,340px)
+}
+.sfoot__notes,.sfoot__bank,.sfoot__tot{
+  background:var(--surface-raised);border-radius:var(--r-card);
+  padding:var(--sp-5) var(--sp-6);
+  flex:none;max-width:none;min-width:0
+}
+/* البنك كان محاذي للشمال عشان كان طرف الكارت — بقى كارت بذاته
+   فبيرجع يبدأ من اليمين زي أي كارت */
+.sfoot__bank{justify-items:start;text-align:start}
+.sfoot__bank .sheet__lbl{justify-self:start}
+
+@media (max-width:1180px){
+  .sheet__foot{grid-template-columns:minmax(0,1fr) minmax(286px,340px)}
+  .sfoot__notes{grid-column:1 / -1}
+}
+@media (max-width:760px){
+  .sheet__foot{grid-template-columns:1fr}
+  .sfoot__notes{grid-column:auto}
+}
+
+/* ============================================================
+   ★ ضبط الحشو والمحاذاة في كروت المستند.
+   ============================================================ */
+
+/* ---------- ١) حشو واحد، متساوي على الجهات الأربع ----------
+   كان `20px 28px` — يعني فوق وتحت ٢٠ ويمين وشمال ٢٨. الفرق ده
+   بيخلّي الكارت يبان مضغوط من فوق ومترهّل من الجنب، والعين
+   بتحس إن فيه حاجة مش مظبوطة من غير ما تعرف إيه. */
+.sheet__sec,
+.sheet__sec:first-child,.sheet__sec:last-child,
+.sheet__cust,
+.sfoot__notes,.sfoot__bank,.sfoot__tot,
+.sheet--att{padding:var(--sp-5)}
+
+/* ---------- ٢) سطور الإجماليات تتحاذى مع حافة الكارت ----------
+   كان على كل سطر حشو جانبي ١٣px **فوق** حشو الكارت، فنص
+   الإجماليات كان داخل ٤١px والكروت التانية نصّها داخل ٢٠.
+   تلات كروت جنب بعض ونصّهم مش على خط واحد.
+
+   دلوقتي السطر ملزوق بحافة الكارت زي أي نص. و«الإجمالي» — لأنه
+   البوكس الوحيد — بياخد حشوه وبيتسحب بره بنفس المقدار، فنصّه
+   يفضل على نفس الخط وبرواز البوكس هو اللي بيتوسّع. */
+.stot{padding-inline:0}
+.stot--grand{padding:10px 13px;margin-inline:-13px}
+
+/* ---------- ٣) بيانات البنك: الأمر على الناحية التانية ----------
+   «تغيير» كان تحت الآيبان — فبيتقرا كإنه سطر رابع من البيانات.
+   وهو مش بيان، هو **أمر**. مكانه على الجهة المقابلة، في نفس
+   سطر اسم البنك: البيانات ناحية والأمر ناحية. */
+.sfoot__bank{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  column-gap:var(--sp-3);row-gap:3px;align-items:center;
+  justify-items:start;text-align:start
+}
+.sfoot__bank > .sheet__lbl{grid-column:1 / -1;grid-row:1}
+.sfoot__bank > b{grid-column:1;grid-row:2}
+.sfoot__bank > span{grid-column:1;grid-row:3}
+.sfoot__bank > .lnk{grid-column:2;grid-row:2;justify-self:end}
+.sfoot__bank > .ptag__p{grid-column:1 / -1}
+
+/* ============================================================
+   ★ تصليحات قايمة الاختيار.
+   ============================================================ */
+
+/* ---------- ١) السكرول ما كانش شغّال ----------
+   القايمة `flex-column` وعليها `max-height`، والليستة جوّاها
+   `overflow-y:auto`. المفروض تسكرول — بس عنصر الفليكس بياخد
+   `min-height:auto` افتراضيًا، يعني **بيرفض يصغر عن محتواه**.
+   فالليستة كانت بتتمدد وتطلع بره القايمة بدل ما تسكرول.
+   `min-height:0` هو اللي بيسمحلها تصغر. */
+.selx__l{min-height:0;flex:1}
+
+/* ---------- ٢) الصف: العربي يمين والكود على الطرف التاني ----------
+   الكود كان تحت الاسم، فكل خيار بياخد سطرين والقايمة بتطول
+   للضعف. وهو مش تكملة للاسم — هو **معرّف تاني لنفس الحاجة**،
+   فمكانه الطرف المقابل: الاسم بتقراه، والكود بتراجعه. */
+.selx__o{padding:6px 10px;gap:12px;min-height:32px}
+.selx__ot{
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:14px;flex:1;min-width:0
+}
+.selx__ot em{
+  margin-inline-start:auto;flex:none;
+  font-family:var(--font-mono);font-size:var(--fs-micro);
+  color:var(--ink-faint);letter-spacing:.02em
+}
+/* المختار: الاسم أغمق والكود بياخد لون الأكشن معاه، عشان السطر
+   كله يتقرا مختار — مش علامة صح لوحدها في الآخر */
+.selx__o.is-on .selx__ot em{color:var(--accent)}
+/* علامة الصح ليها مكان ثابت، فالصفوف ما ترجفش لما تتنقل */
+.selx__o svg{width:14px;height:14px}
+.selx__o::after{content:'';width:14px;flex:none}
+.selx__o.is-on::after{display:none}
+
+/* ---------- ٣) شريط البحث أنحف ---------- */
+.selx__s{padding:7px 10px}
+.selx__s input{font-size:var(--fs-xs)}
+
+/* ============================================================
+   ★ كل القوايم الطايرة خلفيتها **بيضا**.
+
+   القايمة المنسدلة طبقة فوق الصفحة، مش جزء من الكارت. لما كانت
+   بلون الكارت الكريمي كانت بتبان زي إنها امتداد ليه — وهي مش
+   كده: هي حاجة **مؤقتة طالعة فوق كل حاجة**، وبتختفي أول ما
+   تختار. الأبيض بيقول كده من غير ظل زيادة ولا برواز.
+
+   والقاعدة دي أصلًا مطبّقة على قايمة الاختيار (`.selx__p`) —
+   فالباقي كان شاذ عنها.
+   ============================================================ */
+.colmenu__p,.xtra__p,.ptag__p,.splitb__p,
+.rmenu__p,.pick1__p,.docmenu,.dr__pop{
+  background:var(--surface-field)
+}
+/* الوقوف على عنصر القايمة بياخد الكريمي — بقى هو الحاجة المرفوعة
+   دلوقتي، بعد ما الخلفية بقت بيضا */
+.colmenu__i:hover,.xtra__i:hover,.ptag__p button:hover,
+.splitb__p button:hover,.rmenu__i:hover,.pick1__o:hover,
+.docmenu__i:hover,.selx__o.is-hi{background:var(--surface-raised)}
+
+/* ============================================================
+   ★ الرأس اتفكّ لسكشنين.
+
+   كان كارت واحد فيه حاجتين مالهمش علاقة: **بيانات المستند**
+   (رقم وتواريخ — بتتغيّر مع كل فاتورة) و**بيانات المنشأة**
+   (اسم وعنوان وشعار — ثابتة للسنة كلها). حطّهم في بوكس واحد
+   بيقول إنهم مجموعة، وهما مش.
+   ============================================================ */
+.sheet__head{
+  background:none;padding:0;border-radius:0;
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.82fr);
+  gap:var(--gap);align-items:start
+}
+.sheet__meta,.sheet__org{
+  background:var(--surface-raised);border-radius:var(--r-card);
+  padding:var(--sp-5)
+}
+/* المنشأة: النص من اليمين والشعار على الطرف التاني */
+.sheet__org{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:var(--sp-4)
+}
+.sorg__tx{text-align:start}
+.sorg__tx b{justify-content:flex-start}
+
+/* ---------- ★ «حقول إضافية» بقى زرار بشكل زرار ----------
+   كان نص سايب تحت سطور البيانات مباشرة، وعلى نفس محاذاتها —
+   فالعين بتقراه **سطر رابع من المستند** لِيبله مكتوب وقيمته
+   ناقصة. وهو مش بيان، هو **أمر بيزوّد بيانات**.
+
+   دلوقتي له حدود وأيقونة ومسافة تفصله عن الداتا: شكله بيقول
+   «دوس عليّا»، مش «اقرأني». */
+.xtra{margin-top:var(--sp-3);grid-column:1 / -1}
+.xtra__b{
+  display:inline-flex;align-items:center;gap:6px;
+  height:32px;padding:0 11px;
+  border:1px solid var(--border-control);border-radius:var(--r-ctrl);
+  background:var(--surface-field);
+  font:inherit;font-size:var(--fs-xs);font-weight:var(--fw-medium);
+  color:var(--ink-muted);cursor:pointer
+}
+.xtra__b svg{color:var(--ink-faint)}
+.xtra__b:hover{border-color:var(--accent);color:var(--accent)}
+.xtra__b:hover svg{color:var(--accent)}
+.xtra__b.on{border-color:var(--accent);color:var(--accent);background:var(--accent-quiet)}
+
+@media (max-width:980px){
+  .sheet__head{grid-template-columns:1fr}
+}
+
+/* ============================================================
+   ★ ضبط الإيقاع في الصفحة — مقاس بالأرقام مش بالعين.
+
+   اللي كان مكسور فعلًا:
+     • المسافة بين السكشنز ١٦px في كل حتة — **إلا** آخر واحدة
+       (الإجماليات ← المرفقات) كانت ٤٠px، لأن المرفقات كارت
+       مستقل بـmargin خاص بيه.
+     • الكروت اللي في نفس الصف بأطوال مختلفة: الرأس ١٧٠ و١٤٨،
+       والسفلي ٢٣٥ و١١٣ و٣٤٠. الصف اللي كروته مش متساوية
+       بيخلّي الشبكة تبان مكسورة حتى لو المحتوى مظبوط.
+     • الكروت داخلة ٨px عن عنوان الصفحة — يعني عمودين مختلفين
+       على نفس الشاشة.
+   ============================================================ */
+
+/* ---------- ١) مسافة واحدة بين كل السكشنز ---------- */
+.sheet{margin:0 0 var(--gap)}
+.sheet--att{margin:0 0 var(--sp-7)}   /* الأخيرة بس لها نَفَس تحتها */
+
+/* ---------- ٢) الكروت في الصف الواحد بطول واحد ----------
+   `stretch` بتخلّي كل كارت ياخد طول أطول واحد في صفّه. */
+.sheet__head,.sheet__foot{align-items:stretch}
+
+/* ---------- ٣) الكروت على نفس عمود عنوان الصفحة ---------- */
+.doclist{padding-inline:0}
+
+/* ★ أثر جانبي من `stretch`: الكارت بقى أطول من محتواه، والجريد
+   جوّاه بيوزّع صفوفه على الطول كله — فالمحتوى بيقع في النص.
+   `align-content:start` بتخلّي الصفوف تتلزق فوق والفراغ ينزل
+   تحت، فكل الكروت في الصف بتبدأ من نفس الخط. */
+.sheet__meta,.sfoot__notes,.sfoot__bank,.sfoot__tot{align-content:start}
+
+/* ============================================================
+   ★ آخر ضبط للإيقاع — حشو الأغلفة وخطوط الجدول.
+   ============================================================ */
+
+/* ---------- ١) الغلاف ما ياخدش حشو — الكروت بس ----------
+   `.sheet__head` و`.sheet__foot` مش كروت، هما **صفوف بتلمّ كروت**.
+   كان عليهم حشو ٢٠px فوق حشو الكروت اللي جوّاهم، فالنتيجة إن
+   المسافة بين الكارت والكارت بقت:
+       ٣٦px لما يكون بينهم غلاف  ·  ١٦px لما ما يكونش
+   والعين بتقرا الصفحة كإنها مجموعات مش متساوية، من غير سبب.
+
+   دلوقتي الحشو **جوّه الكروت بس**، والمسافة بينهم `--gap`
+   واحدة في كل الاتجاهات. */
+.sheet__head,.sheet__foot{padding:0}
+
+/* ---------- ٢) خطوط الجدول اتشالت ----------
+   رجّعناها قبل كده لما كان الصف نص مجرّد ومحتاج خط يفصله.
+   دلوقتي كل خانة في الصف بقت **حقل أبيض له حدوده**، فالصف
+   بيتفصل بنفسه — والخط بقى خط زيادة فوق حدود موجودة أصلًا.
+   المسافة بين الصفوف هي الفاصل. */
+.ltable__r,.ltable__h,
+.dt thead th,.dt tbody td,.lines__h,.lines__r{border-bottom:0}
+.ltable__h{padding-bottom:8px}
+.ltable__r{padding-block:8px}
+
+/* ★ القاعدة اللي فوق ما كانتش بتشتغل: فيه قاعدة أقدم بتحدّد
+   `.sheet__sec:first-child` — وده **كلاس + بسيدو-كلاس**، أقوى من
+   `.sheet__head` الكلاس لوحده. فالحشو كان بيرجع ٢٠px.
+   هنا بنعلّى الوزن بنفس القدر مع أسبقية الترتيب. */
+.sheet > .sheet__head,
+.sheet > .sheet__foot{padding:0}
+
+/* ============================================================
+   الإضافات الاختيارية — كل واحدة كارت بذاتها
+   ------------------------------------------------------------
+   «إظهار حالة الدفع» و«إضافة حسن تنفيذ» كانوا سطرين مدفونين
+   جوّه كرت المجاميع — فكانوا بيقروا كأنهم بنود في الحساب، وهما
+   مش كده: دول قرارين بيضيفوا قسم للفاتورة. طلعوا كارتين تحت
+   كرت السامري، وكل واحد بيفضل كارته لما يتفتح.
+   ============================================================ */
+.sfoot__col{display:grid;gap:var(--gap);align-content:start;background:none;padding:0}
+.sfoot__opt{
+  background:var(--surface-raised);border-radius:var(--r-card);
+  padding:var(--sp-5) var(--sp-6);min-width:0
+}
+/* ★ مقفول = الزرار بياخد الكارت كله.
+   كان الكارت بياخد حشو والزرار قاعد جوّاه، فالهوفر كان بيضوّي
+   مستطيل أصغر وبيفضل إطار من لون الكارت حواليه — شكل «حتة
+   جوّه حتة». دلوقتي حشو الكارت اتشال والزرار هو اللي شايله،
+   فالهوفر بيغطي السيكشن كله. و`overflow:hidden` عشان زوايا
+   الهوفر تتقص على زوايا الكارت بالظبط. */
+.sfoot__opt:has(.sfoot__row){padding:0;overflow:hidden}
+.sfoot__opt .sfoot__row{
+  border:0;background:none;width:100%;
+  padding:15px var(--sp-5);border-radius:var(--r-card)
+}
+.sfoot__opt .sfoot__row:hover{background:var(--surface-hover)}
+/* الكارت بقى مفتوح — البلوك جوّه ما بقاش محتاج سطحه الخاص */
+.sfoot__opt .sblock{background:none;padding:0;border-radius:0}
+
+/* ============================================================
+   الإجمالي بنبرة الـSummary Strip
+   ------------------------------------------------------------
+   اللِيبل صغير مكتوم فوق، والرقم كبير مونوسبيس تحته — نفس
+   معاملة `.summary__value` في باقي الشاشات. الحجم هو اللي
+   بيعمل الهرمية، مش برواز.
+
+   ★ الريال بياخد **عرض صريح** مش `width:auto`.
+   الأيقونة SVG بـviewBox ١١٢٤×١٢٥٦ ومن غير مقاس أصلي، فلو
+   سبنا العرض `auto` المتصفح بيمدّها على عرض الأب كله (طلعت
+   شاشة كاملة فعلًا). النسبة ١١٢٤÷١٢٥٦ = ٠٫٨٩٥، فمع ارتفاع
+   ٠٫٨٦em العرض بيبقى ٠٫٧٧em.
+   ============================================================ */
+.sgrand{
+  display:grid;gap:var(--sp-2);justify-items:start;
+  padding:var(--sp-4) 0 var(--sp-1);
+  border-top:1px solid var(--border-table);margin-top:var(--sp-1);
+}
+.sgrand__l{font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--ink-muted)}
+.sgrand__v{
+  display:inline-flex;align-items:center;direction:rtl;line-height:1;
+  font-family:var(--font-mono);font-size:var(--fs-3xl);font-weight:var(--fw-semi);
+  letter-spacing:-.03em;color:var(--ink-strong);
+}
+.sgrand__v .num{direction:ltr;unicode-bidi:isolate}
+.sgrand__v .rs{
+  height:.86em;width:.77em;flex:none;align-self:center;
+  color:var(--ink-faint);margin-inline-end:6px
+}
+
+/* الصفوف اللي فوقه بتهدى شوية عشان الفرق يبان */
+.sfoot__tot .stot{color:var(--ink-muted)}
+.sfoot__tot .stot b{font-size:var(--fs-sm)}
+
+/* ============================================================
+   عناوين رأس الفاتورة — عرض واحد، ونقطتين على خط واحد
+   ------------------------------------------------------------
+   العناوين كانت بتاخد عرض نصّها (٦٣ / ٦٥ / ٨٢px)، فالنقطتين
+   بتاعت كل سطر كانت واقفة في مكان مختلف والعمود بيبان مهزهز.
+
+   الحل مش `text-align` — لأن ده كان هيظبط طرف ويبوّظ التاني.
+   العنوان بقى بياخد **عرض العمود كامل** (`justify-self:stretch`،
+   والعمود أصلًا `max-content` يعني قد أطول عنوان)، وبقى فليكس:
+   النص متمسّك بأول السطر (اليمين في العربي) والنقطتين متدفوعة
+   لآخره بـ`margin-inline-start:auto`. فالطرفين الاتنين مظبوطين
+   مع بعض في كل السطور.
+
+   ★ النقطتين اتشالت من النص في الـJSX وبقت من CSS — عشان تبقى
+   عنصر مستقل ينفع يتحرّك، ومتتقريش كجزء من اسم الحقل.
+   ============================================================ */
+/* ★ لاحظ إنه مش `>`: العنصر `.smeta` اللي جوّه عليه
+   `display:contents`، فالعناوين بتبقى **حفيدة** في الـDOM حتى
+   لو هي بنت في الجريد. المحدّد المباشر كان بيفشل بسببها. */
+.sheet__meta .smeta__k{
+  justify-self:stretch;
+  display:flex;align-items:baseline;gap:6px;
+}
+.sheet__meta .smeta__k::after{
+  content:':';margin-inline-start:auto;color:var(--ink-faint)
+}
+
+
+/* عنوان سيكشن البنود — نفس لِيبل باقي السيكشنز */
+.sheet__lines > .sheet__lbl{display:block;margin-bottom:var(--sp-4)}
+
+/* ============================================================
+   السطر السفلي — عمودين بدل تلاتة
+   ------------------------------------------------------------
+   عمودين: يمين فيه البنك وتحته الملاحظات، وشمال المجاميع.
+   البنك الأول لأنه بيانات لازمة للدفع، والملاحظات كلام
+   بيتقرا بعده.
+   ============================================================ */
+.sheet__foot{grid-template-columns:minmax(0,1fr) minmax(300px,344px)}
+.sfoot__side{
+  display:grid;gap:var(--gap);align-content:start;
+  background:none;padding:0;min-width:0
+}
+/* زرار «تغيير» جوّه كرت البنك — بيقف لوحده في آخر الكارت */
+.sfoot__bank .xtra__b{justify-self:end}
+
+/* حقل الملاحظات — بقى مفتوح دايمًا، فمحتاج عرض كامل وارتفاع مريح */
+.sfoot__notes .fld__i--area{width:100%;min-height:92px;resize:vertical}
+
+/* ============================================================
+   الختم — صف مضغوط بدل مربّع الإفلات
+   ------------------------------------------------------------
+   المربّع المتقطّع ١٠٨×١٠٨ كان بياخد مساحة قد الملاحظات نفسها
+   لحاجة بتتعمل مرة واحدة في عمر المنشأة. بقى صف: أيقونة،
+   وعنوان، وسطر بيقول المطلوب إيه — نفس نبرة باقي الصفوف في
+   الصفحة، ومن غير حدود متقطّعة.
+   ============================================================ */
+.stampf{
+  display:flex;align-items:center;gap:var(--sp-3);width:100%;
+  padding:10px 12px;border:1px solid var(--border-control);
+  border-radius:var(--r-ctrl);background:var(--surface-field);
+  cursor:pointer;text-align:start;font:inherit;color:inherit;
+  transition:border-color 150ms var(--ease)
+}
+.stampf:hover{border-color:var(--accent)}
+.stampf.is-set{cursor:default;border-style:solid}
+.stampf.is-set:hover{border-color:var(--border-control)}
+.stampf__ic{
+  width:30px;height:30px;flex:none;border-radius:var(--r-chip);
+  display:grid;place-items:center;
+  background:var(--surface-sunken);color:var(--ink-muted)
+}
+/* السهم بتاع «تنزيل» مقلوب — بقى سهم رفع */
+.stampf__ic svg{transform:rotate(180deg)}
+.stampf__t{display:grid;gap:1px;flex:1;min-width:0}
+.stampf__t b{font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--ink-strong)}
+.stampf__t span{font-size:var(--fs-micro);color:var(--ink-faint)}
+.stampf > svg{color:var(--ink-faint);flex:none}
+/* الختم المرفوع بيرقّ جوّه الصف بدل ما يبقى دايرة كبيرة لوحدها */
+.stampf .stampmark{width:40px;height:40px;font-size:.5625rem;border-width:1.5px;flex:none}
+
+/* صفوف المرفقات بيضا — كانت بلون السطح الغاطس، فالكارت كان
+   بيبان جواه بلوكات أغمق منه */
+.flist li{background:var(--surface-field)}
+
+/* ============================================================
+   ★ قايمة اختيار البنك رجعت لمكانها
+   ------------------------------------------------------------
+   القايمة `position:absolute`، يعني بتتحسب من أقرب أب عليه
+   `position` غير `static`. الأب ده كان كرت البنك — بس السطر
+   اللي كان بيديله `position:relative` كان جوّه بلوك الرسمات
+   اللي اتمسح، فراح معاه. فالقايمة راحت تتحسب من عنصر أبعد
+   بكتير وطلعت في نص الشاشة فوق الجدول.
+   ============================================================ */
+.sfoot__bank{position:relative}
+.bankpick{position:relative;grid-column:2;grid-row:2;justify-self:end}
+/* القايمة بتطلع فوق الزرار وملزوقة بطرفه — مش بطرف الكارت */
+.bankpick .ptag__p--up{
+  bottom:calc(100% + 6px);
+  inset-inline-end:0;inset-inline-start:auto
+}
+
+/* ============================================================
+   ★ «حقول إضافية» نقل للفراغ اللي جنب البيانات
+   ------------------------------------------------------------
+   الزرار كان تحت السطور، فكان بيزوّد ارتفاع الكارت بصف كامل —
+   والكارت أصلًا فيه فراغ أفقي واسع على الشمال قاعد مش بيعمل
+   حاجة. نقلناه هناك: متوسّط رأسيًا على حافة الكارت الشمال.
+
+   ربح مزدوج: الكارت بيقصر بمقدار الصف اللي راح، والفراغ
+   الميّت بقى ليه شغلانة.
+
+   ★ `position:absolute` لأن عدد صفوف الكارت متغيّر (الحقول
+   الإضافية نفسها بتزوّد صفوف) — فأي محاولة نحطه في عمود
+   ثابت في الجريد بتتكسر أول ما المستخدم يفتح حقل.
+   ============================================================ */
+.sheet__meta{position:relative}
+.xtra{
+  position:absolute;inset-inline-end:var(--sp-6);
+  top:50%;transform:translateY(-50%);
+  margin:0;grid-column:auto
+}
+@media (max-width:980px){
+  /* الشاشة ضاقت — مفيش فراغ جنبي أصلًا، فيرجع تحت السطور */
+  .xtra{position:static;transform:none;margin-top:var(--sp-3);grid-column:1 / -1}
+}
+
+/* ============================================================
+   ★ كارت المنشأة — الشعار متوسّط قصاد البيانات
+   ------------------------------------------------------------
+   كان `align-items:flex-start`، فمربّع الشعار (١٠٨px) بيتعلّق
+   من فوق قصاد تلات سطور نص أقصر منه — فالكارت بيبان مايل.
+   بقى متوسّط رأسيًا قصاد الكتلة اللي قصاده.
+   ============================================================ */
+.sheet__org{align-items:center}
+
+/* ============================================================
+   ★ سيكشن العميل — الحالة الفاضية والأوامر
+   ------------------------------------------------------------
+   الحالة الفاضية كانت **نص أخضر سايب** من غير أي شكل زرار،
+   وهي أهم أمر في الشاشة (فاتورة من غير عميل مش فاتورة).
+   بقت نفس صف «رفع الختم» بالظبط — نفس الكلاس، مش شبهه.
+
+   والحالة المليانة كان فيها لينك «تغيير» ملزوق في الاسم
+   وزرار «تعديل» تايه تحت. الاتنين بقوا جنب بعض على الشمال
+   بشكل أزرار الصفحة الموحّد.
+   ============================================================ */
+.scust{
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;column-gap:var(--sp-5)
+}
+.scust__n,.scust > span{grid-column:1}
+.scust__n{gap:0}
+.scust__acts{
+  grid-column:2;grid-row:1 / -1;align-self:center;
+  display:flex;align-items:center;gap:var(--sp-2)
+}
+@media (max-width:560px){
+  .scust{grid-template-columns:1fr}
+  .scust__acts{grid-column:1;grid-row:auto;margin-top:var(--sp-3)}
+}
+
+/* ============================================================
+   ★ مربّع رفع الشعار رقّ
+   ------------------------------------------------------------
+   ١٠٨×١٠٨ كان قد تلات سطور بيانات المنشأة كلها — يعني حاجة
+   بتتعمل مرة واحدة في عمر المنشأة واخدة نفس وزن البيانات
+   اللي بتتقرا في كل فاتورة. نزل ٨٠×٨٠: لسه هدف نقر مريح
+   (أكبر من الحد الأدنى ٤٤px بالضعف)، بس مش مزاحم.
+   ============================================================ */
+.sheet__org .updrop{width:80px;height:80px;gap:3px;border-radius:var(--r-ctrl)}
+.sheet__org .updrop svg{width:16px;height:16px}
+.sheet__org .updrop em{font-size:.625rem}
+.sheet__org .updrop img{width:60px;height:60px}
+
+/* ============================================================
+   ★ سيكشن العميل — دروب داون على اليمين، بيانات على الشمال
+   ------------------------------------------------------------
+   قبل كده كان: زرار بيفتح حقل، والحقل بيختفي بعد الاختيار،
+   وبعدين زرار «تغيير» بيرجّع الحقل، وزرار «تعديل» بيودّي
+   لشاشة تانية. تلات أشكال مختلفة لحاجة واحدة.
+
+   دلوقتي الحقل **موجود دايمًا**: بيدوس، بيدوّر، بيختار.
+   والتغيير هو نفس الحقل — مفيش زرار بيرجّع حاجة اتخبّت.
+   والبيانات بتتكتب في كارت على الشمال في آخر السيكشن:
+   التحكّم ناحية والقراية ناحية، فالعين مش بتلف.
+   ============================================================ */
+.sheet__cust{
+  display:grid;grid-template-columns:minmax(230px,320px) 1fr;
+  align-items:center;column-gap:var(--sp-6);row-gap:var(--sp-4)
+}
+.scust__pick{display:grid;gap:var(--sp-2);justify-items:start;min-width:0}
+.scust__pick .selx{width:100%}
+.scust__info{
+  justify-self:end;min-width:0;text-align:start;
+  display:grid;gap:2px;
+  padding:var(--sp-4) var(--sp-5);border-radius:var(--r-ctrl);
+  background:var(--surface-field);
+  font-size:var(--fs-xs);color:var(--ink-muted)
+}
+.scust__info b{
+  font-size:var(--fs-base);font-weight:var(--fw-semi);color:var(--ink-strong);
+  margin-bottom:2px
+}
+@media (max-width:760px){
+  .sheet__cust{grid-template-columns:1fr}
+  .scust__info{justify-self:stretch}
+}
+
+/* ============================================================
+   ★ ضبط رأس المستند وسيكشن العميل وشريط أدوات البنود
+   ============================================================ */
+
+/* ١) كارتَي الرأس بعرض واحد — كان اليمين أكبر من الشمال بـ٢٢٪ */
+.sheet__head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+
+/* ٢) «حقول إضافية» على نفس حشو الكارت (٢٠px) مش ٢٨ */
+/* ★★ الإزاحة صفر مش ٢٠px — وده اللي كنت غلطان فيه تلات مرات.
+   العنصر `position:absolute`، والصندوق اللي بيتحسب منه هو
+   **صندوق الحشو** (padding box) مش صندوق الحدود. يعني الـ٢٠px
+   بتاعة حشو الكارت متحسوبة أصلًا في نقطة الصفر — فلما كتبت
+   `inset-inline-end:20px` بقى المجموع ٤٠px، ضعف الحشو.
+   الصفر هنا معناه «على نفس خط المحتوى بالظبط». */
+.xtra{inset-inline-end:0}
+
+/* ٣) كارت بيانات العميل بيملا طول السيكشن بدل ما يزوّده */
+.scust__info{align-self:stretch;align-content:center}
+.scust__info .sep{
+  font-style:normal;color:var(--ink-faint);
+  margin-inline:6px
+}
+
+/* ٤) شريط الأدوات رجع لليمين (بداية السطر في العربي) */
+.sltools{justify-content:flex-start}
+
+/* ============================================================
+   ★ «إضافة بند» — صف جوّه الجدول
+   ------------------------------------------------------------
+   كان زرار في شريط الأدوات فوق الجدول. لكن إضافة بند بتحصل
+   وانت خلّصت آخر صف — فالإيد والعين تحت، والزرار كان فوق على
+   بُعد جدول كامل. دلوقتي هو آخر صف في الجدول: نفس الارتفاع،
+   نفس الحشو، وبيتمدّ على العرض كله فهدف نقره كبير.
+   ============================================================ */
+.ltable__add{
+  display:flex;align-items:center;gap:8px;width:100%;
+  min-width:900px;                      /* زي صفوف الجدول بالظبط */
+  padding:11px var(--sp-2);border:0;background:none;
+  border-radius:var(--r-ctrl);cursor:pointer;
+  font:inherit;font-size:var(--fs-xs);font-weight:var(--fw-medium);
+  color:var(--ink-muted);text-align:start;
+  transition:background 150ms var(--ease),color 150ms var(--ease)
+}
+.ltable__add svg{color:var(--ink-faint);flex:none}
+.ltable__add:hover{background:var(--surface-hover);color:var(--accent)}
+.ltable__add:hover svg{color:var(--accent)}
+
+/* ============================================================
+   ★ «تغيير» بقت كلمة موحّدة بدل أيقونة القلم
+   ------------------------------------------------------------
+   كانت تلات أيقونات قلم في الرأس + واحدة مكتوب جنبها «تعديل»
+   في كارت المنشأة — يعني نفس الفعل بشكلين. والأيقونة لوحدها
+   بتسيب المستخدم يخمّن: القلم ده بيعدّل الرقم ولا بيفتح شاشة؟
+
+   بقت كلها كلمة «تغيير»، نفس الكلمة اللي على «تغيير البنك» —
+   ففعل واحد له اسم واحد في الصفحة كلها.
+   ============================================================ */
+.smeta__p{
+  padding:2px 4px;font-size:var(--fs-micro);font-weight:var(--fw-medium);
+  color:var(--ink-faint);gap:0
+}
+.smeta__p:hover{color:var(--accent);background:none;text-decoration:underline;
+  text-underline-offset:3px}
+.smeta__p.on{color:var(--accent)}
+
+/* ============================================================
+   ★ كرت البنك — «تغيير» جنب اسم البنك
+   ------------------------------------------------------------
+   كانت زرار بحدود واقف لوحده في آخر الكارت، بعيد عن الحاجة
+   اللي بيغيّرها. بقت كلمة جنب اسم البنك مباشرة: بتقول «الاسم
+   ده قابل للتغيير» في نفس اللحظة اللي بتقراه فيها.
+   ============================================================ */
+.sfoot__bank{grid-template-columns:1fr}
+.sfoot__bank > .sheet__lbl{grid-column:1;grid-row:1}
+.sfoot__bank > .bankpick{grid-column:1;grid-row:2;justify-self:start}
+.sfoot__bank > span{grid-column:1;grid-row:3}
+.bankpick{
+  display:flex;align-items:baseline;gap:var(--sp-3);
+  position:relative;grid-column:1;grid-row:auto;justify-self:start
+}
+.bankpick > b{font-size:var(--fs-sm);color:var(--ink-strong)}
+/* القايمة بتطلع فوق الصف كله، متمسّكة بأول السطر */
+.bankpick .ptag__p--up{
+  bottom:calc(100% + 6px);inset-inline-start:0;inset-inline-end:auto
+}
+
+/* ============================================================
+   ★ مبدّل المنشآت — بقى دراور
+   ------------------------------------------------------------
+   كان قايمة منسدلة ٢٤٠px مكدّس فيها: حالة الربط مع الهيئة،
+   وقايمة المنشآت، والإعدادات. والمنشآت عند عميل كبير ممكن
+   تبقى عشرات — قايمة بالحجم ده مبتستحملش ده، ولا فيها مكان
+   لبحث ولا لاسم منشأة كامل.
+
+   دلوقتي الاسم نفسه هو الزرار (كان النص ميّت والسهم لوحده هو
+   الزرار — هدف ١٦px جنب اسم عرضه ١٥٠px)، والدراور بيدّي
+   مساحة لكل منشأة تاخد سطرين: الاسم وحالتها.
+   ============================================================ */
+.orgtop__id{
+  border:0;background:none;padding:var(--sp-2);margin:calc(var(--sp-2) * -1);
+  border-radius:var(--r-ctrl);cursor:pointer;font:inherit;text-align:start;
+  transition:background 150ms var(--ease)
+}
+.orgtop__id:hover{background:var(--nav-hover-bg)}
+.orgtop__cv{flex:none;color:var(--ink-faint);margin-inline-start:auto}
+.orgtop__id[aria-expanded="true"] .orgtop__cv{transform:rotate(180deg)}
+
+.odrw__zatca{
+  display:grid;grid-template-columns:auto 1fr;gap:2px 8px;
+  padding:var(--sp-4) var(--sp-5);border-radius:var(--r-ctrl);
+  background:var(--surface-sunken);margin-bottom:var(--sp-5)
+}
+.odrw__s{width:100%;margin-bottom:var(--sp-3)}
+.odrw__l{display:grid;gap:var(--sp-2)}
+.odrw__o{
+  display:flex;align-items:center;gap:var(--sp-3);width:100%;
+  padding:var(--sp-3) var(--sp-4);border:1px solid transparent;
+  border-radius:var(--r-ctrl);background:var(--surface-field);
+  cursor:pointer;font:inherit;text-align:start;
+  transition:border-color 150ms var(--ease),background 150ms var(--ease)
+}
+.odrw__o:hover{background:var(--surface-hover)}
+.odrw__o.is-on{border-color:var(--accent);background:var(--accent-quiet)}
+.odrw__o > svg{flex:none;color:var(--accent);margin-inline-start:auto}
+.odrw__av{
+  width:34px;height:34px;flex:none;border-radius:var(--r-chip);overflow:hidden;
+  display:grid;place-items:center;background:var(--surface-sunken);
+  font-size:var(--fs-xs);font-weight:var(--fw-bold);color:var(--ink-base)
+}
+.odrw__av img{width:100%;height:100%;object-fit:cover;display:block}
+.odrw__t{display:grid;gap:1px;min-width:0}
+.odrw__t b{
+  font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--ink-strong);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.odrw__t em{font-style:normal;font-size:var(--fs-micro);color:var(--ink-faint)}
+.odrw__o.is-on .odrw__t em{color:var(--accent)}
+
+.odrw__acts{
+  display:grid;gap:2px;margin-top:var(--sp-5);
+  padding-top:var(--sp-4);border-top:1px solid var(--border-table)
+}
+.odrw__i{
+  display:flex;align-items:center;gap:var(--sp-3);width:100%;
+  padding:10px var(--sp-4);border:0;border-radius:var(--r-ctrl);
+  background:none;cursor:pointer;font:inherit;font-size:var(--fs-sm);
+  color:var(--ink-base);text-align:start
+}
+.odrw__i:hover{background:var(--surface-hover);color:var(--ink-strong)}
+.odrw__i .omenu__ic{color:var(--ink-faint);display:flex}
+
+/* ★ الشعار يمين الكلام — زي ما الليتر هيد بيتقرا في المستند
+   العربي: الشعار الأول ثم اسم المنشأة وعنوانها.
+   `order:-1` بيقدّمه على النص، و`flex-start` بيلمّهم مع بعض
+   بدل ما `space-between` يرمي كل واحد في ناحية. */
+.sheet__org{justify-content:flex-start;gap:var(--sp-5)}
+.sheet__org .updrop{order:-1}
+
+/* ============================================================
+   ★ الملاحظات والختم جنب بعض
+   ------------------------------------------------------------
+   الختم كان صف تحت الملاحظات، فكان بيطوّل الكارت بصف كامل.
+   بقى على الشمال جنبها بنفس مربّع رفع الشعار (٨٠×٨٠)،
+   وارتفاع التكست إريا اتثبّت على ٨٠ كمان — فالاتنين واقفين
+   على نفس الخط من فوق ومن تحت، والكارت قصر.
+   ============================================================ */
+.sfoot__notes{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  column-gap:var(--sp-5);align-items:start
+}
+.snote{display:grid;gap:var(--sp-2);min-width:0}
+.sstamp{display:grid;gap:var(--sp-2);justify-items:start}
+.sfoot__notes .updrop{
+  width:80px;height:80px;gap:3px;border-radius:var(--r-ctrl)
+}
+.sfoot__notes .updrop svg{width:16px;height:16px}
+.sfoot__notes .updrop em{font-size:.625rem}
+.sfoot__notes .stampmark{width:56px;height:56px;font-size:.625rem;border-width:1.5px}
+/* نفس ارتفاع مربّع الختم بالظبط */
+.sfoot__notes .fld__i--area{width:100%;height:80px;min-height:80px;resize:vertical}
+
+@media (max-width:560px){
+  .sfoot__notes{grid-template-columns:1fr;row-gap:var(--sp-4)}
+}
+
+/* ============================================================
+   ★ مربّع الشعار — مرفوع افتراضيًا، والإزالة على الهوفر
+   ------------------------------------------------------------
+   كان مربّع إفلات فاضي، ونفس الدوسة بترفع وتشيل — يعني
+   المستخدم ممكن يمسح الشعار وهو فاكر إنه بيفتح المتصفّح.
+
+   دلوقتي الشعار ظاهر (المنشأة عندها شعار في إعداداتها أصلًا)،
+   و«إزالة الشعار» طبقة بتطلع فوقه عند الهوفر بس — فالمربّع
+   بيقول حالته، والأمر المدمّر بيبان لما تقرّب منه.
+   ============================================================ */
+.logobox{
+  position:relative;width:80px;height:80px;flex:none;
+  border-radius:var(--r-ctrl);overflow:hidden
+}
+.logobox.is-set{background:var(--surface-field)}
+.logobox img{width:100%;height:100%;object-fit:contain;display:block;padding:8px}
+.logobox__x{
+  position:absolute;inset:0;display:grid;place-content:center;gap:4px;
+  justify-items:center;padding:6px;border:0;cursor:pointer;
+  background:rgba(28,28,28,.72);color:#fff;
+  font:inherit;font-size:.625rem;font-weight:var(--fw-medium);
+  opacity:0;transition:opacity 150ms var(--ease)
+}
+.logobox:hover .logobox__x,
+.logobox__x:focus-visible{opacity:1}
+/* الحالة الفاضية — نفس مربّع الإفلات المتقطّع */
+.logobox__up{
+  width:100%;height:100%;display:grid;place-content:center;gap:3px;
+  justify-items:center;cursor:pointer;font:inherit;font-size:.625rem;
+  border:1.5px dashed var(--border-control);border-radius:var(--r-ctrl);
+  background:none;color:var(--ink-faint)
+}
+.logobox__up em{font-style:normal}
+.logobox__up:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ★ «إضافة بند» بتبدأ من عمود «اختر الصنف» مش من حافة الجدول.
+   عمود الرقم ١٨px والفجوة ٩px — فالإزاحة ٢٧px بالظبط، والزرار
+   بيقف على نفس خط الحقل اللي هيتملى أول ما يتضاف البند. */
+.ltable__add{padding-inline-start:27px}
+
+/* ★ الشعار يمين الكلام — القاعدة القديمة كانت بتدوّر على
+   `.updrop`، والعنصر بقى `.logobox` بعد ما الرفع والإزالة
+   اتفصلوا، فالترتيب كان راجع لوضعه الأصلي من غير ما يبان. */
+.sheet__org .logobox{order:-1}
+
+/* ★ وزواياه مدوّرة زي أسطح السيستم، مش مربّع حقل */
+.logobox{border-radius:18px}
+.logobox.is-set img{padding:10px}
+.logobox__x{border-radius:18px}
+.logobox__up{border-radius:18px}
+
+/* ★ الملاحظات بتاخد عرض العمود كله.
+   القاعدة القديمة كانت لسه حاطة `justify-items:start` من أيام
+   ما الكروت كانت فليكس — فالتكست إريا كانت بتنكمش على عرض
+   محتواها بدل ما تملا العمود، والفراغ اللي جنبها كان بيبان
+   كأنه غلطة. */
+.sfoot__notes{justify-items:stretch;max-width:none}
+.snote{width:100%}
+/* ★ نفس ارتفاع مربّع الختم (٨٠px) بالظبط — الاتنين جنب بعض
+   فلازم يقفوا على خط واحد من فوق ومن تحت */
+.sfoot__notes .fld__i--area{width:100%;height:80px;min-height:80px}
+
+/* المرفقات: كارت تالت في نفس العمود تحت الملاحظات */
+.sfoot__att{
+  background:var(--surface-raised);border-radius:var(--r-card);
+  padding:var(--sp-5) var(--sp-6);display:grid;gap:var(--sp-3);min-width:0
+}
+
+/* شعار البنك — مربّع ثابت جنب الاسم، بيستحمل صورة أو أيقونة */
+.bankpick{align-items:center}
+.bankav{
+  width:32px;height:32px;flex:none;border-radius:var(--r-chip);
+  display:grid;place-items:center;overflow:hidden;
+  background:var(--surface-field);color:var(--ink-muted)
+}
+.bankav img{width:100%;height:100%;object-fit:contain;padding:4px;display:block}
+
+/* ============================================================
+   ★ عنوان البنود وأدواته في سطر واحد
+   ------------------------------------------------------------
+   كان العنوان سطر لوحده والأدوات سطر تحته — سطرين بيقولوا
+   حاجة واحدة: «ده جدول البنود، ودي مفاتيحه». بقوا سطر واحد:
+   العنوان يمين، الأدوات شمال، ومتوسّطين رأسيًا مع بعض.
+   ============================================================ */
+.slhead{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--sp-4);flex-wrap:wrap;margin-bottom:var(--sp-4)
+}
+.slhead .sheet__lbl{margin:0}
+.slhead .sltools{margin:0;justify-content:flex-end;flex:0 1 auto}
+.sheet__lines > .sheet__lbl{margin-bottom:0}
+
+/* ★ صف «إضافة بند»: بيبدأ من عمود «اختر الصنف»، خلفيته بيضا،
+   والكلمة في النص.
+   العرض `calc(100% - 27px)` مش `100%` — عشان الإزاحة تتخصم من
+   العرض بدل ما الصف يطلع بره الجدول من الناحية التانية. */
+.ltable .ltable__add{
+  margin-inline-start:27px;
+  width:calc(100% - 27px);min-width:calc(900px - 27px);
+  padding:12px var(--sp-4);padding-inline-start:var(--sp-4);
+  justify-content:center;
+  background:var(--surface-field);border-radius:var(--r-ctrl)
+}
+.ltable .ltable__add:hover{background:var(--surface-hover)}
+
+/* ============================================================
+   ★ دراور معاينة الطباعة — تنضيف
+   ------------------------------------------------------------
+   اللي كان بايظ:
+   ١) تلات أسطح بألوان مختلفة فوق بعض: رأس كريمي، جسم بلون
+      تاني، وكبسولة «قالب الطباعة» عايمة فوق الورقة بلون ثالث
+      وظل. الورقة نفسها المفروض تكون هي الحاجة الوحيدة اللي
+      ليها لون مختلف عن الخلفية.
+   ٢) الأوامر كلها في سطر واحد بيلف — والإغلاق مرمي في آخره
+      بين الأزرار.
+   ٣) أيقونة عين جنب «معاينة الطباعة» بتقول اللي العنوان
+      قايله بالحرف.
+
+   الحل: الخلفية بيضا بالكامل (الورقة هي اللي بتبان، مش
+   الشيل)، والرأس سطرين — الاسم والإغلاق فوق، والأوامر تحت
+   في مجموعتين مفصولتين بمسافة مرنة: الشكل والقالب على اليمين،
+   الطباعة والـPDF على الشمال.
+   ============================================================ */
+.pp__box{background:#FFFFFF}
+.pp__h{
+  display:grid;gap:10px;flex-wrap:nowrap;
+  padding:12px 16px;background:#FFFFFF;
+  border-bottom:1px solid var(--border-table)
+}
+.pp__hr{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pp__t{font-size:var(--fs-sm);font-weight:var(--fw-bold);color:var(--ink-strong)}
+.pp__ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pp__sp{flex:1 1 auto;min-width:0}
+.pp__body{background:#FFFFFF;padding:20px 16px 28px}
+
+/* القالب بقى حقل في الرأس، مش كبسولة عايمة فوق الورقة */
+.pp__tpl{
+  position:static;display:flex;align-items:center;gap:8px;
+  padding:0;border:0;background:none;box-shadow:none;border-radius:0
+}
+.pp__tpl span{font-size:var(--fs-xs);color:var(--ink-muted);flex:none}
+.pp__tpl .selx{min-height:32px;min-width:150px;font-size:var(--fs-xs)}
+
+/* الورقة: ظل خفيف جدًا هو اللي بيفصلها عن الأبيض اللي وراها،
+   مع خط شعرة عشان تفضل بانة لو الظل اتشال */
+.pp__paper--full,.pp__paper--thermal{
+  box-shadow:0 1px 2px rgba(28,28,28,.06),0 0 0 1px var(--paper-line)
+}
+
+/* ★ بيانات العميل سطر جنب الحقل بدل كارت على الشمال.
+   `align-self:end` + حشو تحتاني نص ارتفاع الحقل (٤٠px) — كده
+   السطر بيقف على منتصف الحقل بالظبط، مش على منتصف العمود
+   اللي فيه اللِيبل والحقل مع بعض. */
+.scust__meta{
+  margin:0;align-self:end;justify-self:start;padding-bottom:17px;
+  font-size:var(--fs-xs);color:var(--ink-muted);min-width:0
+}
+.scust__meta .sep{font-style:normal;color:var(--ink-faint);margin-inline:6px}
+@media (max-width:760px){
+  .scust__meta{align-self:start;padding-bottom:0;justify-self:start}
+}
+
+/* ============================================================
+   ★ «إضافة بند» بستايل الحقول، والأيقونات غمقت
+   ------------------------------------------------------------
+   الصف كان سطح أبيض سادة من غير حد — فمكانش باين إنه هدف نقر
+   لحد ما تهوفر عليه. بقى بنفس برواز الحقول اللي فوقه بالظبط:
+   حد ١px بلون `--border-control`، نفس نصف القطر، ونفس
+   الارتفاع الأدنى ٤٠px. فالصف بيقرا كإنه «الصف الجاي».
+
+   والأيقونات كانت كلها `--ink-faint` — باهتة لدرجة إنها كانت
+   بتبان رمادي ميّت جنب نص أغمق منها. غمقت درجة لـ`--ink-muted`
+   في كل أزرار الصفحة، فالأيقونة والكلمة بقوا بنفس الوزن.
+   ============================================================ */
+.ltable .ltable__add{
+  border:1px solid var(--border-control);
+  min-height:40px;padding:0 var(--sp-4);
+  color:var(--ink-muted)
+}
+.ltable .ltable__add:hover{
+  background:var(--surface-hover);border-color:var(--accent);color:var(--accent)
+}
+
+/* الأيقونات في كل الأزرار — درجة أغمق */
+.xtra__b svg,
+.gbtn2 svg,
+.ptag__b svg,
+.sfoot__add svg,
+.sfoot__row svg,
+.smeta__p svg,
+.ltable__add svg,
+.odrw__i .omenu__ic{color:var(--ink-muted)}
+.xtra__b:hover svg,
+.gbtn2:hover svg,
+.ptag__b:hover svg,
+.sfoot__add:hover svg,
+.sfoot__row:hover svg,
+.ltable__add:hover svg{color:var(--accent)}
+
+/* ============================================================
+   ★ سيكشن العميل — المحاذاة بالصفوف مش بالحشو
+   ------------------------------------------------------------
+   كنت بوسّط سطر البيانات قصاد الحقل بحشو تحتاني محسوب بإيدي —
+   وده بيتكسر أول ما يتغيّر مقاس اللِيبل أو الحقل.
+
+   دلوقتي `.scust__pick` عليها `display:contents`، فاللِيبل
+   والحقل بيدخلوا الجريد الأب كعناصر: اللِيبل صف ١، الحقل
+   صف ٢. وسطر البيانات بيتحط في **نفس صف الحقل** بـ
+   `align-self:center` — فالتوسيط بقى علاقة بين صفّين، مش رقم.
+   ============================================================ */
+.sheet__cust{align-items:start;row-gap:var(--sp-2)}
+.scust__pick{display:contents}
+.sheet__cust > .sheet__lbl{grid-column:1;grid-row:1}
+.sheet__cust .selx{grid-column:1;grid-row:2;width:100%}
+.sheet__cust > .fld__e{grid-column:1;grid-row:3}
+.scust__meta{
+  grid-column:2;grid-row:2;align-self:center;justify-self:start;
+  padding-bottom:0;margin:0
+}
+@media (max-width:760px){
+  .sheet__cust{grid-template-columns:1fr}
+  .scust__meta{grid-column:1;grid-row:3;align-self:start}
+}
+
+/* ============================================================
+   ★ كرت البنك — الشعار يمين، والاسم والآيبان تحت بعض
+   ------------------------------------------------------------
+   الآيبان كان سطر مستقل تحت الكارت، فالشعار كان بيتوسّط قصاد
+   الاسم لوحده والآيبان سايب تحتهم. دلوقتي الاتنين كتلة واحدة
+   على شمال الشعار، متمسّكين بنفس الخط من اليمين، والشعار
+   متوسّط قصاد الكتلة كلها.
+   ============================================================ */
+.bankav{width:44px;height:44px;border-radius:var(--r-ctrl)}
+.bankav img{padding:5px}
+.bankpick{display:flex;align-items:center;gap:var(--sp-3)}
+.bankpick__t{display:grid;gap:2px;justify-items:start;min-width:0}
+.bankpick__n{display:flex;align-items:baseline;gap:var(--sp-3)}
+.bankpick__t .num{font-size:var(--fs-xs);color:var(--ink-muted)}
+
+/* ★ الخط تحت رأس المعاينة اتشال — الدراور كله أبيض والورقة
+   ليها إطارها، فالخط كان بيقسم سطح واحد من غير داعي.
+   الفصل بقى بالمسافة زي باقي الصفحة. */
+.pp__h{border-bottom:0}
+
+/* سهم الرجوع قبل اسم الشاشة */
+.pagehead__lead{display:flex;align-items:center;gap:var(--sp-3);min-width:0}
+.pagehead__back{
+  width:36px;height:36px;flex:none;display:grid;place-items:center;
+  border:0;background:none;border-radius:var(--r-ctrl);cursor:pointer;
+  color:var(--ink-muted);
+  transition:background 150ms var(--ease),color 150ms var(--ease)
+}
+.pagehead__back:hover{background:var(--surface-hover);color:var(--ink-strong)}
+/* السهم في العربي بيشاور ناحية اليمين */
+[dir="rtl"] .pagehead__back svg{transform:scaleX(-1)}
+
+/* ============================================================
+   ★ زرار الرجوع شفّاف
+   ------------------------------------------------------------
+   كان بياخد سطح عند الهوفر — والسهم لوحده كفاية. الهوفر بقى
+   على لون الحبر بس، فالزرار مفيهوش صندوق أصلًا.
+   ============================================================ */
+.pagehead__back{background:none}
+.pagehead__back:hover{background:none;color:var(--ink-strong)}
+.pagehead__back:active{color:var(--accent)}
+
+/* ============================================================
+   ★ الخط الفاصل بقى هو مقبض القايمة
+   ------------------------------------------------------------
+   الطي كان زرار مدفون جوّه القايمة نفسها — يعني عشان تفتحها
+   لازم تلاقي زرار جوّه حاجة مقفولة. دلوقتي المقبض على الحد
+   نفسه: خط رفيع، بتسحبه فالقايمة تتوسّع أو تضيق، وبتدوس عليه
+   فتتطوى.
+
+   منطقة الإمساك ١١px (الخط ١px بس) — حد أدنى معقول لماوس
+   بيقرّب على خط، من غير ما الخط نفسه يتخن.
+   ============================================================ */
+.main{position:relative}
+.navrail{
+  position:absolute;inset-block:0;inset-inline-start:0;
+  width:1px;background:var(--border-table);
+  z-index:30;cursor:col-resize;touch-action:none;
+  transition:background 150ms var(--ease)
+}
+/* منطقة الإمساك — أوسع من الخط وشفّافة */
+.navrail::before{
+  content:'';position:absolute;inset-block:0;
+  inset-inline-start:-5px;width:11px
+}
+.navrail:hover{background:var(--accent)}
+.navrail__b{
+  position:absolute;top:50%;inset-inline-start:50%;
+  transform:translate(50%,-50%);
+  width:26px;height:26px;display:grid;place-items:center;
+  border:1px solid var(--border-control);border-radius:8px;
+  background:var(--surface-page);color:var(--ink-muted);
+  cursor:pointer;opacity:0;
+  transition:opacity 150ms var(--ease),color 150ms var(--ease),
+             border-color 150ms var(--ease)
+}
+[dir="ltr"] .navrail__b{transform:translate(-50%,-50%)}
+.navrail:hover .navrail__b,
+.navrail__b:focus-visible{opacity:1}
+.navrail__b:hover{color:var(--accent);border-color:var(--accent)}
+
+/* الشيل بيتحرّك مع السحب من غير أنيميشن (الأنيميشن بيعمل تأخير
+   محسوس)، وبيتحرّك بنعومة عند الطي بس */
+.shell{transition:grid-template-columns .2s var(--ease)}
+.shell:has(.navrail:active){transition:none}
+
+/* ============================================================
+   ★ نصوص القايمة بتتقصّ بدل ما تلف
+   ------------------------------------------------------------
+   مع عرض متغيّر، أي اسم أطول من العمود كان هينزل سطر تاني
+   ويكسر ارتفاع الصف. كلهم بقوا سطر واحد بتلاتة نقط.
+   ============================================================ */
+.nav .label,
+.nav .nav__link,
+.nav .navprofile__n,
+.nav .navprofile__t,
+.nav .navsig__t,
+.nav .orgtop__n{
+  min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+.nav__item,.nav__grouphead,.nav__link{min-width:0}
+.nav .ico{flex:none}
+
+/* ============================================================
+   ★★ القايمة المقفولة — أيقونات بس
+   ------------------------------------------------------------
+   اللي كان بايظ: القواعد القديمة كانت بتخبّي لِيبل
+   `.nav__grouphead` — والعناصر في الماركب الحالي اسمها
+   `.nav__item`. فالليبلات فضلت ظاهرة، ولمّا زوّدنا القص
+   بالنقط بقت «فو…» و«عر…» و«إش…» — كلمة مقطوعة أسوأ من
+   مفيش كلمة، لأنها بتقول للمستخدم إن فيه حاجة ناقصة.
+
+   البلوك ده بيغطي كل جزء في القايمة بالاسم، والقاعدة الحاكمة
+   واحدة: **في الوضع المقفول مفيش نص خالص** — أيقونة متوسّطة
+   في مربّع ٤٠px، والاسم بيتقال في التولتيب (`title`).
+   ============================================================ */
+.shell.collapsed .nav{overflow:visible}
+.shell.collapsed .nav__scroll{padding-inline:var(--sp-2)}
+
+/* ١) عناصر التنقّل */
+.shell.collapsed .nav__item,
+.shell.collapsed .nav__link,
+.shell.collapsed .nav__grouphead{
+  justify-content:center;gap:0;
+  padding-inline:0;width:100%
+}
+.shell.collapsed .nav .label{display:none}
+.shell.collapsed .nav .chev,
+.shell.collapsed .navprofile__chev,
+.shell.collapsed .orgtop__cv{display:none}
+.shell.collapsed .nav__sub{display:none}
+.shell.collapsed .nav__sectiontitle{display:none}
+
+/* العنصر النشط: مربّع متوسّط مش شريط ممدود */
+.shell.collapsed .nav__item{
+  height:40px;border-radius:var(--r-ctrl)
+}
+.shell.collapsed .nav__item .ico{margin:0}
+
+/* ٢) شارة المنشأة فوق — الأفاتار بس، في النص */
+.shell.collapsed .orgtop{padding-inline:var(--sp-2);justify-content:center}
+.shell.collapsed .orgtop__id{justify-content:center;width:100%;gap:0;margin:0}
+.shell.collapsed .orgtop__n{display:none}
+
+/* ٣) الفوتر — صورة المستخدم في النص، والتوقيع بيختفي */
+.shell.collapsed .nav__foot{padding-inline:var(--sp-2)}
+.shell.collapsed .navprofile{justify-content:center;gap:0;padding-inline:0}
+.shell.collapsed .navprofile__t{display:none}
+.shell.collapsed .navsig{display:none}
+
+/* ٤) القوايم المنبثقة بتطلع جنب القايمة مش جوّاها */
+.shell.collapsed .pmenu{inset-inline-start:calc(100% + 6px);inset-inline-end:auto;bottom:0}
+
+/* ============================================================
+   ★ المقبض اتنقل من المحتوى للشيل
+   ------------------------------------------------------------
+   الزرار كان بيتقص من النص: هو راكب على الخط بإزاحة ٥٠٪، يعني
+   نصّه بيقع بره صندوق `.main` — و`.main` عليها `overflow:hidden`.
+   دلوقتي المقبض ابن مباشر للشيل ومتحطّ عند حد القايمة، فنصّه
+   في القايمة ونصّه في المحتوى والاتنين جوّه الشيل.
+   ============================================================ */
+.shell{position:relative}
+.main{overflow:hidden}
+/* ★★ الحافة الصح هي `inset-inline-start` مش `end`.
+   في العربي الـ**start هي اليمين** — والقايمة على اليمين،
+   فحدّها بيبعد عن اليمين بمقدار عرضها. أنا كنت كاتب `end`
+   (الشمال)، فالخط راح يبعد ٢٥٢px عن **حافة الشاشة الشمال**
+   وقعد في نص الجدول.
+
+   والجميل إن السطر ده صح في الاتجاهين من غير استثناء: في
+   الإنجليزي الـstart هي الشمال، والقايمة على الشمال. */
+.navrail{
+  inset-inline-end:auto;
+  inset-inline-start:var(--nav-w);
+  transition:inset-inline-start .2s var(--ease)
+}
+.shell.collapsed .navrail{inset-inline-start:var(--nav-w-collapsed)}
+.shell:has(.navrail:active) .navrail{transition:none}
+/* الزرار متوسّط على الخط بمقاييس فيزيائية — الخط ١px ومتماثل،
+   فالتوسيط الفيزيائي شغّال في الاتجاهين */
+.navrail__b{
+  inset-inline-start:auto;left:50%;transform:translate(-50%,-50%)
+}
+
+/* ============================================================
+   ★ أزرار القايمة المقفولة مربّعة
+   ------------------------------------------------------------
+   كانت بتاخد عرض العمود كله (٧٢px) وارتفاع ٤٤ — يعني مستطيل
+   والأيقونة ضايعة في نصّه. بقت ٤٠×٤٠ متوسّطة، فالهوفر
+   والعنصر النشط بيرسموا مربّع حوالين الأيقونة بالظبط.
+   ============================================================ */
+.shell.collapsed .nav__item,
+.shell.collapsed .nav__link{
+  width:40px;height:40px;margin-inline:auto;
+  padding:0;border-radius:var(--r-ctrl)
+}
+.shell.collapsed .nav__group{display:grid;justify-items:center}
+.shell.collapsed .nav__scroll{padding-inline:0}
+
+/* ★ زرار طي القايمة ظاهر على طول.
+   كان بيظهر عند الهوفر بس — يعني عشان تقفل القايمة لازم
+   تعرف إن فيه زرار مخبّي على الخط أصلًا. الخط رفيع والزرار
+   صغير، فوجوده الدايم مش تشويش. */
+.navrail__b{opacity:1}
+.navrail__b:hover{background:var(--surface-page)}
+
+/* ============================================================
+   ★ مبدّل العرض — جدول / كروت
+   ============================================================ */
+.vsw{
+  display:flex;gap:2px;margin-inline-start:auto;flex:none;
+  padding:3px;border-radius:var(--r-ctrl);background:var(--surface-sunken)
+}
+.vsw button{
+  width:30px;height:28px;display:grid;place-items:center;
+  border:0;background:none;border-radius:7px;cursor:pointer;
+  color:var(--ink-muted);
+  transition:background 150ms var(--ease),color 150ms var(--ease)
+}
+.vsw button:hover{color:var(--ink-strong)}
+.vsw button.is-on{background:var(--surface-field);color:var(--ink-strong)}
+
+/* ============================================================
+   ★ جدول الفواتير
+   ============================================================ */
+.ivtable__w{overflow-x:auto;margin-top:var(--sp-2)}
+.ivtable{min-width:900px}
+.ivtable thead th{
+  padding:0 var(--sp-3) 10px;font-size:var(--fs-micro);
+  font-weight:var(--fw-semi);color:var(--ink-muted);text-align:start;
+  border-bottom:1px solid var(--border-table)
+}
+.ivtable thead th.n{text-align:end}
+.ivtable tbody td{
+  padding:11px var(--sp-3);vertical-align:middle;
+  border-bottom:1px solid var(--border-table)
+}
+.ivtable tbody tr:last-child td{border-bottom:0}
+.ivtable tbody tr{transition:background 150ms var(--ease)}
+.ivtable tbody tr:hover{background:var(--surface-hover)}
+.ivtable tbody tr.selected{background:var(--surface-selected)}
+
+/* المتأخر: شريط على الحافة مش خلفية — الخلفية الملوّنة في
+   جدول بتبقى بقعة كبيرة بتكسر المسح بالعين */
+.ivtable tbody tr.is-late td:first-child{
+  box-shadow:inset -3px 0 0 var(--state-critical)
+}
+
+.ivt__no{
+  border:0;background:none;padding:0;cursor:pointer;font:inherit;
+  font-family:var(--font-mono);font-size:var(--fs-sm);font-weight:var(--fw-semi);
+  color:var(--ink-strong);display:block
+}
+.ivt__no:hover{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.ivt__wh,.ivt__cid{
+  display:block;font-style:normal;font-size:var(--fs-micro);color:var(--ink-faint);margin-top:2px
+}
+.ivt__cn{
+  display:block;font-size:var(--fs-sm);color:var(--ink-base);
+  max-width:24ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.ivt__st{display:flex;gap:5px;flex-wrap:wrap}
+.ivt__due{font-size:var(--fs-xs);color:var(--ink-muted)}
+.ivt__amt{
+  display:inline-flex;align-items:center;gap:3px;
+  font-family:var(--font-mono);font-size:var(--fs-base);font-weight:var(--fw-semi);
+  color:var(--ink-strong);letter-spacing:-.02em
+}
+.ivt__amt svg{width:11px;height:11px;color:var(--ink-faint)}
+.ivt__was{
+  display:flex;align-items:center;gap:3px;justify-content:flex-end;
+  font-family:var(--font-mono);font-size:var(--fs-micro);color:var(--ink-faint)
+}
+.ivt__was svg{width:9px;height:9px}
+.dt td.n .ivt__amt,.dt td.n .ivt__was{justify-content:flex-end}
+.ivtable td.n{text-align:end}
+
+/* ---------- الأوامر: بتظهر على الصف اللي إيدك عليه ---------- */
+.ivtable__ac{width:1%;white-space:nowrap}
+.ivt__acts{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.ivt__ic,.ivt__go{
+  opacity:0;pointer-events:none;
+  transition:opacity 120ms var(--ease)
+}
+.ivtable tbody tr:hover .ivt__ic,
+.ivtable tbody tr:hover .ivt__go,
+.ivtable tbody tr:focus-within .ivt__ic,
+.ivtable tbody tr:focus-within .ivt__go{opacity:1;pointer-events:auto}
+.ivt__ic{
+  width:30px;height:30px;display:grid;place-items:center;flex:none;
+  border:0;background:none;border-radius:var(--r-ctrl);cursor:pointer;
+  color:var(--ink-muted)
+}
+.ivt__ic:hover{background:var(--surface-sunken);color:var(--accent)}
+.ivt__ic:disabled{opacity:.35;cursor:default}
+.ivt__ic:disabled:hover{background:none;color:var(--ink-muted)}
+.ivt__go{height:30px;padding:0 10px;font-size:var(--fs-micro)}
+
+@media (max-width:760px){
+  /* الجدول مش بيتقرا على شاشة صغيرة — الكروت بتشتغل أحسن */
+  .vsw{display:none}
+}
+
+/* ============================================================
+   ★★ توحيد التحكّمات في السيستم كله
+   ------------------------------------------------------------
+   القاعدة: أي حاجة بتتداس ليها **واحد من تلات ارتفاعات بس**،
+   ونصف قطر واحد، وحشو أفقي واحد. مفيش رقم من دماغ حد بعد كده.
+
+   md (٣٨) — شرائط الأدوات، الفلاتر، الأزرار الرئيسية
+   lg (٤٠) — حقول الفورمات الكبيرة
+   sm (٣٠) — التحكّمات جوّه صف أو خلية جدول
+
+   ملاحظة عن `.search`: هو مش زرار، هو صندوق جوّاه input —
+   فالارتفاع بيتحط على الصندوق والـinput بياخد `height:100%`
+   عشان منطقة الكتابة تبقى قد الصندوق كله مش شريط في نصّه.
+   ============================================================ */
+
+/* ---------- md: شرائط الأدوات والفلاتر ---------- */
+.ltools > *,
+.ltools .search,
+.pick1__b,
+.dr__btn,
+.ltools__more,
+.btn,
+.xtra__b,
+.ptag__b,
+.stampf{
+  height:var(--ctl-md);min-height:var(--ctl-md);
+  border-radius:var(--r-ctrl);
+  font-size:var(--fs-xs);
+  padding-inline:var(--ctl-px)
+}
+.ltools > *{align-self:center}
+.search{padding-inline:var(--ctl-px)}
+.search input{height:100%;font-size:var(--fs-xs)}
+.btn{font-weight:var(--fw-semi);font-size:var(--fs-sm)}
+
+/* الأزرار الأيقونية في نفس الشرائط: مربّعة بنفس الارتفاع */
+.vsw{
+  height:var(--ctl-md);padding:3px;border-radius:var(--r-ctrl);
+  align-items:center
+}
+.vsw button{width:32px;height:100%;border-radius:7px}
+
+/* ---------- sm: جوّه الصفوف والجداول ---------- */
+.gbtn2,
+.ivt__ic,
+.ivt__go,
+.segs--sm button,
+.smeta__sel,
+.pp__ctrl .gbtn2{
+  height:var(--ctl-sm);min-height:var(--ctl-sm);
+  border-radius:var(--r-ctrl);font-size:var(--fs-micro)
+}
+.ivt__ic{width:var(--ctl-sm);padding:0}
+.pp__tpl .selx{min-height:var(--ctl-sm);height:var(--ctl-sm)}
+
+/* ---------- lg: حقول المستند ---------- */
+.sheet .selx,
+.sheet .fld__i:not(.fld__i--area),
+.scust__pick .selx{
+  min-height:var(--ctl-lg);height:var(--ctl-lg);
+  border-radius:var(--r-ctrl)
+}
+/* الحقول جوّه صف الجدول بتفضل sm — الصف مش فورم */
+.ltable__r .selx,
+.ltable__r .fld__i{min-height:var(--ctl-sm);height:var(--ctl-sm)}
+.ltable .ltable__add{height:var(--ctl-sm);min-height:var(--ctl-sm)}
+
+/* ---------- الشريط نفسه: محاذاة رأسية واحدة ---------- */
+.ltools{align-items:center}
+.tophead__ctrl,.docact{align-items:center}
+
+/* ============================================================
+   ★ مقبض القايمة بيختفي مع القايمة
+   ------------------------------------------------------------
+   تحت ٩٠٠px القايمة بتبقى دراور بيطلع من الحافة، مش عمود —
+   فالمقبض كان بيفضل معلّق في نص المحتوى وهو مربوط بعرض قايمة
+   مش موجودة أصلًا.
+   ============================================================ */
+@media (max-width:900px){
+  .navrail{display:none}
+}
+
+/* ============================================================
+   ★ تصليحات جدول الفواتير
+   ------------------------------------------------------------
+   ١) الهيدر كان شريط رمادي (`--surface-raised`) موروث من ستايل
+      `.dt` القديم، وحشوه `0 12px 10px` — يعني ملزوق من فوق
+      ومن غير مساحة تنفّس. بقى شفّاف بحشو متساوي وخط شعرة تحت
+      بس: الفصل بالمسافة والخط، مش ببلوك لون.
+
+   ٢) الشرايط الحمرا على حافة الصفوف المتأخرة اتشالت. كانت
+      بتعمل عمود متقطّع من البقع على طرف الجدول، والمعلومة
+      نفسها مكتوبة أصلًا في شارة «متأخر».
+
+   ٣) الأيقونات كانت بتزحلق: صف فيه «إصدار» بيدفع الأيقونات
+      ٧١px عن صف مالوش أمر. دلوقتي الأوامر **جريد بخانات
+      ثابتة** — كل أيقونة في نفس العمود في كل الصفوف، وخانة
+      الأمر الرئيسي بتفضل محجوزة فاضية لو الصف مالوش أمر.
+   ============================================================ */
+.ivtable thead th{
+  background:none;
+  padding:10px var(--ctl-px);
+  border-bottom:1px solid var(--border-table)
+}
+.ivtable tbody tr.is-late td:first-child{box-shadow:none}
+.ivtable tbody td{padding:10px var(--ctl-px)}
+
+.ivt__acts{
+  display:grid;align-items:center;gap:4px;
+  grid-template-columns:repeat(3,var(--ctl-sm)) 84px var(--ctl-sm);
+  justify-content:end;justify-items:center
+}
+.ivt__gap{display:block;width:84px;height:1px}
+.ivt__go{width:84px;justify-content:center;padding:0 8px}
+
+/* ============================================================
+   ★ ترتيب أوامر الصف، وإخفاؤها لحد الهوفر
+   ------------------------------------------------------------
+   ١) **الأمر الرئيسي بقى الأيمن.** هو اللي المستخدم جاي
+      عشانه — فيقابل عينه أول ما تدخل الخانة، والأيقونات
+      المساعدة بعده ملزوقة بالـ⋮.
+
+   ٢) **الأيقونات المعطّلة كانت بتبان من غير هوفر.** السبب
+      باج أسبقية: `.ivt__ic{opacity:0}` وبعديها
+      `.ivt__ic:disabled{opacity:.35}` — فالمعطّل كان بياخد
+      ٠٫٣٥ في كل الأحوال. النتيجة صفوف فيها أيقونة باهتة
+      واحدة أو اتنين سايبين في الفراغ. دلوقتي الشفافية بتتحكّم
+      من مكان واحد (الهوفر)، والتعطيل بيتقال باللون مش
+      بالشفافية.
+   ============================================================ */
+.ivt__acts{
+  grid-template-columns:84px repeat(3,var(--ctl-sm)) var(--ctl-sm)
+}
+
+/* كل الأوامر مخفية لحد ما إيدك تيجي على الصف */
+.ivt__ic,.ivt__go,.ivt__acts .rmenu{
+  opacity:0;pointer-events:none;
+  transition:opacity 120ms var(--ease)
+}
+.ivtable tbody tr:hover .ivt__ic,
+.ivtable tbody tr:hover .ivt__go,
+.ivtable tbody tr:hover .ivt__acts .rmenu,
+.ivtable tbody tr:focus-within .ivt__ic,
+.ivtable tbody tr:focus-within .ivt__go,
+.ivtable tbody tr:focus-within .ivt__acts .rmenu{opacity:1;pointer-events:auto}
+
+/* ★ `opacity:inherit` كان غلط — بيورّث من الأب (اللي شفافيته
+   ١) مش من قاعدة `.ivt__ic{opacity:0}`. لازم صفر صريح، وقاعدة
+   الهوفر أقوى منه في الأسبقية فبتكسبه لما إيدك تيجي على الصف. */
+.ivt__ic:disabled{opacity:0;color:var(--w-400);cursor:default}
+.ivt__ic:disabled:hover{background:none;color:var(--w-400)}
+
+/* ============================================================
+   ★ مقبض القايمة ظاهر على طول ومتوسّط
+   ------------------------------------------------------------
+   الخط والزرار كانوا بيستنوا الهوفر عشان يبانوا — يعني
+   المستخدم لازم يعرف إنهم موجودين قبل ما يشوفهم. دلوقتي
+   ظاهرين دايمًا بنبرة هادية، والهوفر بيغمّقهم بس.
+   ============================================================ */
+.navrail .navrail__b{opacity:1}
+.navrail{background:var(--border-table)}
+.navrail:hover{background:var(--accent)}
+.navrail:hover .navrail__b{border-color:var(--accent);color:var(--accent)}
+/* متوسّط رأسيًا في ارتفاع الشاشة */
+.navrail__b{top:50%;bottom:auto;margin:0}
+
+/* ============================================================
+   ★ شريط الفلاتر — مسافة واحدة وخلفية واحدة
+   ------------------------------------------------------------
+   الفراغات كانت مختلفة لأن كل فلتر ليه هامش من عنده، والخلفيات
+   كانت تلاتة: حقل أبيض، وسطح كريمي، وشفّاف. الشريط الواحد
+   لازم يكون **إيقاع واحد**: نفس المسافة بين كل حاجتين، ونفس
+   السطح في كل الأزرار.
+   ============================================================ */
+.ltools{gap:var(--sp-3)}
+.ltools > * + *{margin-inline-start:0}
+.ltools .search,
+.ltools .pick1__b,
+.ltools .dr__btn,
+.ltools__more{
+  background:var(--surface-field);
+  border:1px solid var(--border-control)
+}
+.ltools__more svg,.dr__btn svg:first-child,.pick1__b svg{color:var(--ink-muted)}
+
+/* المدى جوّه زرار الفترة — نبرة تحتانية، مش عنوان تاني */
+.dr__rg{
+  font-style:normal;font-size:var(--fs-micro);color:var(--ink-faint);
+  padding-inline-start:8px;margin-inline-start:2px;
+  border-inline-start:1px solid var(--border-table)
+}
+
+/* ============================================================
+   ★ الترقيم — أسهم أيقونات وكومبوبوكس لعدد الصفوف
+   ============================================================ */
+.pager{
+  border-top:0;padding:var(--sp-5) var(--sp-2) var(--sp-2);
+  gap:var(--sp-4);flex-wrap:wrap
+}
+.pager__side{display:flex;align-items:center;gap:var(--sp-5)}
+.pager__pages{gap:2px}
+.pager__btn{min-width:32px;height:32px}
+.pager__nav{display:grid;place-items:center;color:var(--ink-muted)}
+/* «السابق» بيشاور ناحية اليمين في العربي، و«التالي» ناحية الشمال */
+.pager__nav:first-child svg{transform:rotate(90deg)}
+.pager__nav:last-child svg{transform:rotate(-90deg)}
+[dir="ltr"] .pager__nav:first-child svg{transform:rotate(-90deg)}
+[dir="ltr"] .pager__nav:last-child svg{transform:rotate(90deg)}
+
+.perpage{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-xs);color:var(--ink-muted)}
+.perpage__f{
+  position:relative;display:flex;align-items:center;
+  height:var(--ctl-sm);border:1px solid var(--border-control);
+  border-radius:var(--r-ctrl);background:var(--surface-field);
+  transition:border-color 150ms var(--ease)
+}
+.perpage__f:focus-within{border-color:var(--accent)}
+.perpage__i{
+  width:46px;height:100%;border:0;background:none;padding:0 0 0 2px;
+  font:inherit;font-size:var(--fs-xs);color:var(--ink-strong);
+  text-align:center;outline:0
+}
+.perpage__i::-webkit-outer-spin-button,
+.perpage__i::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.perpage__c{
+  width:22px;height:100%;display:grid;place-items:center;flex:none;
+  border:0;background:none;cursor:pointer;color:var(--ink-faint)
+}
+.perpage__p{
+  position:absolute;bottom:calc(100% + 5px);inset-inline-start:0;z-index:40;
+  min-width:100%;padding:5px;display:grid;gap:1px;
+  background:var(--surface-field);border-radius:var(--r-ctrl);
+  box-shadow:var(--shadow-pop)
+}
+.perpage__p button{
+  padding:7px 12px;border:0;border-radius:var(--r-sm);background:none;
+  font:inherit;font-size:var(--fs-xs);color:var(--ink-base);
+  cursor:pointer;text-align:center
+}
+.perpage__p button:hover{background:var(--surface-hover);color:var(--ink-strong)}
+.perpage__p button.on{color:var(--accent);font-weight:var(--fw-semi)}
+
+/* ============================================================
+   ★ خط الشجرة بين المجموعة وعناصرها
+   ------------------------------------------------------------
+   العناصر الفرعية كانت مزاحة بالفراغ بس — فالعلاقة بينها وبين
+   أبوها كانت مفهومة من المسافة مش مرسومة. خط رأسي رفيع بينزل
+   من تحت المجموعة على طول العناصر بيقولها صراحةً.
+
+   الخط على `inset-inline-start` — اليمين في العربي — على نفس
+   محور أيقونة المجموعة فوقه.
+   ============================================================ */
+.nav__group.open .nav__sub{position:relative}
+.nav__group.open .nav__sub::before{
+  content:'';position:absolute;inset-block:2px;
+  inset-inline-start:calc(var(--sp-3) + 9px);
+  width:1px;background:var(--border-table)
+}
+/* العنصر النشط بيقطع الخط عند مستواه — بيقول «الفرع ده هو
+   اللي إحنا فيه» من غير ما نزوّد أي عنصر جديد */
+.nav__group.open .nav__link.active{position:relative}
+
+/* ============================================================
+   ★ أوامر الكارت = أوامر الجدول
+   ------------------------------------------------------------
+   الكارت كان فيه أزرار بنص («تنزيل PDF»، «إرسال») بترتيب
+   معكوس، والجدول أيقونات بترتيب تاني. نفس الشاشة بشكلين
+   وأوامرها بتتقري بطريقتين — دلوقتي واحدة.
+   ============================================================ */
+.ivcard__acts{
+  order:3;display:grid;align-items:center;gap:4px;flex:none;
+  grid-template-columns:84px repeat(3,var(--ctl-sm));
+  justify-items:center
+}
+.ivcard:hover .ivt__ic,
+.ivcard:hover .ivt__go,
+.ivcard:focus-within .ivt__ic,
+.ivcard:focus-within .ivt__go{opacity:1;pointer-events:auto}
+.ivcard .ivt__ic:hover{background:var(--surface-sunken);color:var(--accent)}
+
+/* ============================================================
+   ★ زرار المقبض بيقلب مع حالة القايمة
+   ------------------------------------------------------------
+   الأيقونة فيها سهم جوّه لوح. لما القايمة مفتوحة السهم بيشاور
+   ناحيتها (يمين في العربي) = «اقفلني»، ولما تتقفل بينقلب
+   للناحية التانية = «افتحني». من غير الانقلاب ده الزرار بيقول
+   نفس الحاجة في الحالتين، والمستخدم بيدوس عليه عشان يجرّب.
+   ============================================================ */
+.navrail__b svg{transition:transform .2s var(--ease)}
+.shell.collapsed .navrail__b svg{transform:scaleX(-1)}
+
+/* الخط والزرار هاديين، وبيتلوّنوا لما إيدك تقرّب من الحافة */
+.navrail{background:var(--border-table)}
+.navrail__b{border-color:var(--border-control);color:var(--ink-faint)}
+.navrail:hover{background:var(--accent)}
+.navrail:hover .navrail__b{border-color:var(--accent);color:var(--accent)}
+
+/* ★ الشريط اترصّ: ٨px بين كل حاجتين بدل ١٢ */
+.ltools{gap:var(--sp-2)}
+
+/* ============================================================
+   ★ المقبض بيظهر بالهوفر بس
+   ------------------------------------------------------------
+   الخط والزرار مخفيين تمامًا لحد ما الماوس توصل طرف القايمة.
+   منطقة الإمساك (١١px) فاضلة شغّالة وهي مخفية — يعني التحسّس
+   شغّال قبل ما حاجة تبان، فالمستخدم بيلاقيه أول ما يقرّب
+   من الحافة من غير ما الخط يقعد مرسوم طول الوقت.
+   ============================================================ */
+.navrail{background:transparent;transition:background 150ms var(--ease)}
+.navrail .navrail__b{opacity:0;transition:opacity 150ms var(--ease),
+  border-color 150ms var(--ease),color 150ms var(--ease)}
+.navrail:hover{background:var(--accent)}
+.navrail:hover .navrail__b,
+.navrail:focus-within .navrail__b{opacity:1}
+.navrail:hover .navrail__b{border-color:var(--accent);color:var(--accent)}
+
+/* ============================================================
+   ★ الحشو رجع لمكانه الصح في شريط الفلاتر
+   ------------------------------------------------------------
+   كنت مطبّق مقاس التحكّمات على `.ltools > *` — والأبناء دول
+   نصّهم **أغلفة** (`.pick1`، `.dr`) مش أزرار. فالغلاف خد حشو
+   ١٢px حوالين الزرار اللي جوّاه أصلًا حشوه ١٢، والنتيجة فراغ
+   مضاعف جوّه كل فلتر.
+
+   دلوقتي المقاس على الزرار نفسه، والغلاف بياخد المحاذاة بس.
+   ============================================================ */
+.ltools > *{padding:0;height:auto;min-height:0}
+.ltools > .search,
+.ltools > .ltools__more,
+.ltools > .vsw{height:var(--ctl-md)}
+.ltools > .search{padding-inline:var(--ctl-px)}
+.ltools > .ltools__more{padding-inline:var(--ctl-px)}
+.ltools > .vsw{padding:3px}
+
+/* ============================================================
+   ★ لوحة المجموعة لما القايمة مقفولة
+   ============================================================ */
+.nav__fly{display:none}
+.shell.collapsed .nav__group{position:relative}
+.shell.collapsed .nav__group:hover > .nav__fly,
+.shell.collapsed .nav__group:focus-within > .nav__fly{
+  display:grid;gap:1px;
+  /* ★ `inset-inline-start` — الـstart في العربي هي اليمين،
+     والقايمة على اليمين، فالحساب من اليمين بيطلّع اللوحة ناحية
+     المحتوى. (`end` كان بيحطها جوّه القايمة نفسها.) */
+  position:absolute;top:-6px;inset-inline-start:calc(100% + 8px);
+  z-index:60;min-width:186px;padding:6px;
+  background:var(--surface-field);border-radius:var(--r-ctrl);
+  box-shadow:var(--shadow-pop)
+}
+.nav__flyt{
+  padding:6px 10px 7px;font-size:var(--fs-micro);font-weight:var(--fw-semi);
+  color:var(--ink-faint)
+}
+.nav__flyi{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 10px;border-radius:var(--r-sm);
+  font-size:var(--fs-sm);color:var(--ink-base);text-decoration:none
+}
+.nav__flyi:hover{background:var(--surface-hover);color:var(--ink-strong)}
+.nav__flyi.active{color:var(--accent);font-weight:var(--fw-semi);background:var(--accent-quiet)}
+.nav__flyi svg{color:var(--accent);flex:none}
+
+/* ★ الزرار المقفول مربّع فعلًا — `height` لوحدها مكانتش كفاية
+   لأن `.nav__item` عليها `min-height:44px` من القاعدة الأساسية،
+   والـmin بيكسب الـheight. */
+.shell.collapsed .nav__item,
+.shell.collapsed .nav__link{
+  width:40px;height:40px;min-height:40px;max-height:40px
+}
+
+/* ★ لوحة المجموعة: إزاحة فيزيائية صريحة.
+   الخاصية المنطقية هنا كانت بتلف في الاتجاه الغلط مرتين، وده
+   مكان محدّد ومعروف (لوحة جنب عمود ثابت) — فالكتابة الفيزيائية
+   مع حارس اتجاه أوضح وأقل عرضة للّخبطة. */
+.shell.collapsed .nav__group:hover > .nav__fly,
+.shell.collapsed .nav__group:focus-within > .nav__fly{
+  inset-inline-start:auto;inset-inline-end:auto;
+  right:calc(100% + 6px);left:auto
+}
+[dir="ltr"] .shell.collapsed .nav__group:hover > .nav__fly,
+[dir="ltr"] .shell.collapsed .nav__group:focus-within > .nav__fly{
+  left:calc(100% + 8px);right:auto
+}
+
+/* ============================================================
+   ★★ القايمة المقفولة لازم تقول «انت فين»
+   ------------------------------------------------------------
+   المشكلة: في الوضع المقفول العناصر الفرعية مخفية، والمجموعة
+   نفسها مكانش عليها أي علامة — فالمستخدم اللي واقف على «فواتير
+   المبيعات» بيشوف عمود أيقونات رمادية متطابقة، مفيش فيها واحدة
+   بتقول «انت هنا».
+
+   دلوقتي حاجتين:
+   ١) **المجموعة بتاخد شكل النشط** لو جوّاها الشاشة الشغّالة،
+      وعليها نقطة صغيرة على الحافة تفرّقها عن العنصر المفرد
+      النشط: دي «جواها النشط» مش «هي النشط».
+   ٢) **كل أيقونة ليها لوحة بالهوفر** — المفردة بتقول اسمها،
+      والمجموعة بتفتح عناصرها والعنصر الشغّال معلّم. قاعدة
+      واحدة لكل الأيقونات، مش بعضها بيرد وبعضها ساكت.
+   ============================================================ */
+.shell.collapsed .nav__item.is-ison{
+  background:var(--nav-active-bg);color:var(--nav-ink-active);
+  font-weight:var(--fw-semi)
+}
+.shell.collapsed .nav__item.is-ison .ico{opacity:1}
+/* نقطة على الحافة: «الشاشة الشغّالة جوّه المجموعة دي» */
+.shell.collapsed .nav__group{position:relative}
+.shell.collapsed .nav__item.is-ison::after{
+  content:'';position:absolute;top:50%;transform:translateY(-50%);
+  inset-inline-start:-7px;width:3px;height:16px;border-radius:2px;
+  background:var(--accent-indicator)
+}
+
+/* اللوحة: نفس السلوك للمجموعة وللعنصر المفرد */
+.nav__one{position:relative}
+.shell.collapsed .nav__one:hover > .nav__fly,
+.shell.collapsed .nav__one:focus-within > .nav__fly{
+  display:grid;gap:1px;position:absolute;top:0;z-index:60;
+  padding:6px;min-width:150px;
+  right:calc(100% + 6px);left:auto;
+  background:var(--surface-field);border-radius:var(--r-ctrl);
+  box-shadow:var(--shadow-pop)
+}
+[dir="ltr"] .shell.collapsed .nav__one:hover > .nav__fly,
+[dir="ltr"] .shell.collapsed .nav__one:focus-within > .nav__fly{
+  left:calc(100% + 8px);right:auto
+}
+.nav__fly--one .nav__flyi{cursor:default}
+
+/* الجسر الشفّاف: الفراغ ٨px بين الأيقونة واللوحة كان بيقطع
+   الهوفر وانت رايح ناحيتها، فاللوحة تقفل في نص الطريق */
+/* ★★ الجسر كان على الناحية الغلط.
+   اللوحة بتطلع **شمال** الأيقونة، فالفراغ اللي الماوس بتعدّيه
+   بين الاتنين على **يمين اللوحة**. أنا كنت حاطط الجسر
+   `right:100%` — ودي بتحطه على شمالها، في ناحية مفيهاش حاجة.
+   الصح `left:100%`: بيبدأ من حافة اللوحة اليمنى ويمتد ناحية
+   الأيقونة فيوصّل الهوفر.
+
+   وزوّدت عرضه ٢٠px وعلّيته شوية فوق وتحت (`inset-block:-8px`)
+   عشان الحركة القُطرية — الماوس نادرًا بتمشي في خط أفقي مظبوط. */
+.shell.collapsed .nav__group > .nav__fly::before,
+.shell.collapsed .nav__one > .nav__fly::before{
+  content:'';position:absolute;inset-block:-8px;
+  left:100%;width:20px
+}
+[dir="ltr"] .shell.collapsed .nav__group > .nav__fly::before,
+[dir="ltr"] .shell.collapsed .nav__one > .nav__fly::before{left:auto;right:100%}
+
+/* ★★ اللوحة كانت بتتقص قبل ما تبان.
+   `.nav__scroll` عليها `overflow:auto` عشان القايمة الطويلة
+   تتمرّر — وده بيقص أي حاجة بتطلع بره حدودها، واللوحة بتطلع
+   بره بالظبط. في الوضع المقفول القايمة أيقونات بس (حوالي
+   ٤٤٠px) فمفيش سبب تفضل عليها قص: بتبقى `visible` وتسيب
+   اللوحة تخرج.
+   ملاحظة: مينفعش نخلي محور واحد `visible` والتاني `auto` —
+   المتصفح بيحوّل الاتنين لـauto. فالحل كله أو ولا حاجة. */
+.shell.collapsed .nav__scroll{overflow:visible}
+.shell.collapsed .nav{overflow:visible}
+
+/* ============================================================
+   ★ عناوين الشاشات أكبر، والمسافة بين السكشنز أوسع
+   ------------------------------------------------------------
+   العنوان كان ٢٠px — نفس مقاس أي عنوان تاني في الصفحة تقريبًا،
+   فالشاشة كانت بتبدأ من غير ما حد يقول اسمها بصوت عالي. بقى
+   ٢٦px بوزن أتقل وتتبّع حروف أضيق (العناوين الكبيرة بتحتاج
+   تضييق عشان ما تبانش مفكوكة).
+
+   والمسافة الرئيسية بين السكشنز من ١٦ لـ٢٤: هي دي المسافة
+   اللي بتخلّي الفراغ يبان **كقرار** مش كفاضي. وحشو الصفحة
+   نفسه اتوسّع عشان الكروت ما تلزقش في حواف الشاشة.
+   ============================================================ */
+.pagehead__title{
+  font-size:1.625rem;          /* ٢٦px */
+  font-weight:var(--fw-black);
+  letter-spacing:-.02em;line-height:1.25
+}
+.pagehead__sub{font-size:var(--fs-sm);margin-top:5px}
+.pagehead{margin-bottom:var(--sp-5)}
+
+/* المسافة الرئيسية بين السكشنز */
+.sheet,.sheet__head,.sheet__foot,.sfoot__side,.sfoot__col{gap:var(--sp-6)}
+.sheet{margin:0 0 var(--sp-6)}
+.content{padding:var(--sp-6) var(--sp-6) var(--sp-7)}
+
+/* شرائط الشاشة: الأدوات والتبويبات والجدول ياخدوا نفس النفَس */
+.dtabs{margin-bottom:var(--sp-5)}
+.ltools{padding:0 var(--sp-2) var(--sp-5)}
+.ivtable__w{margin-top:var(--sp-3)}
+.ivlist{gap:var(--sp-3)}
+
+/* ============================================================
+   ★ تهدية أوزان الخط في الكروت
+   ------------------------------------------------------------
+   الكروت كانت بتستخدم `bold`/`black` في حاجات كتير: عنوان
+   الكرت، والأرقام، والأسماء، والشارات — فكل حاجة بتصرخ
+   وبالتالي مفيش حاجة بتبان. الهرمية في الكارت المفروض
+   تتعمل بـ**الحجم واللون**، والوزن يفضل محجوز للرقم اللي
+   الكارت موجود عشانه.
+
+   القاعدة هنا: عناوين الكروت والأسماء تنزل `semi`، والنصوص
+   المساعدة `medium`، والأرقام الكبيرة بس هي اللي بتفضل تقيلة.
+   ============================================================ */
+.panel__title,.sect__t,.sheet__lbl,
+.ivcard__no,.ivt__no,
+.scust__n,.scust__info b,
+.sfoot__bank b,.bankpick > .bankpick__t b,
+.stampf__t b,.odrw__t b,
+.summary__item .v,.deflist dd,
+.stat__v,.need__t,.dl__t{
+  font-weight:var(--fw-semi)
+}
+
+.panel__sub,.sect__s,.smeta__k,.ivcard__sub,.ivt__cn,
+.fld__l,.pagehead__sub,.perpage,.pager{
+  font-weight:var(--fw-medium)
+}
+
+/* الشارات كانت بوزن bold على مقاس صغير — ده بيخلّيها بقعة
+   حبر. نصف درجة أخف وبتفضل مقروءة */
+.st{font-weight:var(--fw-medium)}
+
+/* الرقم الرئيسي في الكارت هو اللي بياخد الوزن التقيل */
+.ivcard__now,.ivt__amt,.sgrand__v,.summary__value{font-weight:var(--fw-bold)}
+
+/* ============================================================
+   ★★ المبدّلات بقت بنفس لغة الفلاتر
+   ------------------------------------------------------------
+   مبدّل العرض والمبدّل المقسّم (`segs`/`vtog`) كانوا بياخدوا
+   `--surface-sunken` — رمادي الهوية الغامق — كمسار للمبدّل.
+   والدرجة دي **مش مستخدمة في أي فلتر ولا تبويب ولا زرار** في
+   الشاشة، فكانت بتبان كأنها عنصر من منتج تاني وسط الشريط.
+
+   دلوقتي المبدّل زيه زي أي فلتر: سطح أبيض وحد `--border-control`
+   ونفس نصف القطر. والمختار جوّاه بيتعلّم بنبرة البراند الهادية
+   (`--accent-quiet`) — نفس اللي بتستخدمه الفلاتر الشغّالة،
+   فالمعنى «ده المفعّل» بيتقال بنفس الطريقة في الشاشة كلها.
+   ============================================================ */
+.vsw,.segs,.vtog{
+  background:var(--surface-field);
+  border:1px solid var(--border-control);
+  border-radius:var(--r-ctrl);
+  box-shadow:none
+}
+.vsw button,.segs button,.vtog button{
+  color:var(--ink-muted);background:none;box-shadow:none;
+  border-radius:calc(var(--r-ctrl) - 4px)
+}
+.vsw button:hover,.segs button:hover,.vtog button:hover{
+  background:var(--surface-hover);color:var(--ink-strong)
+}
+.vsw button.is-on,.segs button.on,.vtog button.on,
+.vsw button[aria-pressed="true"]{
+  background:var(--accent-quiet);color:var(--accent);
+  font-weight:var(--fw-semi);box-shadow:none
+}
+
+/* ============================================================
+   ★★ ارتفاع واحد لكل حاجة بتتداس أو بتتكتب فيها
+   ------------------------------------------------------------
+   الصف الواحد في جدول البنود كان فيه أربع ارتفاعات: ٢٩ · ٣٠ ·
+   ٤٠ · ٣٣. القاعدة دلوقتي: أي حقل أو زرار أو قايمة أو بحث
+   ارتفاعه `--ctl-h` — من غير استثناء إلا التكست إريا (بتتمدّد
+   بطبيعتها) والأزرار النصّية اللي مالهاش صندوق أصلًا.
+   ============================================================ */
+.selx,.fld__i:not(.fld__i--area),
+.btn,.gbtn2,.xtra__b,.ptag__b,.ltools__more,.stampf,
+.search,.pick1__b,.dr__btn,.perpage__f,
+.ltable__add,.ivt__ic,.ivt__go,.vsw,.segs,.vtog,
+.sheet .selx,.sheet .fld__i:not(.fld__i--area),
+.ltable__r .selx,.ltable__r .fld__i,
+.pp__ctrl .gbtn2,.pp__tpl .selx,
+.segs--sm button,.smeta__sel{
+  height:var(--ctl-h);min-height:var(--ctl-h);
+  box-sizing:border-box
+}
+/* الأيقونية منهم مربّعة */
+.ivt__ic,.vsw button{width:var(--ctl-h)}
+.vsw button{height:100%}
+.segs button,.vtog button{height:100%}
+/* خانات العرض في الصف تتمركز على نفس الارتفاع */
+.ltable__r{align-items:center}
+.ltable__t,.ltable__i{min-height:var(--ctl-h);display:flex;align-items:center}
+.ltable__x{width:var(--ctl-h);height:var(--ctl-h)}
+/* شبكة أوامر الصف بتتبع الارتفاع الجديد */
+.ivt__acts,.ivcard__acts{grid-template-columns:84px repeat(3,var(--ctl-h)) var(--ctl-h)}
+.ivcard__acts{grid-template-columns:84px repeat(3,var(--ctl-h))}
+.ivt__go,.ivt__gap{width:84px}
+
+/* ★ زرار الرجوع بقى له صندوق زي أي زرار أيقوني في السيستم:
+   مربّع بارتفاع التحكّمات، سطح أبيض وحد `--border-control`.
+   كان شفّاف تمامًا فكان بيبان كأنه سهم مرسوم جنب العنوان
+   مش حاجة تتداس. */
+.pagehead__back{
+  width:var(--ctl-h);height:var(--ctl-h);
+  background:var(--surface-field);
+  border:1px solid var(--border-control);
+  border-radius:var(--r-ctrl);
+  color:var(--ink-muted)
+}
+.pagehead__back:hover{
+  background:var(--surface-hover);
+  border-color:var(--accent);color:var(--accent)
+}

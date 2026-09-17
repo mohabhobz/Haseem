@@ -12,6 +12,7 @@ import { fmtDate, fmtMoney } from '../lib/format.js'
 import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    البيانات الجمركية.
@@ -246,11 +247,11 @@ function CustomsForm({ d, onClose }) {
         </label>
         <label className="fld">
           <span className="fld__l">المورد <em>اختياري</em></span>
-          <select className="fld__i" value={sup} disabled={readOnly}
+          <Select className="fld__i" value={sup} disabled={readOnly}
             onChange={(e) => setSup(e.target.value)}>
             <option value="">مش مربوط بمورد</option>
             {DATA.suppliers.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-          </select>
+          </Select>
           <em className="fld__h">للربط مع سجل المورد بس — مش بيأثر على الأرقام.</em>
         </label>
       </div>
@@ -298,11 +299,11 @@ function CustomsForm({ d, onClose }) {
       <div className="frow frow--2" style={{ marginTop: 14 }}>
         <label className="fld">
           <span className="fld__l">نسبة الضريبة</span>
-          <select className="fld__i" value={rate} disabled={readOnly}
+          <Select className="fld__i" value={rate} disabled={readOnly}
             onChange={(e) => setRate(e.target.value)}>
             <option value="0.15">١٥٪</option>
             <option value="0">٠٪</option>
-          </select>
+          </Select>
           <em className="fld__h">ضريبة الاستيراد إما ١٥٪ أو صفر.</em>
         </label>
         <label className="fld">

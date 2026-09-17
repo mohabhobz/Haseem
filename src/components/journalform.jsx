@@ -5,6 +5,7 @@ import { Ico } from './icons.jsx'
 import { toast } from './feedback.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { Select } from './selectfield.jsx'
 
 /* ============================================================
    قيد يومية يدوي.
@@ -118,21 +119,21 @@ export function JournalForm({ onClose }) {
             const both = Number(l.dr) > 0 && Number(l.cr) > 0
             return (
               <div key={l.key} className={`jlines__row${both ? ' is-bad' : ''}`}>
-                <select className="fld__i" value={l.acc}
+                <Select className="fld__i" value={l.acc}
                   onChange={(e) => set(l.key, { acc: e.target.value })}>
                   <option value="">اختر الحساب…</option>
                   {DATA.accounts.map((a) => (
                     <option key={a.id} value={a.id}>{a.id} — {DATA.accLabel(a)}</option>
                   ))}
-                </select>
+                </Select>
 
-                <select className="fld__i" value={l.cc}
+                <Select className="fld__i" value={l.cc}
                   onChange={(e) => set(l.key, { cc: e.target.value })}>
                   <option value="">—</option>
                   {DATA.costCenters.map((c) => (
                     <option key={c.id} value={c.id}>{c.ar}</option>
                   ))}
-                </select>
+                </Select>
 
                 <input className="fld__i num" inputMode="decimal" value={l.dr} placeholder="0.00"
                   onChange={(e) => set(l.key, { dr: e.target.value, cr: '' })} />

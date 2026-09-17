@@ -7,6 +7,7 @@ import { periodRange } from '../components/pagefilter.jsx'
 import { fmtDate, fmtMoney, TODAY } from '../lib/format.js'
 import * as R from '../lib/reports.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    كشف الحساب.
@@ -73,13 +74,13 @@ export default function RepStatement() {
       extra={
         <label className="repbar__f repbar__f--wide">
           <span className="repbar__l">الحساب</span>
-          <select className="fld__i" value={acc} onChange={(e) => pick(e.target.value)}>
+          <Select className="fld__i" value={acc} onChange={(e) => pick(e.target.value)}>
             {Object.entries(grouped).map(([type, list]) => (
               <optgroup key={type} label={GROUP_AR[type] || type}>
                 {list.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
               </optgroup>
             ))}
-          </select>
+          </Select>
         </label>
       }
     >

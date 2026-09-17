@@ -3,6 +3,7 @@ import { SettingsShell } from '../components/settingsshell.jsx'
 import { Ico, Riyal } from '../components/icons.jsx'
 import { toast } from '../components/feedback.jsx'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    إعدادات المستندات.
@@ -71,25 +72,25 @@ export default function SetDocs() {
           </div>
           <label className="fld">
             <span className="fld__l">اللغة الافتراضية</span>
-            <select className="fld__i" value={lang} onChange={(e) => setLang(e.target.value)}>
+            <Select className="fld__i" value={lang} onChange={(e) => setLang(e.target.value)}>
               {LANGS.map((l) => <option key={l.id} value={l.id}>{l.ar}</option>)}
-            </select>
+            </Select>
             <em className="fld__h">لغة الواجهة وقوالب الطباعة</em>
           </label>
           <label className="fld">
             <span className="fld__l">نوع العميل الأساسي</span>
-            <select className="fld__i" value={kind} onChange={(e) => setKind(e.target.value)}>
+            <Select className="fld__i" value={kind} onChange={(e) => setKind(e.target.value)}>
               {CUST_KINDS.map((k) => <option key={k.id} value={k.id}>{k.ar}</option>)}
-            </select>
+            </Select>
             <em className="fld__h">يحدد نوع الفاتورة المقترح</em>
           </label>
         </div>
 
         <label className="fld" style={{ marginTop: 14 }}>
           <span className="fld__l">الحساب البنكي الافتراضي للفواتير</span>
-          <select className="fld__i" value={bank} onChange={(e) => setBank(e.target.value)}>
+          <Select className="fld__i" value={bank} onChange={(e) => setBank(e.target.value)}>
             {DATA.banks.map((k) => <option key={k.id} value={k.id}>{k.ar} — {k.holder}</option>)}
-          </select>
+          </Select>
           <em className="fld__h">
             يُطبع على الفاتورة مع الآيبان. تُضاف الحسابات وتُعدَّل من «النقد والبنوك».
           </em>
@@ -103,16 +104,16 @@ export default function SetDocs() {
         <div className="frow frow--2">
           <label className="fld">
             <span className="fld__l">فاصل الآلاف والكسور</span>
-            <select className="fld__i ltr" value={numF} onChange={(e) => setNumF(e.target.value)}>
+            <Select className="fld__i ltr" value={numF} onChange={(e) => setNumF(e.target.value)}>
               {NUM_FORMATS.map((f) => <option key={f.id} value={f.id}>{f.ar}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="fld">
             <span className="fld__l">الأرقام السالبة</span>
-            <select className="fld__i" value={neg} onChange={(e) => setNeg(e.target.value)}>
+            <Select className="fld__i" value={neg} onChange={(e) => setNeg(e.target.value)}>
               <option value="paren">بين قوسين — (101,600.00)</option>
               <option value="minus">بإشارة سالب — −101,600.00</option>
-            </select>
+            </Select>
             <em className="fld__h">القوسان هما المتعارف عليه محاسبيًا</em>
           </label>
         </div>
@@ -161,9 +162,9 @@ export default function SetDocs() {
         <h2 className="fcard__t">قالب الطباعة <em>شكل الورقة اللي بتخرج من الطابعة</em></h2>
         <label className="fld">
           <span className="fld__l">القالب الافتراضي</span>
-          <select className="fld__i" value={tpl} onChange={(e) => setTpl(e.target.value)}>
+          <Select className="fld__i" value={tpl} onChange={(e) => setTpl(e.target.value)}>
             {DATA.printTemplates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-          </select>
+          </Select>
           <em className="fld__h">
             تقدر تغيّره وقت الطباعة لأي مستند — ده الافتراضي بس.
           </em>

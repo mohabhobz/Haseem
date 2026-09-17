@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/layout.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    عميل جديد.
@@ -245,10 +246,10 @@ export default function CustomerNew() {
                 <div className="frow frow--2" style={{ marginTop: 14 }}>
                   <label className="fld">
                     <span className="fld__l">نوع الهوية الإضافية <em className="fld__opt">اختياري</em></span>
-                    <select className="fld__i" value={idType}
+                    <Select className="fld__i" value={idType}
                       onChange={(e) => { setIdType(e.target.value); if (!e.target.value) setIdNo('') }}>
                       {ID_TYPES.map((t) => <option key={t.id || 'none'} value={t.id}>{t.ar}</option>)}
-                    </select>
+                    </Select>
                   </label>
                   <div className="fld">
                     <span className="fld__l">رقم الهوية الإضافية</span>
@@ -335,9 +336,9 @@ export default function CustomerNew() {
               </label>
               <label className="fld">
                 <span className="fld__l">البلد</span>
-                <select className="fld__i" value={country} onChange={(e) => setCountry(e.target.value)}>
+                <Select className="fld__i" value={country} onChange={(e) => setCountry(e.target.value)}>
                   {COUNTRIES.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-                </select>
+                </Select>
               </label>
               <label className="fld">
                 <span className="fld__l">الرمز البريدي</span>
@@ -353,9 +354,9 @@ export default function CustomerNew() {
             <div className="frow frow--2">
               <label className="fld">
                 <span className="fld__l">شروط السداد</span>
-                <select className="fld__i" value={terms} onChange={(e) => setTerms(e.target.value)}>
+                <Select className="fld__i" value={terms} onChange={(e) => setTerms(e.target.value)}>
                   {TERMS.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-                </select>
+                </Select>
                 <em className="fld__h">تُحسب منها تواريخ استحقاق فواتيره تلقائيًا</em>
               </label>
               <label className="fld">

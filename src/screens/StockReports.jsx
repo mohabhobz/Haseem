@@ -8,6 +8,7 @@ import { SAR } from '../components/data.jsx'
 import { useSort, byNum, byText } from '../components/pagefilter.jsx'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    تقارير المخزون — تقرير التقييم والرصيد الفعلي.
@@ -79,10 +80,10 @@ export default function StockReports() {
   const storePick = (
     <label className="fld fld--inline">
       <span className="fld__l">المستودع</span>
-      <select className="fld__i" value={store} onChange={(e) => setStore(e.target.value)}>
+      <Select className="fld__i" value={store} onChange={(e) => setStore(e.target.value)}>
         <option value="all">جميع المستودعات</option>
         {DATA.stores.map((s) => <option key={s.id} value={s.id}>{s.ar}</option>)}
-      </select>
+      </Select>
     </label>
   )
 

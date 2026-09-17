@@ -5,6 +5,7 @@ import { Modal } from '../components/modal.jsx'
 import { toast, confirmAction } from '../components/feedback.jsx'
 import { fmtDate } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    الفريق والصلاحيات.
@@ -431,10 +432,10 @@ function InviteForm({ roles, modules, onClose, onDone }) {
 
       <label className="fld" style={{ marginTop: 14 }}>
         <span className="fld__l">نطاق الفروع</span>
-        <select className="fld__i" value={branch} onChange={(e) => setBranch(e.target.value)}>
+        <Select className="fld__i" value={branch} onChange={(e) => setBranch(e.target.value)}>
           <option value="all">كل الفروع</option>
           {DATA.branches.map((b) => <option key={b.id} value={b.id}>{b.ar}</option>)}
-        </select>
+        </Select>
         <em className="fld__h">بيشوف مستندات الفروع دي بس</em>
       </label>
 

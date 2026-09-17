@@ -7,6 +7,7 @@ import { fmtMoney, TODAY } from '../lib/format.js'
 import { PrintPreview } from '../components/printpreview.jsx'
 import * as DATA from '../data/mock.js'
 import { toast, confirmAction } from '../components/feedback.jsx'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    إشعار مدين جديد.
@@ -140,20 +141,20 @@ export default function DebitNoteNew() {
             <div className="frow frow--2">
               <div className="fld">
                 <span className="fld__l">العميل <em className="req">مطلوب</em></span>
-                <select className={`fld__i${show('cust') ? ' is-bad' : ''}`} value={cust}
+                <Select className={`fld__i${show('cust') ? ' is-bad' : ''}`} value={cust}
                   onChange={(e) => { setCust(e.target.value); setSrc('') }}>
                   <option value="">اختر عميل…</option>
                   {DATA.customers.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-                </select>
+                </Select>
                 {show('cust') && <em className="fld__e">{errs.cust}</em>}
               </div>
               <div className="fld">
                 <span className="fld__l">السبب <em className="req">مطلوب</em></span>
-                <select className={`fld__i${show('reason') ? ' is-bad' : ''}`} value={reason}
+                <Select className={`fld__i${show('reason') ? ' is-bad' : ''}`} value={reason}
                   onChange={(e) => setReason(e.target.value)}>
                   <option value="">اختر سبب…</option>
                   {REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+                </Select>
                 {show('reason') ? <em className="fld__e">{errs.reason}</em>
                   : <em className="fld__h">بيتكتب في XML الإشعار وبيتبعت للهيئة</em>}
               </div>
@@ -202,27 +203,27 @@ export default function DebitNoteNew() {
                   </label>
                   <label className="fld">
                     <span className="fld__l">طريقة الدفع <em className="fld__opt">حقل الهيئة</em></span>
-                    <select className="fld__i" value={pay} onChange={(e) => setPay(e.target.value)}>
+                    <Select className="fld__i" value={pay} onChange={(e) => setPay(e.target.value)}>
                       <option value="">غير محدد</option>
                       {/* القيم زي ما هي في السيستم — حقل الهيئة مش مكان اجتهاد */}
                       <option value="cash">نقداً</option>
                       <option value="transfer">تحويل بنكي</option>
                       <option value="account">حساب بنكي</option>
                       <option value="card">بطاقة بنكية</option>
-                    </select>
+                    </Select>
                   </label>
                 </div>
 
                 {/* المرجع اختياري هنا — عكس الإشعار الدائن */}
                 <label className="fld" style={{ marginTop: 14 }}>
                   <span className="fld__l">فاتورة مرجع <em className="fld__opt">اختياري</em></span>
-                  <select className="fld__i" value={src} disabled={!c}
+                  <Select className="fld__i" value={src} disabled={!c}
                     onChange={(e) => setSrc(e.target.value)}>
                     <option value="">من غير مرجع</option>
                     {custInvoices.map((v) => (
                       <option key={v.no} value={v.no}>{v.no} — {fmtMoney(v.total)}</option>
                     ))}
-                  </select>
+                  </Select>
                   <em className="fld__h">
                     {c ? 'لو الرسوم مرتبطة بفاتورة، اربطها — بيتبعت مرجعها للهيئة.'
                        : 'اختر العميل الأول عشان تظهر فواتيره.'}
@@ -271,10 +272,10 @@ export default function DebitNoteNew() {
                     onChange={(e) => setLine(l.key, { qty: e.target.value })} />
                   <input className="fld__i n" type="number" min="0" step="0.01" value={l.price}
                     onChange={(e) => setLine(l.key, { price: e.target.value })} />
-                  <select className="fld__i" value={l.tax}
+                  <Select className="fld__i" value={l.tax}
                     onChange={(e) => setLine(l.key, { tax: e.target.value })}>
                     {DATA.taxRates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-                  </select>
+                  </Select>
                   <span className="lines__t">{fmtMoney(l.total)}</span>
                   <button className="lines__x" aria-label="شيل البند" onClick={() => delLine(l.key)}>
                     <Ico.close size={14} />

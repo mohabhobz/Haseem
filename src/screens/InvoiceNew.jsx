@@ -1,22 +1,46 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { AppShell, CurrencyNote } from '../components/layout.jsx'
-import { Ico } from '../components/icons.jsx'
+import { AppShell, PageHeader } from '../components/layout.jsx'
+import { Ico, Riyal } from '../components/icons.jsx'
 import { DateField } from '../components/datefield.jsx'
+import { SelectField } from '../components/selectfield.jsx'
 import { SAR } from '../components/data.jsx'
-import { fmtMoney, fmtDate, TODAY } from '../lib/format.js'
+import { fmtMoney, TODAY } from '../lib/format.js'
 import { PrintPreview } from '../components/printpreview.jsx'
 import * as DATA from '../data/mock.js'
 import { toast, confirmAction } from '../components/feedback.jsx'
 
 /* ============================================================
-   مستند بيع جديد — فاتورة ضريبية · فاتورة مبدئية · عرض سعر.
-   نفس الفورم، والنوع بيغيّر الترقيم والأمر النهائي بس.
+   إنشاء فاتورة مبيعات — **منقولة من سيستم الكلاينت بالحرف**.
+   المرجع: التصوير المباشر من app-staging.haseem.com (دوك ١٩).
 
-   قاعدتين من بورد الكلاينت اتطبّقوا هنا حرفيًا:
-   ١) «زرار الحفظ ميتقفلش أبدًا» — الزرار شغّال دايمًا، والضغط
-      عليه وهي ناقصة بيوَرّي الأخطاء جوّه الحقول مش بيمنعك.
-   ٢) رقم المستند مقترح وقابل للتعديل.
+   ★ الفكرة اللي الكلاينت متمسّك بيها، وهي سبب الشاشة دي كلها:
+
+     «هما بيملوا الداتا وهي شبه الفاتورة وقريبة منها، فأماكن
+      ظهور الحاجة عندهم معتبرينها أفضل.»
+
+   يعني الفورم **مش فورم**. هو **الفاتورة نفسها وإنت بتكتب فيها**:
+   ورقة بيضا واحدة، الرقم والتواريخ في ركنها اليمين زي ما هيتطبعوا،
+   والمنشأة والشعار في ركنها الشمال زي ما هيتطبعوا، وجدول البنود في
+   النص، والإجماليات تحت على الشمال. المستخدم بيشوف المستند وهو
+   بيعمله، مش بيملا خانات وبعدين يتفاجئ بالشكل.
+
+   ★ عشان كده اتشال اللي كان عندنا:
+   • الكروت المنفصلة (بيانات المستند · البنود · العميل · الملاحظات)
+     بقت **أقسام في ورقة واحدة** يفصلها خط، زي السيستم.
+   • **الرَّيل الجانبي** اللي كان فيه الإجماليات والدفعة الأولى
+     وحسن التنفيذ — اتشال. الإجماليات نزلت **تحت على الشمال**
+     جوه الورقة، والدفعة وحسن التنفيذ بقوا زرارين بيتفتحوا من
+     تحت الإجمالي (`+ إظهار حالة الدفع` · `+ إضافة حسن تنفيذ`)
+     بالظبط زي السيستم.
+   • **شريط الحفظ السفلي** اتشال — الأوامر فوق على الشمال:
+     معاينة · حفظ كمسودة ▾ (وجواها: إصدار · جدولة). والرجوع سهم
+     قبل اسم الشاشة — تنقّل مش أمر مستند.
+
+   ★ واللي **ما اتشالش** رغم إن السيستم مش بيعمله: التحقق.
+   الزرار لسه شغّال دايمًا وبيوَرّي الناقص جوّه الحقول (قاعدة
+   البورد)، وكود إعفاء الهيئة `VATEX-SA-xx` لسه بيظهر على البند
+   المعفي — من غيره الفاتورة بتترفض من الهيئة. دول مش شكل.
    ============================================================ */
 
 const KINDS = [
@@ -33,11 +57,13 @@ const termDays = (c) => {
   return m ? +m[0] : 0
 }
 
-const iso = (d) => d.toISOString().slice(0, 10)
+const iso = (d) =>
+  d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+  '-' + String(d.getDate()).padStart(2, '0')
 const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
 const num = (x) => Number(x) || 0
 /* العربي مش بيعدّ زي الإنجليزي — مفرد ومثنى وجمع */
-const countAr = (n) => (n === 1 ? 'حقل واحد' : n === 2 ? 'حقلان' : `${n} حقول`)
+const countAr = (n) => (n === 1 ? 'حقل واحد' : n === 2 ? 'حقلان' : n + ' حقول')
 
 const emptyLine = () => ({
   key: Math.random().toString(36).slice(2),
@@ -45,86 +71,121 @@ const emptyLine = () => ({
   dpc: 0, tax: 'S', acct: '', cc: '',
 })
 
-/* ---------- أعمدة البنود: اللي ظاهر منها قرار المستخدم ----------
-   الأربعة الأساسية (الصنف · الكمية · السعر · المبلغ) مش بتتقفل — من غيرهم
-   مفيش بند أصلاً. الباقي بيتفتح على حسب طبيعة الشغل. */
+/* ---------- «تعديل الحقول» — نفس القايمة اللي في السيستم بالحرف ----------
+   الترتيب والافتراضيات منقولة زي ما هي: اسم الوحدة والمبلغ مفتوحين،
+   والباقي مقفول. `بند الفاتورة` و`الوصف` و`الكمية` و`سعر الوحدة`
+   و`الضريبة` أعمدة ثابتة — من غيرهم مفيش بند أصلًا. */
 const COLS = [
-  { id: 'img',  label: 'الصورة',        w: '44px'          },
-  { id: 'desc', label: 'الوصف',         w: 'minmax(0,.9fr)' },
-  { id: 'unit', label: 'اسم الوحدة',    w: '96px'          },
-  { id: 'dpc',  label: 'نسبة الخصم ٪',  w: '92px'          },
-  { id: 'acct', label: 'الحساب',        w: 'minmax(0,.8fr)' },
-  { id: 'cc',   label: 'مركز التكلفة',  w: 'minmax(0,.8fr)' },
+  { id: 'dpc',  label: 'نسبة الخصم %' },
+  { id: 'acct', label: 'الحساب'        },
+  { id: 'unit', label: 'اسم الوحدة'    },
+  { id: 'amt',  label: 'المبلغ'        },
+  { id: 'img',  label: 'الصورة'        },
 ]
-const COLS_DEFAULT = { img: false, desc: true, unit: false, dpc: false, acct: false, cc: false }
+const COLS_DEFAULT = { dpc: false, acct: false, unit: true, amt: true, img: false }
+
+/* ---------- «حقول إضافية» — نفس التلاتة اللي في السيستم ---------- */
+const XTRA = [
+  { id: 'rep', label: 'مندوب المبيعات' },
+  { id: 'prj', label: 'المشروع'        },
+  { id: 'ref', label: 'المرجع'         },
+]
 
 const RET_PC = [5, 10]
 
-export default function InvoiceNew() {
-  const nav = useNavigate()
-  const [sp] = useSearchParams()
-  /* الشاشة دي بتخدم تلات أنواع — النوع بييجي من اللينك اللي فتحها */
-  const k0 = KINDS.some((k) => k.id === sp.get('kind')) ? sp.get('kind') : 'inv'
-
-  const [kind, setKind]   = useState(k0)
-  const [no, setNo]       = useState(`${KINDS.find((k) => k.id === k0).px}-${27123}`)
-  const [editNo, setEditNo] = useState(false)
-  const [noDraft, setNoDraft] = useState('')
-  const [date, setDate]   = useState(iso(new Date(TODAY)))
-  const [dueOv, setDueOv] = useState('')   /* تاريخ استحقاق معدّل يدويًا */
-  const [cust, setCust]   = useState('')
-  const [branch, setBranch] = useState(DATA.branches[0].id)
-  const [wh, setWh]       = useState(DATA.warehouses[0].id)
-  const [rep, setRep]     = useState(DATA.reps[0].id)
-  const [bank, setBank]   = useState(DATA.banks[0].id)
-  const [extra, setExtra] = useState(false)   /* حقول إضافية */
-  const [cols, setCols]   = useState(COLS_DEFAULT)
-  const [colsOpen, setColsOpen] = useState(false)
-  const colsRef = useRef(null)
-  const [logo, setLogo]   = useState(false)
-  const [stamp, setStamp] = useState(false)
-  const [preview, setPreview] = useState(false)
-
-  /* حسن التنفيذ — مبلغ بيتحجز لحد ما فترة الضمان تخلص */
-  const [ret, setRet]       = useState(false)
-  const [retMode, setRetMode] = useState('pc')   /* نسبة | مبلغ ثابت */
-  const [retVal, setRetVal]   = useState(5)
-  const [retBase, setRetBase] = useState('net')  /* قبل الضريبة | شامل الضريبة */
-  const [retDate, setRetDate] = useState('')
-  const [retCond, setRetCond] = useState('')
-
-  /* الدفعة الأولى — بتتسجّل مع الإصدار */
-  const [payState, setPayState] = useState('none')
-  const [payAmt, setPayAmt]     = useState('')
-  const [incl, setIncl]   = useState(false)   /* السعر شامل الضريبة؟ */
-  const [disc, setDisc]   = useState('')
-  const [discPc, setDiscPc] = useState(false)
-  const [note, setNote]   = useState('')
-  const [files, setFiles] = useState([])
-  const [lines, setLines] = useState([emptyLine()])
-  const [tried, setTried] = useState(false)   /* اتضغط على الأمر النهائي قبل كده؟ */
-
+/* قايمة صغيرة بتتقفل لما تدوس بره — بتتكرر تلات مرات في الشاشة */
+function useAway(open, close) {
+  const ref = useRef(null)
   useEffect(() => {
-    if (!colsOpen) return
-    const away = (e) => { if (colsRef.current && !colsRef.current.contains(e.target)) setColsOpen(false) }
-    const esc = (e) => { if (e.key === 'Escape') setColsOpen(false) }
+    if (!open) return
+    const away = (e) => { if (ref.current && !ref.current.contains(e.target)) close() }
+    const esc = (e) => { if (e.key === 'Escape') close() }
     document.addEventListener('mousedown', away)
     document.addEventListener('keydown', esc)
     return () => {
       document.removeEventListener('mousedown', away)
       document.removeEventListener('keydown', esc)
     }
-  }, [colsOpen])
+  }, [open, close])
+  return ref
+}
+
+export default function InvoiceNew() {
+  const nav = useNavigate()
+  const [sp] = useSearchParams()
+  const k0 = KINDS.some((k) => k.id === sp.get('kind')) ? sp.get('kind') : 'inv'
+  const K = KINDS.find((k) => k.id === k0)
+
+  const [kind] = useState(k0)
+  const [no, setNo]         = useState(K.px + '-27123')
+  const [editNo, setEditNo] = useState(false)
+  const [noDraft, setNoDraft] = useState('')
+  const [date, setDate]     = useState(iso(new Date(TODAY)))
+  const [dueOv, setDueOv]   = useState('')
+  const [editDate, setEditDate] = useState(false)
+  const [editDue, setEditDue]   = useState(false)
+  const [cust, setCust]     = useState('')
+  const [wh, setWh]         = useState(DATA.warehouses[0].id)
+  const [bank, setBank]     = useState(DATA.banks[0].id)
+  const [bankOpen, setBankOpen] = useState(false)
+
+  /* حقول إضافية — checkbox لكل واحد، واللي اتعلّم بيتزوّد سطر في الرأس */
+  const [xtra, setXtra]     = useState({ rep: false, prj: false, ref: false })
+  const [xtraOpen, setXtraOpen] = useState(false)
+  const [rep, setRep]       = useState(DATA.reps[0].id)
+  const [prj, setPrj]       = useState('')
+  const [ref, setRef]       = useState('')
+
+  const [cols, setCols]     = useState(COLS_DEFAULT)
+  const [colsOpen, setColsOpen] = useState(false)
+  /* الشعار مرفوع افتراضيًا — المنشأة عندها شعار في إعداداتها،
+     فالفاتورة تبدأ بيه بدل ما تبدأ بمربّع فاضي كل مرة */
+  const [logo, setLogo]     = useState(true)
+  const [stamp, setStamp]   = useState(false)
+  const [preview, setPreview] = useState(false)
+  const [saveOpen, setSaveOpen] = useState(false)
+
+  /* حسن التنفيذ — مبلغ بيتحجز لحد ما فترة الضمان تخلص */
+  const [ret, setRet]         = useState(false)
+  const [retMode, setRetMode] = useState('pc')
+  const [retVal, setRetVal]   = useState(5)
+  const [retBase, setRetBase] = useState('net')
+  const [retDate, setRetDate] = useState('')
+  const [retCond, setRetCond] = useState('')
+
+  /* الدفعة الأولى — بتتسجّل مع الإصدار */
+  const [showPay, setShowPay]   = useState(false)
+  const [payState, setPayState] = useState('none')
+  const [payAmt, setPayAmt]     = useState('')
+
+  const [incl, setIncl]   = useState(false)
+  const [taxOpen, setTaxOpen] = useState(false)
+  const [whOpen, setWhOpen]   = useState(false)
+  const [disc, setDisc]   = useState('')
+  const [discPc, setDiscPc] = useState(false)
+  const [editDisc, setEditDisc] = useState(false)
+  const [note, setNote]   = useState('')
+  const [editNote, setEditNote] = useState(false)
+  const [files, setFiles] = useState([])
+  const [lines, setLines] = useState([emptyLine()])
+  const [tried, setTried] = useState(false)
+
+  const colsRef = useAway(colsOpen, () => setColsOpen(false))
+  const xtraRef = useAway(xtraOpen, () => setXtraOpen(false))
+  const saveRef = useAway(saveOpen, () => setSaveOpen(false))
+  const taxRef  = useAway(taxOpen,  () => setTaxOpen(false))
+  const whRef   = useAway(whOpen,   () => setWhOpen(false))
+  const bankRef = useAway(bankOpen, () => setBankOpen(false))
 
   const startEditNo = () => { setNoDraft(no); setEditNo(true) }
   const saveNo   = () => { setNo(noDraft.trim() || no); setEditNo(false) }
-  const cancelNo = () => setEditNo(false)   /* الرقم القديم بيرجع زي ما هو */
+  const cancelNo = () => setEditNo(false)
 
-  const K = KINDS.find((k) => k.id === kind)
   const c = DATA.customers.find((x) => x.id === cust)
   const autoDue = iso(addDays(date, termDays(c)))
   const due = dueOv || autoDue
   const bankObj = DATA.banks.find((b) => b.id === bank)
+  const whObj = DATA.warehouses.find((w) => w.id === wh)
 
   /* ---------- الحساب: كل سطر بفئته الضريبية، والسعر ممكن يكون شامل ---------- */
   const calc = useMemo(() => {
@@ -133,11 +194,10 @@ export default function InvoiceNew() {
       const gross = num(l.qty) * num(l.price)
       const rate  = DATA.rateOf(l.tax) / 100
       const base  = incl ? gross / (1 + rate) : gross
-      const dAmt  = base * (num(l.dpc) / 100)     /* خصم على مستوى البند */
+      const dAmt  = base * (num(l.dpc) / 100)
       const n     = Math.max(0, base - dAmt)
       const t     = n * rate
       net += n; tax += t; lineDisc += dAmt
-      /* مهم: منسميهاش tax عشان ما تدهسش نسبة الضريبة اللي المستخدم مختارها */
       return { ...l, discAmt: +dAmt.toFixed(2), net: +n.toFixed(2),
                taxAmt: +t.toFixed(2), total: +(n + t).toFixed(2) }
     })
@@ -147,7 +207,6 @@ export default function InvoiceNew() {
     const dTax  = tax * ratio
     const total = dNet + dTax
 
-    /* حسن التنفيذ بيتحسب على الأساس اللي المستخدم اختاره، وبيتخصم من المستحق */
     const rBase = retBase === 'net' ? dNet : total
     const rAmt  = !ret ? 0
       : retMode === 'pc' ? rBase * (num(retVal) / 100)
@@ -191,37 +250,35 @@ export default function InvoiceNew() {
     setLine(key, { code: it.code, ar: it.ar, unit: it.unit, price: it.price })
   }
 
-  const switchKind = (id) => {
-    setKind(id)
-    const k = KINDS.find((x) => x.id === id)
-    if (!editNo) setNo(`${k.px}-${27123}`)
-  }
-
-  /* عرض أعمدة الجدول بيتبني من اللي ظاهر بس */
+  /* ---------- عرض أعمدة الجدول بيتبني من اللي ظاهر ----------
+     لازم عدد الأعمدة هنا = عدد الخانات اللي بترتسم بالظبط، وإلا
+     الخانة الأخيرة (زرار الشيل) بتنزل سطر تحت. */
   const lcols = [
-    '22px',
+    '18px',   /* رقم البند — خانتين بالكتير */                        /* # */
     cols.img  && '44px',
-    'minmax(112px,1.1fr)',
-    cols.desc && 'minmax(96px,.9fr)',
-    '86px',
-    cols.unit && '76px',
-    '100px',
-    cols.dpc  && '84px',
-    'minmax(152px,.95fr)',   /* الضريبة — أسماء الفئات طويلة، والسهم عايز مساحته */
+    'minmax(130px,1.1fr)',         /* بند الفاتورة */
+    'minmax(130px,1.1fr)',         /* الوصف */
+    /* الكمية + الوحدة في خانة واحدة **جنب بعض** — فالخانة بتتوسّع
+       لما الوحدة تكون ظاهرة، وبترجع ضيّقة لما تتقفل. */
+    cols.unit ? '176px' : '104px',
+    '128px',                       /* سعر الوحدة */
+    cols.dpc  && '96px',
     cols.acct && 'minmax(0,.85fr)',
-    cols.cc   && 'minmax(0,.85fr)',
-    '96px',
-    '34px',   /* نفس عرض زرار الشيل بالظبط — أي فرق بيعمل سكرول أفقي */
+    'minmax(150px,.95fr)',         /* الضريبة — أسماء الفئات طويلة */
+    cols.amt  && '112px',
+    '32px',                        /* زرار الشيل */
   ].filter(Boolean).join(' ')
 
-  /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك */
   /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك.
-     لو الفورم سليم، الإصدار بيسأل الأول لأنه مالوش رجعة. */
+     ولو الفورم سليم، الإصدار بيسأل الأول لأنه مالوش رجعة. */
   const submit = async () => {
     setTried(true)
-    if (Object.keys(errs).length) return
+    if (Object.keys(errs).length) {
+      toast.bad('ناقص ' + countAr(nErr), { sub: 'موضّحة في المستند باللون الأحمر' })
+      return
+    }
     const ok = await confirmAction({
-      title: `إصدار الفاتورة ${no}؟`,
+      title: 'إصدار الفاتورة ' + no + '؟',
       body: 'الإصدار مالوش رجعة.',
       tone: 'primary',
       confirm: 'إصدار وإرسال للهيئة',
@@ -232,480 +289,625 @@ export default function InvoiceNew() {
       ],
     })
     if (!ok) return
-    toast.ok(`الفاتورة ${no} اتصدرت`, { sub: 'الهيئة قبلتها' })
+    toast.ok('الفاتورة ' + no + ' اتصدرت', { sub: 'الهيئة قبلتها' })
     nav('/sales/invoices')
   }
 
   /* الحفظ كمسودة ليه رجعة، فبيتنفّذ على طول */
   const saveDraft = () => {
-    toast.ok(`الفاتورة ${no} اتحفظت كمسودة`, { sub: 'تقدر تكمّلها وتصدرها بعدين' })
+    toast.ok('الفاتورة ' + no + ' اتحفظت كمسودة', { sub: 'تقدر تكمّلها وتصدرها بعدين' })
     nav('/sales/invoices')
   }
 
+  const org = DATA.org
+
   return (
     <AppShell>
-      <div className="dochead">
-        <button className="dochead__back" onClick={() => nav('/sales/invoices')}>
-          <Ico.back size={16} />فواتير المبيعات
-        </button>
-        <CurrencyNote />
-        <div className="dochead__row">
-          <div className="dochead__id">
-            <h1 className="dochead__no dochead__no--ar">
-              {kind === 'inv' ? 'فاتورة مبيعات جديدة' : 'مستند جديد'}
-            </h1>
-            {/* زي السيستم بالظبط: شاشة الفاتورة مالهاش مبدّل نوع.
-                المبدّل بين عرض السعر والفاتورة المبدئية عايش في موديول
-                عروض الأسعار — والفاتورة ليها موديولها. */}
-            {kind !== 'inv' && (
-              <div className="segs" role="group" aria-label="نوع المستند">
-                {KINDS.filter((k) => k.id !== 'inv').map((k) => (
-                  <button key={k.id} className={kind === k.id ? 'on' : ''}
-                    aria-pressed={kind === k.id} onClick={() => switchKind(k.id)}>{k.label}</button>
-                ))}
+      {/* ---------- الرأس والأوامر — زي السيستم، مش شريط سفلي ---------- */}
+      <div className="tophead">
+        <PageHeader back="/sales/invoices"
+          title="إنشاء فاتورة مبيعات" sub="إدارة الفواتير وتتبع المستحقات" />
+        <div className="tophead__ctrl docact">
+          <div className="splitb" ref={saveRef}>
+            <button className="btn btn--primary" onClick={saveDraft}>حفظ كمسودة</button>
+            <button className="splitb__t" aria-label="خيارات الحفظ" aria-expanded={saveOpen}
+              onClick={() => setSaveOpen((v) => !v)}>
+              <Ico.chevron size={14} />
+            </button>
+            {saveOpen && (
+              <div className="splitb__p" role="menu">
+                <button role="menuitem" onClick={() => { setSaveOpen(false); submit() }}>
+                  <Ico.send size={15} />إصدار
+                </button>
+                <button role="menuitem" onClick={() => { setSaveOpen(false)
+                  toast.info('جدولة الفاتورة', { sub: 'بتتكرر تلقائيًا كل فترة تحدّدها' }) }}>
+                  <Ico.calendar size={15} />جدولة الفاتورة
+                </button>
               </div>
             )}
           </div>
-          <div className="dochead__act">
-            <button className="btn btn--soft" onClick={() => setPreview(true)}>
-              <Ico.search size={15} />معاينة
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="docgrid">
-        <div className="form">
-          {/* ---------- ١) بيانات المستند ---------- */}
-          <section className="fcard">
-            <h2 className="fcard__t">بيانات المستند</h2>
-            <div className="doccols">
-             <div className="doccols__main">
-              <div className="frow frow--3">
-              <div className="fld">
-                <span className="fld__l">رقم المستند</span>
-                {editNo ? (
-                  /* وهو بيعدّل: حفظ أو إلغاء — عشان الغلطة في الكتابة يكون ليها رجعة */
-                  <div className="fedit">
-                    <input className={`fld__i${show('no') ? ' is-bad' : ''}`} value={noDraft} autoFocus
-                      onChange={(e) => setNoDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); saveNo() }
-                        if (e.key === 'Escape') cancelNo()
-                      }} />
-                    <span className="fedit__a">
-                      <button type="button" className="lnk" onClick={saveNo}>حفظ</button>
-                      <button type="button" className="lnk lnk--mute" onClick={cancelNo}>إلغاء</button>
-                    </span>
-                  </div>
-                ) : (
-                  <div className="fld__ro fedit__ro">
-                    <span className="fedit__v">{no}</span>
-                    <button type="button" className="lnk" onClick={startEditNo}>تعديل</button>
-                  </div>
-                )}
-                {show('no') && <em className="fld__e">{errs.no}</em>}
-              </div>
-              <DateField label="تاريخ الإصدار" value={date} onChange={setDate} />
-              <label className="fld">
-                <span className="fld__l">{K.due}</span>
-                <input className="fld__i" type="date" value={due} min={date}
-                  onChange={(e) => setDueOv(e.target.value)} />
-                {dueOv
-                  ? <em className="fld__h">
-                      معدّل يدويًا ·{' '}
-                      <button type="button" className="lnk" onClick={() => setDueOv('')}>
-                        رجّع شروط العميل
-                      </button>
-                    </em>
-                  : c && <em className="fld__h">شروط العميل: {c.terms}</em>}
-              </label>
-
-              </div>
-
-            <button className="fmore" aria-expanded={extra} onClick={() => setExtra((v) => !v)}>
-              <Ico.chevron size={14} className={extra ? 'is-up' : ''} />حقول إضافية
-              <em>الفرع · المستودع · المندوب</em>
-            </button>
-            {extra && (
-              <div className="frow frow--3 fmore__b">
-                <label className="fld">
-                  <span className="fld__l">الفرع <em className="fld__opt">كوده بيروح للهيئة</em></span>
-                  <select className="fld__i" value={branch} onChange={(e) => setBranch(e.target.value)}>
-                    {DATA.branches.map((b) => (
-                      <option key={b.id} value={b.id}>{b.code} — {b.ar}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="fld">
-                  <span className="fld__l">المستودع</span>
-                  <select className="fld__i" value={wh} onChange={(e) => setWh(e.target.value)}>
-                    {DATA.warehouses.map((w) => <option key={w.id} value={w.id}>{w.ar}</option>)}
-                  </select>
-                </label>
-                <label className="fld">
-                  <span className="fld__l">المندوب</span>
-                  <select className="fld__i" value={rep} onChange={(e) => setRep(e.target.value)}>
-                    {DATA.reps.map((r) => <option key={r.id} value={r.id}>{r.ar}</option>)}
-                  </select>
-                </label>
-              </div>
-            )}
-             </div>
-
-             {/* الكولومن التاني: الشعار */}
-             <div className="fld fld--logo">
-               <span className="fld__l">الشعار</span>
-               <button className={`updrop${logo ? ' is-set' : ''}`} onClick={() => setLogo((v) => !v)}>
-                 {logo
-                   ? <img src={DATA.org.logo} alt="" />
-                   : <><Ico.plus size={18} /><em>رفع الشعار</em></>}
-               </button>
-             </div>
-            </div>
-          </section>
-
-          {/* ---------- ٣) البنود ---------- */}
-          <section className="fcard">
-            <div className="fcard__h">
-              <h2 className="fcard__t">البنود</h2>
-              <div className="fcard__ctrl">
-                <div className="segs segs--sm" role="group" aria-label="طريقة إدخال السعر">
-                  <button className={!incl ? 'on' : ''} onClick={() => setIncl(false)}>خالي من الضريبة</button>
-                  <button className={incl ? 'on' : ''} onClick={() => setIncl(true)}>شامل الضريبة</button>
-                </div>
-                <div className="colmenu" ref={colsRef}>
-                  <button className={`gbtn2${colsOpen ? ' on' : ''}`}
-                    aria-expanded={colsOpen} onClick={() => setColsOpen((v) => !v)}>
-                    <Ico.settings size={14} />تعديل الحقول
-                  </button>
-                  {colsOpen && (
-                    <div className="colmenu__p">
-                      <span className="colmenu__t">إظهار في الجدول</span>
-                      {COLS.map((c) => (
-                        <label key={c.id} className="colmenu__i">
-                          <span>{c.label}</span>
-                          <input type="checkbox" checked={!!cols[c.id]}
-                            onChange={() => setCols((v) => ({ ...v, [c.id]: !v[c.id] }))} />
-                          <i className="sw" />
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="lines" style={{ '--lcols': lcols }}>
-              <div className="lines__h">
-                <span>#</span>
-                {cols.img && <span />}
-                <span>الصنف</span>
-                {cols.desc && <span>الوصف</span>}
-                <span>الكمية</span>
-                {cols.unit && <span>الوحدة</span>}
-                <span>سعر الوحدة</span>
-                {cols.dpc && <span>خصم ٪</span>}
-                <span>الضريبة</span>
-                {cols.acct && <span>الحساب</span>}
-                {cols.cc && <span>مركز التكلفة</span>}
-                <span>المبلغ</span>
-                <span />
-              </div>
-              {calc.per.map((l, i) => (
-                <div className="lines__r" key={l.key}>
-                  <span className="lines__i">{i + 1}</span>
-                  {cols.img && <span className="lines__img" aria-hidden="true"><Ico.items size={15} /></span>}
-                  <select className="fld__i" value={l.code} onChange={(e) => pick(l.key, e.target.value)}>
-                    <option value="">اختر صنف…</option>
-                    {DATA.catalog.map((x) => <option key={x.code} value={x.code}>{x.ar}</option>)}
-                  </select>
-                  {cols.desc && (
-                    <input className="fld__i" placeholder="وصف اختياري" value={l.desc}
-                      onChange={(e) => setLine(l.key, { desc: e.target.value })} />
-                  )}
-                  <input className="fld__i n" type="number" min="0" step="1" value={l.qty}
-                    onChange={(e) => setLine(l.key, { qty: e.target.value })} />
-                  {cols.unit && <span className="lines__u">{l.unit}</span>}
-                  <input className="fld__i n" type="number" min="0" step="0.01" value={l.price}
-                    onChange={(e) => setLine(l.key, { price: e.target.value })} />
-                  {cols.dpc && (
-                    <input className="fld__i n" type="number" min="0" max="100" step="1" value={l.dpc}
-                      onChange={(e) => setLine(l.key, { dpc: e.target.value })} />
-                  )}
-                  {/* الفئة وكود الإعفاء في خانة واحدة — الكود بيظهر بس
-                      لما الفئة مش «خاضع». الهيئة بتطلب الاتنين مع بعض
-                      على البند الصفري أو المعفي، ومن غير الكود الفاتورة
-                      بتترفض. كان ناقص عندنا. */}
-                  <span className="taxcell">
-                    <select className="fld__i" value={l.tax}
-                      onChange={(e) => setLine(l.key, { tax: e.target.value, vatex: '' })}>
-                      {DATA.taxRates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-                    </select>
-                    {DATA.needsVatex(l.tax) && (
-                      <select className={`fld__i taxcell__x${!l.vatex ? ' is-bad' : ''}`}
-                        value={l.vatex || ''}
-                        onChange={(e) => setLine(l.key, { vatex: e.target.value })}
-                        title="كود الإعفاء المطلوب من الهيئة">
-                        <option value="">كود الإعفاء مطلوب…</option>
-                        {DATA.vatexFor(l.tax).map((x) => (
-                          <option key={x.id} value={x.id}>{x.id} — {x.ar}</option>
-                        ))}
-                      </select>
-                    )}
-                  </span>
-                  {cols.acct && (
-                    <select className="fld__i" value={l.acct}
-                      onChange={(e) => setLine(l.key, { acct: e.target.value })}>
-                      <option value="">—</option>
-                      {DATA.accountsOf('revenue').map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-                    </select>
-                  )}
-                  {cols.cc && (
-                    <select className="fld__i" value={l.cc}
-                      onChange={(e) => setLine(l.key, { cc: e.target.value })}>
-                      <option value="">—</option>
-                      {DATA.costCenters.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-                    </select>
-                  )}
-                  <span className="lines__t">{fmtMoney(l.total)}</span>
-                  <button className="lines__x" aria-label="شيل السطر" onClick={() => delLine(l.key)}>
-                    <Ico.close size={15} />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button className="lines__add" onClick={addLine}><Ico.plus size={15} />إضافة بند</button>
-            {show('lines') && <em className="fld__e fld__e--blk">{errs.lines}</em>}
-          </section>
-
-          {/* ---------- العميل وبيانات الدفع ---------- */}
-          <section className="fcard">
-            <h2 className="fcard__t">العميل وبيانات الدفع</h2>
-            <div className="frow frow--pay">
-              <div className="fld">
-                <span className="fld__l">اسم العميل</span>
-                <select className={`fld__i${show('cust') ? ' is-bad' : ''}`} value={cust}
-                  onChange={(e) => setCust(e.target.value)}>
-                  <option value="">اختر عميل…</option>
-                  {DATA.customers.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-                </select>
-                {show('cust') && <em className="fld__e">{errs.cust}</em>}
-              </div>
-              <label className="fld">
-                <span className="fld__l">الحساب البنكي على المستند</span>
-                <select className="fld__i" value={bank} onChange={(e) => setBank(e.target.value)}>
-                  {DATA.banks.map((b) => <option key={b.id} value={b.id}>{b.ar}</option>)}
-                </select>
-              </label>
-              <div className="fld">
-                <span className="fld__l">الآيبان</span>
-                <div className="fld__ro">{bankObj?.iban}</div>
-              </div>
-            </div>
-            {c && (
-              <p className="fnote">
-                <Ico.check size={14} />
-                رصيده الحالي <SAR v={c.balance} /> · {c.city} · شروطه المعتادة {c.terms}
-              </p>
-            )}
-          </section>
-
-          {/* ---------- ٤) الملاحظات والختم ---------- */}
-          <section className="fcard">
-            <h2 className="fcard__t">الملاحظات والختم</h2>
-            <div className="notesrow">
-              <label className="fld">
-                <span className="fld__l">ملاحظة للعميل <em className="fld__opt">اختياري</em></span>
-                <textarea className="fld__i fld__i--area" value={note}
-                  placeholder="مثلًا: التحويل على حساب المنشأة، والرجاء ذكر رقم الفاتورة في التحويل."
-                  onChange={(e) => setNote(e.target.value)} />
-              </label>
-              <div className="fld fld--logo">
-                <span className="fld__l">الختم</span>
-                <button className={`updrop${stamp ? ' is-set' : ''}`} onClick={() => setStamp((v) => !v)}>
-                  {stamp
-                    ? <span className="stampmark">مُعتمد</span>
-                    : <><Ico.plus size={18} /><em>رفع الختم</em></>}
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* ---------- ٥) المرفقات ---------- */}
-          <section className="fcard">
-            <div className="fcard__h">
-              <h2 className="fcard__t">المرفقات <em>أمر شراء · عقد · تسليم</em></h2>
-              <button className="gbtn2" onClick={() => setFiles((f) => [...f, { n: `مرفق-${f.length + 1}.pdf`, s: '٢٤٠ ك.ب' }])}>
-                <Ico.plus size={14} />إرفاق ملف
-              </button>
-            </div>
-            {files.length === 0
-              ? <p className="fempty">مفيش مرفقات — المرفقات بتتبعت مع المستند للعميل.</p>
-              : (
-                <ul className="flist">
-                  {files.map((f, i) => (
-                    <li key={i}>
-                      <Ico.invoice size={16} /><b>{f.n}</b><span>{f.s}</span>
-                      <button aria-label="شيل المرفق" onClick={() => setFiles((x) => x.filter((_, j) => j !== i))}>
-                        <Ico.close size={14} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-          </section>
-        </div>
-
-        {/* ---------- الملخّص ---------- */}
-        <aside className="rail">
-          <section className="rail__c">
-            <span className="rail__lbl">{kind === 'inv' ? 'الإجمالي المستحق' : 'إجمالي المستند'}</span>
-            <span className="rail__v"><SAR v={calc.total} /></span>
-            <dl className="rail__sum">
-              <div><dt>قبل الضريبة</dt><dd><SAR v={calc.net} dec /></dd></div>
-              {calc.lineDisc > 0 && (
-                <div><dt>خصم البنود</dt><dd className="is-minus">− <SAR v={calc.lineDisc} dec /></dd></div>
-              )}
-              {calc.disc > 0 && (
-                <div><dt>الخصم</dt><dd className="is-minus">− <SAR v={calc.disc} dec /></dd></div>
-              )}
-              <div><dt>ضريبة القيمة المضافة</dt><dd><SAR v={calc.tax} dec /></dd></div>
-            </dl>
-
-            <div className="rdisc">
-              <span className="fld__l">خصم على المستند</span>
-              <div className="rdisc__r">
-                <input className="fld__i n" type="number" min="0" step="0.01" value={disc}
-                  placeholder="0" onChange={(e) => setDisc(e.target.value)} />
-                <div className="segs segs--sm" role="group" aria-label="نوع الخصم">
-                  <button className={!discPc ? 'on' : ''} onClick={() => setDiscPc(false)}>﷼</button>
-                  <button className={discPc ? 'on' : ''} onClick={() => setDiscPc(true)}>٪</button>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ---------- الدفعة الأولى ---------- */}
-          <section className="rail__c">
-            <span className="rail__lbl">الدفعة الأولى</span>
-            <p className="rcard__s">سجّل الدفعة اللي اتحصّلت وقت إصدار الفاتورة.</p>
-            <span className="fld__l">حالة الدفع</span>
-            <select className="fld__i" value={payState} onChange={(e) => setPayState(e.target.value)}>
-              <option value="none">غير مدفوعة</option>
-              <option value="part">مدفوعة جزئيًا</option>
-              <option value="full">مدفوعة بالكامل</option>
-            </select>
-            {payState === 'part' && (
-              <label className="fld" style={{ marginTop: 12 }}>
-                <span className="fld__l">المبلغ المحصّل</span>
-                <input className="fld__i n" type="number" min="0" step="0.01" placeholder="0"
-                  value={payAmt} onChange={(e) => setPayAmt(e.target.value)} />
-              </label>
-            )}
-            {payState !== 'none' && (
-              <dl className="rail__sum">
-                <div><dt>المحصّل</dt><dd className="is-minus">− <SAR v={calc.paid} dec /></dd></div>
-                <div><dt>الباقي على العميل</dt><dd><SAR v={calc.rest} dec /></dd></div>
-              </dl>
-            )}
-          </section>
-
-          {/* ---------- حسن التنفيذ ---------- */}
-          {!ret ? (
-            <button className="rcard__add" onClick={() => setRet(true)}>
-              <Ico.plus size={15} />ضيف حسن التنفيذ
-              <em>مبلغ بيتحجز لحد ما فترة الضمان تخلص</em>
-            </button>
-          ) : (
-            <section className="rail__c rcard">
-              <div className="rcard__h">
-                <b><Ico.check size={15} />حسن التنفيذ</b>
-                <button className="rcard__x" onClick={() => setRet(false)}>
-                  <Ico.close size={13} />إزالة
-                </button>
-              </div>
-              <p className="rcard__s">المبلغ المحتجز حتى انتهاء فترة الضمان</p>
-
-              <span className="fld__l">طريقة الاحتجاز</span>
-              <div className="segs segs--sm segs--full" role="group">
-                <button className={retMode === 'pc' ? 'on' : ''} onClick={() => setRetMode('pc')}>نسبة</button>
-                <button className={retMode === 'amt' ? 'on' : ''} onClick={() => setRetMode('amt')}>مبلغ ثابت</button>
-              </div>
-
-              <span className="fld__l">{retMode === 'pc' ? 'نسبة الاحتجاز' : 'المبلغ المحتجز'}</span>
-              {retMode === 'pc' ? (
-                <div className="rcard__pc">
-                  {RET_PC.map((p) => (
-                    <button key={p} className={num(retVal) === p ? 'on' : ''}
-                      onClick={() => setRetVal(p)}>{p}٪</button>
-                  ))}
-                  <input className="fld__i n" type="number" min="0" max="100" placeholder="٪"
-                    value={RET_PC.includes(num(retVal)) ? '' : retVal}
-                    onChange={(e) => setRetVal(e.target.value)} />
-                </div>
-              ) : (
-                <input className="fld__i n" type="number" min="0" step="0.01" placeholder="0"
-                  value={retVal} onChange={(e) => setRetVal(e.target.value)} />
-              )}
-
-              <span className="fld__l">أساس الاحتجاز</span>
-              <div className="segs segs--sm segs--full" role="group">
-                <button className={retBase === 'net' ? 'on' : ''} onClick={() => setRetBase('net')}>قبل الضريبة</button>
-                <button className={retBase === 'gross' ? 'on' : ''} onClick={() => setRetBase('gross')}>شامل الضريبة</button>
-              </div>
-
-              <DateField label="تاريخ الإفراج المتوقع" value={retDate} onChange={setRetDate} />
-              <label className="fld"><span className="fld__l">شرط الإفراج</span>
-                <input className="fld__i" placeholder="مثال: بعد انتهاء فترة الضمان"
-                  value={retCond} onChange={(e) => setRetCond(e.target.value)} /></label>
-            </section>
-          )}
-
-          {ret && (
-            <section className="rail__c rail__c--tot">
-              <dl className="rail__sum rail__sum--flat">
-                <div><dt>الإجمالي شامل الضريبة</dt><dd><SAR v={calc.total} dec /></dd></div>
-                <div><dt>حسن التنفيذ</dt><dd className="is-minus">− <SAR v={calc.ret} dec /></dd></div>
-                <div className="is-tot"><dt>الصافي المستحق</dt><dd><SAR v={calc.netDue} dec /></dd></div>
-              </dl>
-            </section>
-          )}
-
-          <section className="rail__c">
-            <span className="rail__lbl">قبل ما تصدر</span>
-            <ul className="check">
-              <li className={cust ? 'on' : ''}><Ico.check size={14} />العميل ورقمه الضريبي</li>
-              <li className={lines.some((l) => l.ar || l.desc) ? 'on' : ''}><Ico.check size={14} />بند واحد على الأقل</li>
-              <li className={calc.total > 0 ? 'on' : ''}><Ico.check size={14} />مبلغ أكبر من صفر</li>
-              <li className={no.trim() ? 'on' : ''}><Ico.check size={14} />رقم المستند</li>
-            </ul>
-            <p className="fnote fnote--quiet">
-              {kind === 'inv'
-                ? 'أول ما تدوس «إصدار» الفاتورة بتروح لمنصة فاتورة وبتستنى ردّها، والرقم بيتحجز للأبد. المسودة مبتروحش للهيئة.'
-                : 'المستند ده مش فاتورة ضريبية — مبيروحش للهيئة ومبيأثرش على حساباتك. لما العميل يوافق تقدر تحوّله لفاتورة.'}
-            </p>
-          </section>
-        </aside>
-      </div>
-
-      {/* شريط القرار — الزرار شغّال دايمًا */}
-      <div className="savebar" data-component="SaveBar">
-        <span className={`savebar__s${tried && nErr ? ' is-bad' : ''}`}>
-          {tried && nErr
-            ? <><Ico.close size={15} />ناقص {countAr(nErr)} — موضّحة أعلاه باللون الأحمر</>
-            : nErr === 0
-              ? <><Ico.check size={15} />جاهزة</>
-              : 'أكمل الحقول ثم أصدر — سننبّهك إن كان هناك نقص'}
-        </span>
-        <div className="savebar__b">
-          <button className="btn btn--ghost" onClick={() => nav('/sales/invoices')}>إلغاء</button>
-          <button className="btn btn--soft" onClick={saveDraft}>حفظ كمسودة</button>
-          <button className="btn btn--primary" onClick={submit}>
-            <Ico.send size={16} />{K.go}
+          <button className={'btn btn--sec' + (preview ? ' is-on' : '')}
+            aria-pressed={preview} onClick={() => setPreview((v) => !v)}>
+            {preview ? 'غلق المعاينة' : 'معاينة'}
           </button>
         </div>
       </div>
+
+      {/* ============================================================
+          الورقة — المستند كله قسم واحد، والأقسام جواه يفصلها خط.
+          ده اللي بيخلّي الفورم «شبه الفاتورة».
+          ============================================================ */}
+      <div className="sheet" data-component="InvoiceSheet">
+
+        {/* ---------- ١) الرأس: الأرقام يمين والمنشأة شمال ---------- */}
+        <div className="sheet__sec sheet__head">
+          <div className="sheet__meta">
+            <p className="smeta">
+              <span className="smeta__k">رقم الفاتورة</span>
+              {editNo ? (
+                <span className="smeta__edit">
+                  <input className={'fld__i' + (show('no') ? ' is-bad' : '')} value={noDraft} autoFocus
+                    onChange={(e) => setNoDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); saveNo() }
+                      if (e.key === 'Escape') cancelNo()
+                    }} />
+                  <button className="lnk" onClick={saveNo}>حفظ</button>
+                  <button className="lnk lnk--mute" onClick={cancelNo}>إلغاء</button>
+                </span>
+              ) : (
+                <>
+                  <b className={'smeta__v num ltr' + (show('no') ? ' is-bad' : '')}>{no}</b>
+                  <button className="smeta__p" onClick={startEditNo}>تغيير</button>
+                </>
+              )}
+            </p>
+            <p className="smeta">
+              <span className="smeta__k">تاريخ الإصدار</span>
+              {editDate ? (
+                <span className="smeta__edit">
+                  <DateField value={date} onChange={(d) => { setDate(d); setEditDate(false) }} />
+                </span>
+              ) : (
+                <>
+                  <b className="smeta__v num ltr">{date}</b>
+                  <button className="smeta__p" onClick={() => setEditDate(true)}>تغيير</button>
+                </>
+              )}
+            </p>
+
+            <p className="smeta">
+              <span className="smeta__k">{K.due}</span>
+              {editDue ? (
+                <span className="smeta__edit">
+                  <DateField value={due} min={date} onChange={(d) => { setDueOv(d); setEditDue(false) }} />
+                </span>
+              ) : (
+                <>
+                  <b className="smeta__v num ltr">{due}</b>
+                  <button className="smeta__p" onClick={() => setEditDue(true)}>تغيير</button>
+                </>
+              )}
+            </p>
+            {/* شروط العميل بتشرح التاريخ اللي اتحسب لوحده */}
+            {c && !dueOv && <p className="smeta__hint">شروط العميل: {c.terms}</p>}
+            {dueOv && (
+              <p className="smeta__hint">
+                معدّل يدويًا ·{' '}
+                <button className="lnk" onClick={() => setDueOv('')}>رجّع شروط العميل</button>
+              </p>
+            )}
+
+            {/* الحقول اللي المستخدم فتحها بتتزوّد هنا كسطور زيادة */}
+            {xtra.rep && (
+              <p className="smeta">
+                <span className="smeta__k">مندوب المبيعات</span>
+                <SelectField className="smeta__sel" value={rep} onChange={setRep}
+                  ariaLabel="مندوب المبيعات"
+                  options={DATA.reps.map((r) => ({ id: r.id, label: r.ar }))} />
+              </p>
+            )}
+            {xtra.prj && (
+              <p className="smeta">
+                <span className="smeta__k">المشروع</span>
+                <input className="smeta__in" placeholder="—" value={prj}
+                  onChange={(e) => setPrj(e.target.value)} />
+              </p>
+            )}
+            {xtra.ref && (
+              <p className="smeta">
+                <span className="smeta__k">المرجع</span>
+                <input className="smeta__in" placeholder="—" value={ref}
+                  onChange={(e) => setRef(e.target.value)} />
+              </p>
+            )}
+
+            <div className="xtra" ref={xtraRef}>
+              {/* ★ بقى زرار له شكل زرار. كان نص سايب تحت سطور
+                  البيانات — فبيتقرا كإنه **سطر رابع من المستند**
+                  لِيبله مكتوب وقيمته ناقصة. وهو مش بيان أصلًا،
+                  هو أمر بيزوّد بيانات. */}
+              <button className={'xtra__b' + (xtraOpen ? ' on' : '')}
+                aria-expanded={xtraOpen} onClick={() => setXtraOpen((v) => !v)}>
+                <Ico.plus size={13} />حقول إضافية
+              </button>
+              {xtraOpen && (
+                <div className="xtra__p">
+                  {XTRA.map((x) => (
+                    <label key={x.id} className="xtra__i">
+                      <input type="checkbox" checked={!!xtra[x.id]}
+                        onChange={() => setXtra((v) => ({ ...v, [x.id]: !v[x.id] }))} />
+                      <span>{x.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* شمال: المنشأة والشعار — زي ما هيتطبعوا على الفاتورة */}
+          <div className="sheet__org">
+            <div className="sorg__tx">
+              <b>
+                {org.nameAr}
+                {/* بتفتح دراور المنشآت اللي في القايمة — نفس
+                    الدراور بالظبط، مش نسخة تانية منه. الحدث ده
+                    أنضف من تمرير الحالة من الـShell للشاشة ورا
+                    بعضه عشان زرار واحد. */}
+                <button className="smeta__p"
+                  onClick={() => window.dispatchEvent(new CustomEvent('haseem:orgs'))}>
+                  تغيير
+                </button>
+              </b>
+              <span>{DATA.branches[0].address}</span>
+              <span>{DATA.branches[0].city}, {DATA.branches[0].zip}</span>
+            </div>
+            {/* الشعار مرفوع — الهوفر بيطلّع «إزالة الشعار» فوقه.
+                المربّع بيقول حالته، والأمر بيظهر لما تقرّب بس. */}
+            <div className={'logobox' + (logo ? ' is-set' : '')}>
+              {logo ? (
+                <>
+                  <img src={org.logo} alt={org.nameAr} />
+                  <button className="logobox__x" onClick={() => setLogo(false)}>
+                    <Ico.trash size={14} />إزالة الشعار
+                  </button>
+                </>
+              ) : (
+                <button className="logobox__up" onClick={() => setLogo(true)}>
+                  <Ico.plus size={16} /><em>رفع الشعار</em>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ---------- ٢) العميل ----------
+            دروب داون واحدة وخلاص: بيدوس عليها، بيدوّر بالاسم أو
+            بالرقم الضريبي، بيختار. ومن غير أزرار «تغيير» و«تعديل»
+            — التغيير هو نفس الدروب داون، والحقل اللي بيتعدّل من
+            نفسه أبسط من حقل + زرارين بيعملوا حاجات مختلفة.
+            وبيانات العميل بتتكتب في كارت على الشمال في الآخر
+            خالص، فالقراية والتحكّم كل واحد في ناحية. */}
+        <div className={'sheet__sec sheet__cust' + (show('cust') ? ' is-bad' : '')}>
+          <div className="scust__pick">
+            <span className="sheet__lbl">العميل</span>
+            <SelectField className="scust__sel" value={cust} search
+              placeholder="اختر عميل…" ariaLabel="العميل"
+              onChange={(v) => { setCust(v); setDueOv('') }}
+              options={DATA.customers.map((x) => ({ id: x.id, label: x.ar, sub: x.vat }))} />
+            {show('cust') && <em className="fld__e">{errs.cust}</em>}
+          </div>
+
+          {/* بيانات العميل سطر جنب الحقل، مش كارت على الشمال —
+              الاسم أصلًا مكتوب جوّه الحقل، فالكارت كان بيكرّره
+              ويزوّد طول السيكشن عشان معلومتين */}
+          {c && (
+            <p className="scust__meta">
+              السجل التجاري / الرقم الموحد: <span className="num ltr">{c.vat}</span>
+              <i className="sep">·</i>{c.city}
+            </p>
+          )}
+        </div>
+
+        {/* ---------- ٣) البنود ---------- */}
+        <div className="sheet__sec sheet__lines">
+          {/* العنوان والأدوات في سطر واحد: العنوان يمين،
+              الأدوات شمال، ومتوسّطين مع بعض رأسيًا */}
+          <div className="slhead">
+          <span className="sheet__lbl">بنود الفاتورة</span>
+          <div className="sltools">
+            <div className="colmenu" ref={colsRef}>
+              <button className={'gbtn2' + (colsOpen ? ' on' : '')}
+                aria-expanded={colsOpen} onClick={() => setColsOpen((v) => !v)}>
+                تعديل الحقول
+              </button>
+              {colsOpen && (
+                <div className="colmenu__p">
+                  <span className="colmenu__t">إظهار في الجدول</span>
+                  {COLS.map((x) => (
+                    <label key={x.id} className="colmenu__i">
+                      <span>{x.label}</span>
+                      <input type="checkbox" checked={!!cols[x.id]}
+                        onChange={() => setCols((v) => ({ ...v, [x.id]: !v[x.id] }))} />
+                      <i className="sw" />
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* المستودع وطريقة السعر — كبسولتين بسهم و«×» زي السيستم */}
+            <div className="ptag" ref={whRef}>
+              <button className="ptag__b" aria-expanded={whOpen} onClick={() => setWhOpen((v) => !v)}>
+                <span className="ltr num">{whObj?.id}</span> — {whObj?.ar}
+                <Ico.chevron size={13} />
+              </button>
+              {whOpen && (
+                <div className="ptag__p">
+                  {DATA.warehouses.map((w) => (
+                    <button key={w.id} className={w.id === wh ? 'on' : ''}
+                      onClick={() => { setWh(w.id); setWhOpen(false) }}>{w.ar}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="ptag" ref={taxRef}>
+              <button className="ptag__b" aria-expanded={taxOpen} onClick={() => setTaxOpen((v) => !v)}>
+                {incl ? 'السعر شامل الضريبة' : 'السعر خالي من الضريبة'}
+                <Ico.chevron size={13} />
+              </button>
+              {taxOpen && (
+                <div className="ptag__p">
+                  <button className={!incl ? 'on' : ''}
+                    onClick={() => { setIncl(false); setTaxOpen(false) }}>السعر خالي من الضريبة</button>
+                  <button className={incl ? 'on' : ''}
+                    onClick={() => { setIncl(true); setTaxOpen(false) }}>السعر شامل الضريبة</button>
+                </div>
+              )}
+            </div>
+          </div>
+          </div>
+
+          <div className="ltable" style={{ '--lc': lcols }}>
+            <div className="ltable__h">
+              <span>#</span>
+              {cols.img && <span />}
+              <span>بند الفاتورة</span>
+              <span>الوصف</span>
+              <span>الكمية</span>
+              <span>سعر الوحدة</span>
+              {cols.dpc && <span>نسبة الخصم %</span>}
+              {cols.acct && <span>الحساب</span>}
+              <span>الضريبة</span>
+              {cols.amt && <span className="is-n">المبلغ</span>}
+              <span />
+            </div>
+
+            {calc.per.map((l, i) => (
+              <div className="ltable__r" key={l.key}>
+                <span className="ltable__i">{i + 1}</span>
+                {cols.img && <span className="ltable__img" aria-hidden="true"><Ico.items size={15} /></span>}
+
+                <SelectField value={l.code} onChange={(v) => pick(l.key, v)}
+                  placeholder="اختر الصنف…" ariaLabel="بند الفاتورة"
+                  options={DATA.catalog.map((x) => ({ id: x.code, label: x.ar, sub: x.code }))} />
+
+                <input className="fld__i" placeholder="الوصف" value={l.desc}
+                  onChange={(e) => setLine(l.key, { desc: e.target.value })} />
+
+                {/* الكمية والوحدة في خانة واحدة — زي السيستم، الوحدة تحت الرقم */}
+                <span className="qcell">
+                  <input className="fld__i n" type="number" min="0" step="1" value={l.qty}
+                    onChange={(e) => setLine(l.key, { qty: e.target.value })} />
+                  {cols.unit && (
+                    <SelectField className="qcell__u" value={l.unit}
+                      ariaLabel="الوحدة" onChange={(v) => setLine(l.key, { unit: v })}
+                      options={DATA.units.map((u) => ({ id: u.ar, label: u.ar, sub: u.code }))} />
+                  )}
+                </span>
+
+                {/* سعر الوحدة + آخر بيع — السيستم بيحطهم تحت بعض في نفس الخانة،
+                    عشان المستخدم يسعّر وهو شايف آخر سعر من غير ما يفتح شاشة تانية */}
+                <span className="pcell">
+                  <input className="fld__i n" type="number" min="0" step="0.01" value={l.price}
+                    onChange={(e) => setLine(l.key, { price: e.target.value })} />
+                  {l.code && (
+                    <em className="pcell__h">
+                      آخر بيع لهذا العميل: <span className="num ltr">{fmtMoney(l.price)}</span>
+                    </em>
+                  )}
+                </span>
+
+                {cols.dpc && (
+                  <input className="fld__i n" type="number" min="0" max="100" step="1" value={l.dpc}
+                    onChange={(e) => setLine(l.key, { dpc: e.target.value })} />
+                )}
+                {cols.acct && (
+                  <SelectField value={l.acct} placeholder="—" ariaLabel="الحساب"
+                    onChange={(v) => setLine(l.key, { acct: v })}
+                    options={DATA.accountsOf('revenue').map((x) => ({ id: x.id, label: x.ar }))} />
+                )}
+
+                {/* ★ الفئة وكود الإعفاء في خانة واحدة. الهيئة بتطلب الاتنين
+                    مع بعض على البند الصفري أو المعفي — ومن غير الكود الفاتورة
+                    بتترفض. ده اللي بنزوّده على السيستم، لأنه مش شكل. */}
+                <span className="taxcell">
+                  <SelectField value={l.tax} ariaLabel="فئة الضريبة"
+                    onChange={(v) => setLine(l.key, { tax: v, vatex: '' })}
+                    options={DATA.taxRates.map((t) => ({ id: t.id, label: t.ar }))} />
+                  {DATA.needsVatex(l.tax) && (
+                    <SelectField className={'taxcell__x' + (!l.vatex ? ' is-bad' : '')}
+                      value={l.vatex || ''} placeholder="كود الإعفاء مطلوب…"
+                      ariaLabel="كود الإعفاء المطلوب من الهيئة"
+                      onChange={(v) => setLine(l.key, { vatex: v })}
+                      options={DATA.vatexFor(l.tax).map((x) => ({ id: x.id, label: x.id, sub: x.ar }))} />
+                  )}
+                </span>
+
+                {cols.amt && (
+                  <span className="ltable__t"><span className="num">{fmtMoney(l.total)}</span><Riyal /></span>
+                )}
+                <button className="ltable__x" aria-label="شيل السطر" onClick={() => delLine(l.key)}>
+                  <Ico.close size={15} />
+                </button>
+              </div>
+            ))}
+
+            {/* ★ زرار البند الجديد جوّه الجدول، تحت آخر سطر —
+                مش في شريط أدوات فوق. إضافة بند فعل بيحصل وانت
+                بتكتب في آخر صف، فمكانه الطبيعي تحت الصف ده
+                مباشرة مش على بُعد جدول كامل. */}
+            <button className="ltable__add" onClick={addLine} aria-label="إضافة بند">
+              <Ico.plus size={16} /><span>إضافة بند</span>
+            </button>
+          </div>
+          {show('lines') && <em className="fld__e fld__e--blk">{errs.lines}</em>}
+        </div>
+
+        {/* ---------- ٤) السطر السفلي: بنك · ملاحظات وختم · إجماليات ---------- */}
+        <div className="sheet__sec sheet__foot">
+
+          {/* البنك والملاحظات تحت بعض في عمود واحد — والبنك الأول
+              لأنه بيانات العميل محتاجها عشان يدفع، والملاحظات
+              كلام إضافي بيتقرا بعده */}
+          <div className="sfoot__side">
+
+          <div className="sfoot__bank" ref={bankRef}>
+            <span className="sheet__lbl">بيانات البنك</span>
+            {/* الاسم و«تغيير» في صف واحد، والقايمة جوّه نفس
+                الحاوية عشان تتحسب من الزرار مش من الكارت */}
+            <div className="bankpick">
+              {/* الشعار على اليمين، والاسم والآيبان تحت بعض
+                  على شماله ومتمسّكين بنفس الخط من اليمين */}
+              <span className="bankav">
+                {bankObj?.logo
+                  ? <img src={bankObj.logo} alt="" />
+                  : <Ico.bank size={20} />}
+              </span>
+              <span className="bankpick__t">
+                <span className="bankpick__n">
+                  <b>{bankObj?.ar}</b>
+                  <button className={'smeta__p' + (bankOpen ? ' on' : '')}
+                    aria-expanded={bankOpen} onClick={() => setBankOpen((v) => !v)}>تغيير</button>
+                </span>
+                <span className="num ltr">{bankObj?.iban}</span>
+              </span>
+              {bankOpen && (
+                <div className="ptag__p ptag__p--up">
+                  {DATA.banks.map((b) => (
+                    <button key={b.id} className={b.id === bank ? 'on' : ''}
+                      onClick={() => { setBank(b.id); setBankOpen(false) }}>{b.ar}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* الملاحظات والختم جنب بعض — الختم على الشمال بنفس
+              مقاس مربّع الشعار، وارتفاع التكست إريا مساوي ليه
+              عشان الاتنين يقفوا على خط واحد فوق وتحت */}
+          <div className="sfoot__notes">
+            <div className="snote">
+              <span className="sheet__lbl">ملاحظات</span>
+              <textarea className="fld__i fld__i--area" value={note}
+                placeholder="مثلًا: التحويل على حساب المنشأة، والرجاء ذكر رقم الفاتورة في التحويل."
+                onChange={(e) => setNote(e.target.value)} />
+            </div>
+
+            <div className="sstamp">
+              <span className="sheet__lbl">الختم</span>
+              <button className={'updrop' + (stamp ? ' is-set' : '')}
+                onClick={() => setStamp((v) => !v)}>
+                {stamp ? <span className="stampmark">مُعتمد</span>
+                       : <><Ico.plus size={16} /><em>رفع الختم</em></>}
+              </button>
+            </div>
+          </div>
+
+          {/* المرفقات تحت الملاحظات في نفس العمود — كانت كارت
+              مستقل بره الورقة، والمستخدم لازم ينزل لآخر الصفحة
+              عشان يرفق ملف مالوش علاقة بالمجاميع اللي جنبه.
+              وجملة «لا توجد مرفقات» اتشالت: الكارت فاضي واضح
+              إنه فاضي، والجملة كانت بتاخد سطر تقول حاجة العين
+              شايفاها. */}
+          <div className="sfoot__att">
+            <div className="satt__h">
+              <span className="sheet__lbl">المرفقات</span>
+              <button className="sfoot__add"
+                onClick={() => setFiles((f) => [...f, { n: 'مرفق-' + (f.length + 1) + '.pdf', s: '٢٤٠ ك.ب' }])}>
+                + إرفاق ملف
+              </button>
+            </div>
+            {files.length > 0 && (
+              <ul className="flist">
+                {files.map((f, i) => (
+                  <li key={i}>
+                    <Ico.invoice size={16} /><b>{f.n}</b><span>{f.s}</span>
+                    <button aria-label="شيل المرفق" onClick={() => setFiles((x) => x.filter((_, j) => j !== i))}>
+                      <Ico.close size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          </div>
+
+          {/* شمال — الإجماليات */}
+          {/* العمود الشمال: كرت المجاميع، وتحته كل إضافة اختيارية في
+              كرت بذاته — مش سطر مدفون جوّه المجاميع */}
+          <div className="sfoot__col">
+          <div className="sfoot__tot">
+            <div className="stot"><span>المجموع الفرعي</span>
+              <b><span className="num">{fmtMoney(calc.net)}</span><Riyal /></b></div>
+
+            {calc.lineDisc > 0 && (
+              <div className="stot stot--q"><span>خصم البنود</span>
+                <b className="is-minus">− <span className="num">{fmtMoney(calc.lineDisc)}</span><Riyal /></b></div>
+            )}
+
+            {/* «إضافة خصم» سطر بيتحوّل لحقل — مش حقل فاضي مستني */}
+            <div className="stot stot--disc">
+              {editDisc || disc ? (
+                <>
+                  <span>الخصم</span>
+                  <span className="sdisc">
+                    <input className="fld__i n" type="number" min="0" step="0.01" value={disc}
+                      autoFocus={editDisc} placeholder="0"
+                      onChange={(e) => setDisc(e.target.value)}
+                      onBlur={() => setEditDisc(false)} />
+                    <span className="segs segs--sm" role="group" aria-label="نوع الخصم">
+                      <button className={!discPc ? 'on' : ''} onClick={() => setDiscPc(false)}>﷼</button>
+                      <button className={discPc ? 'on' : ''} onClick={() => setDiscPc(true)}>٪</button>
+                    </span>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <button className="sfoot__add" onClick={() => setEditDisc(true)}>
+                    إضافة خصم<Ico.edit size={12} />
+                  </button>
+                  <b className="is-dash">—</b>
+                </>
+              )}
+            </div>
+
+            <div className="stot"><span>الضريبة</span>
+              <b><span className="num">{fmtMoney(calc.tax)}</span><Riyal /></b></div>
+
+            {/* الإجمالي بنبرة السامري-ستريب: رقم كبير مونوسبيس واللِيبل فوقه */}
+            <div className="sgrand">
+              <span className="sgrand__l">الإجمالي</span>
+              <b className="sgrand__v"><Riyal /><span className="num">{fmtMoney(calc.total)}</span></b>
+            </div>
+
+          </div>
+
+          <div className="sfoot__opt">
+            {/* ---------- حالة الدفع — زرار بيفتح قسم، زي السيستم ---------- */}
+            {!showPay ? (
+              <button className="sfoot__row" onClick={() => setShowPay(true)}>
+                <Ico.card size={15} />إظهار حالة الدفع في الفاتورة<i>+</i>
+              </button>
+            ) : (
+              <div className="sblock">
+                <div className="sblock__h">
+                  <b><Ico.card size={14} />حالة الدفع</b>
+                  <button className="rcard__x"
+                    onClick={() => { setShowPay(false); setPayState('none'); setPayAmt('') }}>
+                    <Ico.close size={13} />إزالة
+                  </button>
+                </div>
+                <p className="sblock__s">سجّل الدفعة اللي اتحصّلت وقت إصدار الفاتورة.</p>
+                <SelectField value={payState} onChange={setPayState} ariaLabel="حالة الدفع"
+                  options={[
+                    { id: 'none', label: 'غير مدفوعة' },
+                    { id: 'part', label: 'مدفوعة جزئيًا' },
+                    { id: 'full', label: 'مدفوعة بالكامل' },
+                  ]} />
+                {payState === 'part' && (
+                  <input className="fld__i n" type="number" min="0" step="0.01" placeholder="المبلغ المحصّل"
+                    value={payAmt} onChange={(e) => setPayAmt(e.target.value)} />
+                )}
+                {payState !== 'none' && (
+                  <>
+                    <div className="stot stot--q"><span>المحصّل</span>
+                      <b className="is-minus">− <span className="num">{fmtMoney(calc.paid)}</span><Riyal /></b></div>
+                    <div className="stot stot--q"><span>الباقي على العميل</span>
+                      <b><span className="num">{fmtMoney(calc.rest)}</span><Riyal /></b></div>
+                  </>
+                )}
+              </div>
+            )}
+
+          </div>
+
+          <div className="sfoot__opt">
+            {/* ---------- حسن التنفيذ ---------- */}
+            {!ret ? (
+              <button className="sfoot__row" onClick={() => setRet(true)}>
+                <Ico.check size={15} />إضافة حسن تنفيذ<i>+</i>
+              </button>
+            ) : (
+              <div className="sblock">
+                <div className="sblock__h">
+                  <b><Ico.check size={14} />حسن التنفيذ</b>
+                  <button className="rcard__x" onClick={() => setRet(false)}>
+                    <Ico.close size={13} />إزالة
+                  </button>
+                </div>
+                <p className="sblock__s">المبلغ المحتجز حتى انتهاء فترة الضمان</p>
+
+                <div className="segs segs--sm segs--full" role="group" aria-label="طريقة الاحتجاز">
+                  <button className={retMode === 'pc' ? 'on' : ''} onClick={() => setRetMode('pc')}>نسبة</button>
+                  <button className={retMode === 'amt' ? 'on' : ''} onClick={() => setRetMode('amt')}>مبلغ ثابت</button>
+                </div>
+
+                {retMode === 'pc' ? (
+                  <div className="rcard__pc">
+                    {RET_PC.map((p) => (
+                      <button key={p} className={num(retVal) === p ? 'on' : ''}
+                        onClick={() => setRetVal(p)}>{p}٪</button>
+                    ))}
+                    <input className="fld__i n" type="number" min="0" max="100" placeholder="٪"
+                      value={RET_PC.includes(num(retVal)) ? '' : retVal}
+                      onChange={(e) => setRetVal(e.target.value)} />
+                  </div>
+                ) : (
+                  <input className="fld__i n" type="number" min="0" step="0.01" placeholder="0"
+                    value={retVal} onChange={(e) => setRetVal(e.target.value)} />
+                )}
+
+                <div className="segs segs--sm segs--full" role="group" aria-label="أساس الاحتجاز">
+                  <button className={retBase === 'net' ? 'on' : ''} onClick={() => setRetBase('net')}>قبل الضريبة</button>
+                  <button className={retBase === 'gross' ? 'on' : ''} onClick={() => setRetBase('gross')}>شامل الضريبة</button>
+                </div>
+
+                <DateField label="تاريخ الإفراج المتوقع" value={retDate} onChange={setRetDate} />
+                <input className="fld__i" placeholder="شرط الإفراج — مثال: بعد انتهاء فترة الضمان"
+                  value={retCond} onChange={(e) => setRetCond(e.target.value)} />
+
+                <div className="stot stot--q"><span>حسن التنفيذ</span>
+                  <b className="is-minus">− <span className="num">{fmtMoney(calc.ret)}</span><Riyal /></b></div>
+                <div className="stot stot--grand"><span>الصافي المستحق</span>
+                  <b><span className="num">{fmtMoney(calc.netDue)}</span><Riyal /></b></div>
+              </div>
+            )}
+          </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ★ سطر واحد تحت المستند بيقول الناقص — السيستم مالوش، بس
+          قاعدة البورد «الزرار ميتقفلش» محتاجة مكان تقول فيه إيه اللي
+          ناقص من غير ما تمنع الحفظ. */}
+      {tried && nErr > 0 && (
+        <p className="sheet__err">
+          <Ico.close size={15} />ناقص {countAr(nErr)} — موضّحة في المستند باللون الأحمر
+        </p>
+      )}
+
       {preview && (
         <PrintPreview onClose={() => setPreview(false)} doc={{
           no, date, due,

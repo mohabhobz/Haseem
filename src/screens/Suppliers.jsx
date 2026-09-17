@@ -12,6 +12,7 @@ import { fmtDate } from '../lib/format.js'
 import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    الموردون.
@@ -393,10 +394,10 @@ function SupplierForm({ s, all, onClose }) {
       <div className="frow frow--2" style={{ marginTop: 14 }}>
         <label className="fld">
           <span className="fld__l">شروط السداد</span>
-          <select className="fld__i" value={terms} onChange={(e) => setTerms(e.target.value)}>
+          <Select className="fld__i" value={terms} onChange={(e) => setTerms(e.target.value)}>
             {['عند الاستلام', 'صافي 10 أيام', 'صافي 15 يوم', 'صافي 30 يوم', 'صافي 45 يوم', 'صافي 60 يوم', 'سنوي مقدّم']
               .map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          </Select>
           <em className="fld__h">منها بيتحسب تاريخ استحقاق فاتورته لوحده.</em>
         </label>
         <label className="fld">

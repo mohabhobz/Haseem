@@ -5,6 +5,7 @@ import { fmtMoney, amountInWords } from '../lib/format.js'
 import * as R from '../lib/reports.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from './selectfield.jsx'
 
 /* ---------- تحويل جديد ---------- */
 export function TransferForm({ onClose }) {
@@ -49,10 +50,10 @@ export function TransferForm({ onClose }) {
       <div className="frow frow--2">
         <label className="fld">
           <span className="fld__l">من حساب</span>
-          <select className={`fld__i${touched && same ? ' is-bad' : ''}`} value={from}
+          <Select className={`fld__i${touched && same ? ' is-bad' : ''}`} value={from}
             onChange={(e) => setFrom(e.target.value)}>
             {DATA.cashAccounts.map((a) => <option key={a.acc} value={a.acc}>{a.ar}</option>)}
-          </select>
+          </Select>
           <em className={`fld__h${over ? ' is-warn' : ''}`}>
             الرصيد الحالي <b className="num">{fmtMoney(bal)}</b>
             {over && ' — المبلغ والرسوم أكبر من الرصيد'}
@@ -61,10 +62,10 @@ export function TransferForm({ onClose }) {
 
         <label className="fld">
           <span className="fld__l">إلى حساب</span>
-          <select className={`fld__i${touched && same ? ' is-bad' : ''}`} value={to}
+          <Select className={`fld__i${touched && same ? ' is-bad' : ''}`} value={to}
             onChange={(e) => setTo(e.target.value)}>
             {DATA.cashAccounts.map((a) => <option key={a.acc} value={a.acc}>{a.ar}</option>)}
-          </select>
+          </Select>
           {same
             ? <em className="fld__e">مينفعش تحوّل لنفس الحساب</em>
             : <em className="fld__h">

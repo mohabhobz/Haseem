@@ -12,6 +12,7 @@ import { fmtDate, fmtMoney, TODAY} from '../lib/format.js'
 import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    المصروفات.
@@ -294,22 +295,22 @@ function ExpenseForm({ e, onClose }) {
       <div className="frow frow--2" style={{ marginTop: 14 }}>
         <label className="fld">
           <span className="fld__l">حساب المصروف</span>
-          <select className="fld__i" value={acc} disabled={readOnly}
+          <Select className="fld__i" value={acc} disabled={readOnly}
             onChange={(ev) => setAcc(ev.target.value)}>
             {DATA.accountsOf('expense').map((a) => (
               <option key={a.id} value={a.id}>{a.ar}</option>
             ))}
-          </select>
+          </Select>
           <em className="fld__h">حسابات المصروف بس — مش شجرة الحسابات كلها.</em>
         </label>
         <label className="fld">
           <span className="fld__l">اندفع من</span>
-          <select className="fld__i" value={cash} disabled={readOnly}
+          <Select className="fld__i" value={cash} disabled={readOnly}
             onChange={(ev) => setCash(ev.target.value)}>
             {DATA.accountsOf('cash').map((a) => (
               <option key={a.id} value={a.id}>{a.ar}</option>
             ))}
-          </select>
+          </Select>
           <em className="fld__h">النقدية والبنوك بس.</em>
         </label>
       </div>
@@ -324,10 +325,10 @@ function ExpenseForm({ e, onClose }) {
         </label>
         <label className="fld">
           <span className="fld__l">فئة الضريبة</span>
-          <select className="fld__i" value={tax} disabled={readOnly}
+          <Select className="fld__i" value={tax} disabled={readOnly}
             onChange={(ev) => setTax(ev.target.value)}>
             {DATA.purchaseTax.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-          </select>
+          </Select>
         </label>
       </div>
 

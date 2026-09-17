@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Ico } from './icons.jsx'
 import { Checkbox, IconButton, Button } from './primitives.jsx'
 import { RowMenu } from './rowmenu.jsx'
@@ -52,6 +52,16 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
               ))}
               <td className="actcell">
                 <div className="rowacts">
+                  {/* ★ عنقود الأوامر — السيستم بيحط أكتر من أمر على الصف
+                      (تسجيل دفعة · PDF · إرسال · معاينة) مش أمر واحد.
+                      `action` فضل زي ما هو للأمر الرئيسي المميّز. */}
+                  {r.actions?.map((a) => (
+                    <button key={a.label} className={`iact${a.on ? ' is-on' : ''}`}
+                      title={a.label} aria-label={a.label} disabled={a.off}
+                      onClick={(e) => { e.stopPropagation(); a.onClick?.(e) }}>
+                      {a.Ic ? <a.Ic size={15} /> : a.label}
+                    </button>
+                  ))}
                   {r.action && (
                     <button className={`act act--${r.action.tone || 'go'}`}
                       onClick={(e) => { e.stopPropagation(); r.action.onClick?.() }}>
@@ -91,26 +101,103 @@ export function BulkActionBar({ count, actions, onClear, onAction }) {
 /* أزرار الصفحات بتظهر بس لما يبقى فيه أكتر من صفحة فعلًا.
    قبل كده كانت ١ ٢ ٣ مرسومة دايمًا حتى لو كل النتايج في صفحة
    واحدة — زرار شكله شغّال وهو مش شغّال. */
-export function Pagination({ from, to, total, page = 1, perPage, onPage }) {
+/* ============================================================
+   الترقيم.
+   ------------------------------------------------------------
+   ★ الأسهم كانت حروف نصّية (‹ ›) — مقاسها بيتغيّر مع الخط،
+   ووزنها أرفع من أي أيقونة جنبها، واتجاهها في العربي بيلخبط.
+   بقت أيقونات من نفس السيت، واتجاهها منطقي: «السابق» بيشاور
+   ناحية اليمين في العربي.
+
+   ★ وعدد الصفوف بقى **كومبوبوكس**: تختار من القايمة أو تكتب
+   رقمك بإيدك. اللي بيراجع ١٥ فاتورة مش زي اللي بيراجع ٢٠٠،
+   والقايمة الجاهزة لوحدها بتجبر الاتنين على نفس الرقم.
+   ============================================================ */
+const PER_OPTS = [12, 25, 50, 100]
+
+function PerPage({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(String(value))
+  const box = useRef(null)
+
+  useEffect(() => { setDraft(String(value)) }, [value])
+  useEffect(() => {
+    if (!open) return
+    const away = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', away)
+    return () => document.removeEventListener('mousedown', away)
+  }, [open])
+
+  /* الرقم بيتقبل عند الإنتر أو الخروج من الحقل — مش مع كل حرف،
+     عشان ما نعيدش ترتيب الجدول وانت لسه بتكتب «1» من «100». */
+  const commit = () => {
+    const n = Math.max(1, Math.min(500, parseInt(draft, 10) || value))
+    setDraft(String(n))
+    if (n !== value) onChange(n)
+    setOpen(false)
+  }
+
+  return (
+    <label className="perpage" ref={box}>
+      <span>صفوف</span>
+      <span className="perpage__f">
+        <input className="perpage__i num" value={draft} inputMode="numeric"
+          aria-label="عدد الصفوف في الصفحة"
+          onFocus={() => setOpen(true)}
+          onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, ''))}
+          onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setOpen(false) }}
+          onBlur={commit} />
+        <button type="button" className="perpage__c" tabIndex={-1}
+          aria-label="اختر من القائمة" onClick={() => setOpen((v) => !v)}>
+          <Ico.chevron size={13} />
+        </button>
+        {open && (
+          <div className="perpage__p" role="listbox">
+            {PER_OPTS.map((n) => (
+              <button key={n} type="button" role="option" aria-selected={n === value}
+                className={n === value ? 'on' : ''}
+                onMouseDown={(e) => { e.preventDefault(); setDraft(String(n)); onChange(n); setOpen(false) }}>
+                <span className="num">{n}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </span>
+    </label>
+  )
+}
+
+export function Pagination({ from, to, total, page = 1, perPage, onPage, onPerPage }) {
   const pages = perPage ? Math.max(1, Math.ceil(total / perPage)) : 1
   const show = pages > 1 && typeof onPage === 'function'
 
   return (
     <div data-component="Pagination" className="pager">
-      <div>عرض <span className="num">{from}</span> إلى <span className="num">{to}</span> من <span className="num">{total}</span></div>
-      {show && (
-        <div className="pager__pages">
-          <button className="pager__btn" disabled={page >= pages}
-            aria-label="الصفحة التالية" onClick={() => onPage(page + 1)}>›</button>
-          {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
-            <button key={n} className={`pager__btn${n === page ? ' on' : ''}`}
-              aria-current={n === page ? 'page' : undefined}
-              onClick={() => onPage(n)}>{n}</button>
-          ))}
-          <button className="pager__btn" disabled={page <= 1}
-            aria-label="الصفحة السابقة" onClick={() => onPage(page - 1)}>‹</button>
-        </div>
-      )}
+      <div className="pager__count">
+        عرض <span className="num">{from}</span> إلى <span className="num">{to}</span> من <span className="num">{total}</span>
+      </div>
+
+      <div className="pager__side">
+        {typeof onPerPage === 'function' && <PerPage value={perPage} onChange={onPerPage} />}
+
+        {show && (
+          <div className="pager__pages">
+            <button className="pager__btn pager__nav" disabled={page <= 1}
+              aria-label="الصفحة السابقة" onClick={() => onPage(page - 1)}>
+              <Ico.chevron size={14} />
+            </button>
+            {Array.from({ length: pages }, (_, i) => i + 1).map((n) => (
+              <button key={n} className={`pager__btn${n === page ? ' on' : ''}`}
+                aria-current={n === page ? 'page' : undefined}
+                onClick={() => onPage(n)}>{n}</button>
+            ))}
+            <button className="pager__btn pager__nav" disabled={page >= pages}
+              aria-label="الصفحة التالية" onClick={() => onPage(page + 1)}>
+              <Ico.chevron size={14} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

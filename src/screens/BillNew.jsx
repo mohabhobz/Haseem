@@ -8,6 +8,7 @@ import { fmtMoney, fmtDate } from '../lib/format.js'
 import { useDoc } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    إنشاء فاتورة مشتريات / أمر شراء.
@@ -195,13 +196,13 @@ export default function BillNew({ mode = 'bill' }) {
             <div className="frow frow--2">
               <div className="fld">
                 <span className="fld__l">المورد</span>
-                <select className={`fld__i${show('sup') ? ' is-bad' : ''}`} value={sup}
+                <Select className={`fld__i${show('sup') ? ' is-bad' : ''}`} value={sup}
                   onChange={(e) => setSupplier(e.target.value)}>
                   <option value="">اختر مورد…</option>
                   {DATA.suppliers.map((x) => (
                     <option key={x.id} value={x.id}>{x.ar}{x.vat ? '' : ' (غير مسجّل ضريبيًا)'}</option>
                   ))}
-                </select>
+                </Select>
                 {show('sup')
                   ? <em className="fld__e">{show('sup')}</em>
                   : <button className="linkish" onClick={() => nav('/purchases/suppliers')}>
@@ -256,12 +257,12 @@ export default function BillNew({ mode = 'bill' }) {
                 return (
                   <div className="lines__r" key={l.key}>
                     <span className="lines__i">{i + 1}</span>
-                    <select className="fld__i" value={l.sku} onChange={(e) => pick(l.key, e.target.value)}>
+                    <Select className="fld__i" value={l.sku} onChange={(e) => pick(l.key, e.target.value)}>
                       <option value="">اختر صنف…</option>
                       {DATA.items.map((x) => (
                         <option key={x.sku} value={x.sku}>{x.ar}</option>
                       ))}
-                    </select>
+                    </Select>
                     <input className="fld__i n" type="number" min="0" step="1" value={l.qty}
                       onChange={(e) => setLine(l.key, { qty: e.target.value })} />
                     <span className="lines__pw">
@@ -273,16 +274,16 @@ export default function BillNew({ mode = 'bill' }) {
                         </em>
                       )}
                     </span>
-                    <select className="fld__i" value={l.tax}
+                    <Select className="fld__i" value={l.tax}
                       onChange={(e) => setLine(l.key, { tax: e.target.value })}>
                       {DATA.purchaseTax.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-                    </select>
-                    <select className="fld__i" value={l.acc}
+                    </Select>
+                    <Select className="fld__i" value={l.acc}
                       onChange={(e) => setLine(l.key, { acc: e.target.value })}>
                       {DATA.accountsOf('expense').map((a) => (
                         <option key={a.id} value={a.id}>{DATA.accName(a.id)}</option>
                       ))}
-                    </select>
+                    </Select>
                     <span className="lines__t">{fmtMoney(l.net)}</span>
                     <button className="lines__x" aria-label="شيل السطر"
                       disabled={lines.length === 1}
@@ -330,10 +331,10 @@ export default function BillNew({ mode = 'bill' }) {
                   {isPO ? 'يتسلّم في' : 'يدخل مستودع'}
                   {!anyProduct && <em className="fld__opt">مش مطلوب</em>}
                 </span>
-                <select className="fld__i" value={store} disabled={!anyProduct}
+                <Select className="fld__i" value={store} disabled={!anyProduct}
                   onChange={(e) => setStore(e.target.value)}>
                   {DATA.stores.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-                </select>
+                </Select>
                 <em className="fld__h">
                   {anyProduct
                     ? isPO ? 'الكميات بتدخله وقت تسجيل الاستلام.' : 'الكميات بتدخله وقت الترحيل.'

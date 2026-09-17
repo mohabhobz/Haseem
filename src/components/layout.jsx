@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Button, IconButton, SearchField } from './primitives.jsx'
 import { Ico, Riyal } from './icons.jsx'
@@ -7,6 +7,7 @@ import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { getTheme, setTheme } from '../lib/theme.js'
 import { getBrand } from '../lib/brand.js'
+import { Drawer } from './drawer.jsx'
 
 /* خريطة التنقل — قائمة واحدة متصلة، من غير تقسيمات */
 const NAV = [
@@ -82,6 +83,15 @@ export function Sidebar({ collapsed, onToggle }) {
   const nav = useNavigate()
   const [menu, setMenu] = useState(false)
   const [orgMenu, setOrgMenu] = useState(false)
+  const [orgQ, setOrgQ]       = useState('')
+
+  /* أي شاشة تقدر تفتح دراور المنشآت من غير ما تعرف حاجة عن
+     الـShell — «تغيير» اللي في رأس الفاتورة بيستخدمه */
+  useEffect(() => {
+    const open = () => setOrgMenu(true)
+    window.addEventListener('haseem:orgs', open)
+    return () => window.removeEventListener('haseem:orgs', open)
+  }, [])
   const [theme, setTh] = useState(getTheme)
   /* شعار المنشأة بيتقرا من الهوية، وبيتحدّث لحظيًا لما تتغيّر */
   const [brand, setBrand] = useState(getBrand)
@@ -131,7 +141,23 @@ export function Sidebar({ collapsed, onToggle }) {
       const on = activeIn(it.children)
       return (
         <div key={it.label} data-component="NavGroup" className={`nav__group${open[it.label] ? ' open' : ''}`}>
-          <button className="nav__item" onClick={() => setOpen((p) => ({ ...p, [it.label]: !p[it.label] }))}>
+          {/* ★ والقايمة مقفولة، الدوسة **بتودّيك جوّه الموديول**
+              والقايمة تفضل مقفولة زي ما هي.
+              قبل كده كانت بتفتح القايمة — وده كان بيغيّر حالة
+              الشاشة من غير ما المستخدم يطلب. هو قافلها عن قصد،
+              وبيعرف أسماء الموديولز من الهوفر، وبيختار من
+              اللوحة الجانبية. فمفيش سبب الدوسة تفتحها.
+              القايمة بتتفتح من مقبض الحافة **بس**.
+              والوجهة: الشاشة الشغّالة جوّه المجموعة لو فيه،
+              وإلا أول شاشة فيها. */}
+          {/* `is-ison` = فيه شاشة شغّالة جوّه المجموعة دي. مهم في
+              الوضع المقفول: العناصر الفرعية مخفية، فلو المجموعة
+              ما اتعلّمتش المستخدم مش عارف هو فين خالص. */}
+          <button className={'nav__item' + (on ? ' is-ison' : '')} title={it.label}
+            onClick={() => {
+              if (collapsed) { nav(on || it.children[0].to); return }
+              setOpen((p) => ({ ...p, [it.label]: !p[it.label] }))
+            }}>
             <span className="ico"><it.Ic size={18} /></span>
             <span className="label">{it.label}</span>
             <Ico.chevron size={16} className="chev" />
@@ -145,6 +171,22 @@ export function Sidebar({ collapsed, onToggle }) {
                 className={() => `nav__link${on === c.to ? ' active' : ''}`}>{c.label}</NavLink>
             ))}
           </div>
+
+          {/* ★ القايمة مقفولة: المجموعة بتفتح لوحة جنبية بالهوفر.
+              من غيرها المستخدم لازم يفتح القايمة كلها عشان يشوف
+              فين هو — واللوحة بتوري كمان **العنصر الشغّال**،
+              فالمقفولة ما بتبقاش بتخبّي مكانك. */}
+          <div className="nav__fly" role="menu" aria-label={it.label}>
+            <span className="nav__flyt">{it.label}</span>
+            {it.children.map((c) => (
+              <NavLink key={c.label} to={c.to} role="menuitem"
+                aria-current={on === c.to ? 'page' : undefined}
+                className={() => `nav__flyi${on === c.to ? ' active' : ''}`}>
+                {c.label}
+                {on === c.to && <Ico.check size={14} />}
+              </NavLink>
+            ))}
+          </div>
         </div>
       )
     }
@@ -152,18 +194,29 @@ export function Sidebar({ collapsed, onToggle }) {
       /* شاشة لسه متبنيتش — بتفضل بشكلها الطبيعي، مش رمادية ولا
          معطّلة، بس بتقول الحقيقة بدل ما تسكت */
       return (
-        <button key={it.label} className="nav__item" data-component="NavItem"
+        <button key={it.label} className="nav__item" data-component="NavItem" title={it.label}
           onClick={() => toast.info(`${it.label} — الموديول ده لسه تحت التصميم`,
             { sub: 'المبيعات والعملاء هما الجاهزين دلوقتي' })}>
           <span className="ico"><it.Ic size={18} /></span><span className="label">{it.label}</span>
         </button>
       )
     }
+    /* العنصر المفرد بياخد لوحة كمان — عشان الوضع المقفول
+       يبقى فيه **قاعدة واحدة**: أي أيقونة تهوفر عليها تقولك
+       اسمها وحالتها، مش بعضهم يقول وبعضهم لأ. */
     return (
-      <NavLink key={it.label} to={it.to} data-component="NavItem"
-        className={({ isActive }) => `nav__item${isActive ? ' active' : ''}`}>
-        <span className="ico"><it.Ic size={18} /></span><span className="label">{it.label}</span>
-      </NavLink>
+      <div key={it.label} className="nav__one">
+        <NavLink to={it.to} data-component="NavItem"
+          className={({ isActive }) => `nav__item${isActive ? ' active' : ''}`}>
+          <span className="ico"><it.Ic size={18} /></span><span className="label">{it.label}</span>
+        </NavLink>
+        <div className="nav__fly nav__fly--one" role="tooltip">
+          <span className={'nav__flyi' + (hits(it.to) ? ' active' : '')}>
+            {it.label}
+            {hits(it.to) && <Ico.check size={14} />}
+          </span>
+        </div>
+      </div>
     )
   }
 
@@ -171,53 +224,68 @@ export function Sidebar({ collapsed, onToggle }) {
     <nav data-component="Sidebar" className="nav">
       {/* ★ رأس القائمة = هوية المنشأة نفسها. ده منتج SaaS —
           العميل بيشوف شركته هو فوق، مش شعار حسيم. */}
+      {/* ★ رأس القائمة بقى زرار واحد بيفتح دراور.
+          قبل كده كان فيه قايمة منسدلة صغيرة فيها حالة الهيئة
+          وقايمة المنشآت والإعدادات مكدّسين في ٢٤٠px. والمنشآت
+          ممكن تبقى عشرات — قايمة بالحجم ده مش مكانها.
+          الدراور بيدّي مساحة للبحث ولاسم كامل لكل منشأة. */}
       <div className="orgtop" data-component="OrgSwitcher">
-        <span className="orgtop__id">
+        <button className="orgtop__id" aria-haspopup="dialog" aria-expanded={orgMenu}
+          onClick={(e) => { e.stopPropagation(); setOrgMenu(true) }}>
           <span className="orgtop__av">
             {brand.logo
               ? <img src={brand.logo} alt="" />
               : <b>{DATA.org.initials}</b>}
           </span>
           <span className="orgtop__n" title={DATA.org.nameAr}>{DATA.org.nameAr}</span>
-        </span>
-
-        <button className={`orgtop__btn${orgMenu ? ' is-open' : ''}`}
-          aria-label="خيارات المنشأة" aria-expanded={orgMenu}
-          onClick={(e) => { e.stopPropagation(); setOrgMenu((v) => !v) }}>
-          <Ico.chevron size={16} />
+          <Ico.chevron size={15} className="orgtop__cv" />
         </button>
+      </div>
 
-        {orgMenu && (
-          <div className="omenu" data-component="OrgMenu" onClick={(e) => e.stopPropagation()}>
-            <div className={`omenu__zatca${DATA.org.zatcaOk ? ' is-ok' : ''}`}>
-              <i className="omenu__dot" />
-              <span className="omenu__zt">{DATA.org.zatca}</span>
-              <span className="omenu__zs">{DATA.org.zatcaSync}</span>
-            </div>
+      <Drawer open={orgMenu} onClose={() => setOrgMenu(false)}
+        title="المنشآت" meta="اختر المنشأة اللي عايز تشتغل عليها">
 
-            <div className="omenu__sep" />
-            <div className="omenu__lbl">تبديل المنشأة</div>
-            {DATA.orgs.map((o) => (
-              <button key={o.id} className={`omenu__org${o.current ? ' is-on' : ''}`}>
-                <span className="omenu__oav">
+        {/* حالة الربط مع الهيئة للمنشأة الشغّالة دلوقتي */}
+        <div className={`odrw__zatca${DATA.org.zatcaOk ? ' is-ok' : ''}`}>
+          <i className="omenu__dot" />
+          <span className="omenu__zt">{DATA.org.zatca}</span>
+          <span className="omenu__zs">{DATA.org.zatcaSync}</span>
+        </div>
+
+        {DATA.orgs.length >= 8 && (
+          <input className="fld__i odrw__s" placeholder="ابحث باسم المنشأة…"
+            value={orgQ} onChange={(e) => setOrgQ(e.target.value)} />
+        )}
+
+        <div className="odrw__l">
+          {DATA.orgs
+            .filter((o) => o.nameAr.includes(orgQ.trim()))
+            .map((o) => (
+              <button key={o.id} className={`odrw__o${o.current ? ' is-on' : ''}`}
+                onClick={() => setOrgMenu(false)}>
+                <span className="odrw__av">
                   {o.logo ? <img src={o.logo} alt="" /> : <b>{o.initials}</b>}
                 </span>
-                <span className="omenu__on">{o.nameAr}</span>
-                {o.current && <Ico.check size={15} className="omenu__ok" />}
+                <span className="odrw__t">
+                  <b>{o.nameAr}</b>
+                  <em>{o.current ? 'المنشأة الشغّالة دلوقتي' : 'اضغط للتبديل'}</em>
+                </span>
+                {o.current && <Ico.check size={16} />}
               </button>
             ))}
+        </div>
 
-            <div className="omenu__sep" />
-            <button className="omenu__i"
-              onClick={() => { setOrgMenu(false); nav('/settings/organization') }}>
-              <span className="omenu__ic"><Ico.settings size={16} /></span>إعدادات المنشأة
-            </button>
-            <button className="omenu__i">
-              <span className="omenu__ic"><Ico.plus size={16} /></span>إضافة منشأة
-            </button>
-          </div>
-        )}
-      </div>
+        <div className="odrw__acts">
+          <button className="odrw__i"
+            onClick={() => { setOrgMenu(false); nav('/settings/organization') }}>
+            <span className="omenu__ic"><Ico.settings size={16} /></span>إعدادات المنشأة
+          </button>
+          <button className="odrw__i">
+            <span className="omenu__ic"><Ico.plus size={16} /></span>إضافة منشأة
+          </button>
+        </div>
+      </Drawer>
+
       <div className="nav__scroll">
         {NAV.map(renderItem)}
       </div>
@@ -302,8 +370,96 @@ export function TopBar({ search }) {
   )
 }
 
+/* ============================================================
+   NavRail — الخط اللي بيفصل القايمة عن المحتوى، وهو نفسه
+   المقبض بتاعها.
+   ------------------------------------------------------------
+   • **سحب** بيغيّر عرض القايمة (١٨٠ → ٣٦٠).
+   • **دوسة** من غير سحب بتقفل/تفتح.
+   • السحب تحت ١٥٠ بيقفلها — نفس حركة الإيد في أي IDE.
+
+   ملاحظة اتجاه: القايمة على **اليمين**، فتوسيعها معناه إن
+   الماوس بيروح **شمال** — يعني الفرق `startX - clientX`
+   موجب. في LTR العكس، عشان كده في `dirSign`.
+   ============================================================ */
+const NAV_MIN = 180
+const NAV_MAX = 360
+const NAV_SNAP = 150
+
+function NavRail({ collapsed, width, onWidth, onToggle }) {
+  const drag = useRef(null)
+
+  const down = (e) => {
+    e.preventDefault()
+    const sign = document.documentElement.dir === 'rtl' ? -1 : 1
+    drag.current = { x: e.clientX, w: width, moved: false, sign }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
+  }
+
+  const move = (e) => {
+    const d = drag.current
+    if (!d) return
+    const delta = (e.clientX - d.x) * d.sign
+    if (Math.abs(e.clientX - d.x) > 3) d.moved = true
+    const next = d.w + delta
+    if (next < NAV_SNAP) { onWidth(NAV_MIN); if (!collapsed) onToggle(true); return }
+    if (collapsed) onToggle(false)
+    onWidth(Math.min(NAV_MAX, Math.max(NAV_MIN, next)))
+  }
+
+  const up = (e) => {
+    const d = drag.current
+    drag.current = null
+    e.currentTarget.releasePointerCapture?.(e.pointerId)
+    /* دوسة من غير سحب = قفل/فتح */
+    if (d && !d.moved) onToggle(!collapsed)
+  }
+
+  return (
+    <div className="navrail" onPointerDown={down} onPointerMove={move}
+      onPointerUp={up} onPointerCancel={up}
+      role="separator" aria-orientation="vertical"
+      aria-label="عرض القائمة — اسحب للتغيير أو اضغط للطي">
+      <button className="navrail__b" tabIndex={-1}
+        aria-label={collapsed ? 'فتح القائمة' : 'طي القائمة'}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={() => onToggle(!collapsed)}>
+        <Ico.collapse size={15} />
+      </button>
+    </div>
+  )
+}
+
 export function AppShell({ children, search }) {
-  const [collapsed, setCollapsed] = useState(false)
+  /* ★★ حالة القايمة بتتخزّن.
+     كل شاشة بترسم `<AppShell>` بتاعها، فالتنقّل بيهدّ المكوّن
+     ويبنيه من أول وجديد — يعني أي حالة جوّاه بترجع لأصلها.
+     ده كان بيخلّي القايمة تتفتح لوحدها بعد كل تنقّلة، والمستخدم
+     اللي قافلها عن قصد يلاقيها اتفتحت من غير ما يطلب.
+     التخزين بيخلّي القرار بتاعه هو اللي يعيش، مش الافتراضي. */
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('nav:collapsed') === '1' } catch { return false }
+  })
+  const [navW, setNavW] = useState(() => {
+    try { return +localStorage.getItem('nav:w') || 252 } catch { return 252 }
+  })
+
+  /* ★ الكتابة بتحصل **من فعل المستخدم بس**، مش في `useEffect`
+     بيشتغل مع كل بناء للمكوّن. الفرق مهم: الشاشة بتتبني من أول
+     وجديد مع كل تنقّلة، ولو الكتابة معلّقة على البناء، أي حالة
+     عابرة بتتسجّل كأنها قرار. كده اللي بيتخزّن هو اللي المستخدم
+     عمله بإيده بس، والقايمة ما بتغيّرش نفسها أبدًا. */
+  const applyCollapsed = (v) => {
+    setCollapsed((prev) => {
+      const next = typeof v === 'function' ? v(prev) : v
+      if (next !== prev) { try { localStorage.setItem('nav:collapsed', next ? '1' : '0') } catch {} }
+      return next
+    })
+  }
+  const applyWidth = (w) => {
+    setNavW(w)
+    try { localStorage.setItem('nav:w', String(w)) } catch {}
+  }
   const [navOpen, setNavOpen] = useState(false)
   const { pathname } = useLocation()
 
@@ -312,6 +468,7 @@ export function AppShell({ children, search }) {
 
   return (
     <div data-component="AppShell"
+      style={{ '--nav-w': navW + 'px' }}
       className={`shell${collapsed ? ' collapsed' : ''}${navOpen ? ' navopen' : ''}`}>
 
       {/* شريط الموبايل — بيظهر تحت 900px بس */}
@@ -325,7 +482,13 @@ export function AppShell({ children, search }) {
       </header>
 
       <div className="navscrim" onClick={() => setNavOpen(false)} />
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar collapsed={collapsed} onToggle={() => applyCollapsed((c) => !c)} />
+
+      {/* المقبض بقى ابن مباشر للشيل مش للمحتوى — عشان الزرار
+          اللي راكب على الخط يقع نص في القايمة ونص في المحتوى
+          من غير ما حد فيهم يقصّه */}
+      <NavRail collapsed={collapsed} width={navW} onWidth={applyWidth}
+        onToggle={applyCollapsed} />
 
       <main className="main">
         <div className="content">{children}</div>
@@ -347,12 +510,27 @@ export function CurrencyNote() {
   )
 }
 
-export function PageHeader({ title, sub, actions }) {
+/* `back`: مسار أو دالة. لما تتبعت، بيظهر سهم رجوع **قبل اسم
+   الشاشة** بدل زرار «رجوع» مدفون بين أزرار الحفظ.
+   السبب: الرجوع مش أمر من أوامر المستند — هو تنقّل. ولما كان
+   قاعد جنب «حفظ كمسودة» كان بياخد نفس وزنه البصري، والمستخدم
+   لازم يقرا الأزرار كلها عشان يلاقي الخروج. */
+export function PageHeader({ title, sub, actions, back }) {
+  const nav = useNavigate()
+  const goBack = () => (typeof back === 'function' ? back() : nav(back))
+
   return (
     <div data-component="PageHeader" className="pagehead">
-      <div>
-        <h1 className="pagehead__title">{title}</h1>
-        {sub && <div className="pagehead__sub">{sub}</div>}
+      <div className="pagehead__lead">
+        {back && (
+          <button className="pagehead__back" onClick={goBack} aria-label="رجوع" title="رجوع">
+            <Ico.back size={18} />
+          </button>
+        )}
+        <div>
+          <h1 className="pagehead__title">{title}</h1>
+          {sub && <div className="pagehead__sub">{sub}</div>}
+        </div>
       </div>
       <div className="pagehead__actions">{actions}</div>
     </div>

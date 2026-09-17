@@ -7,6 +7,7 @@ import { fmtMoney, fmtDate, TODAY } from '../lib/format.js'
 import { PrintPreview } from '../components/printpreview.jsx'
 import * as DATA from '../data/mock.js'
 import { toast, confirmAction } from '../components/feedback.jsx'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    إشعار دائن جديد — خطوتين.
@@ -335,14 +336,14 @@ export default function CreditNoteNew() {
 
                 <label className="fld" style={{ marginTop: 14 }}>
                   <span className="fld__l">طريقة الدفع <em className="fld__opt">حقل الهيئة</em></span>
-                  <select className="fld__i" value={pay} onChange={(e) => setPay(e.target.value)}>
+                  <Select className="fld__i" value={pay} onChange={(e) => setPay(e.target.value)}>
                     <option value="">غير محدد</option>
                     {/* القيم زي ما هي في السيستم — حقل الهيئة مش مكان اجتهاد */}
                     <option value="cash">نقداً</option>
                     <option value="transfer">تحويل بنكي</option>
                     <option value="account">حساب بنكي</option>
                     <option value="card">بطاقة بنكية</option>
-                  </select>
+                  </Select>
                 </label>
               </div>
 
@@ -390,10 +391,10 @@ export default function CreditNoteNew() {
                     onChange={(e) => setLine(l.key, { qty: e.target.value })} />
                   <input className="fld__i n" type="number" min="0" step="0.01" value={l.price}
                     onChange={(e) => setLine(l.key, { price: e.target.value })} />
-                  <select className="fld__i" value={l.tax}
+                  <Select className="fld__i" value={l.tax}
                     onChange={(e) => setLine(l.key, { tax: e.target.value })}>
                     {DATA.taxRates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-                  </select>
+                  </Select>
                   <span className="lines__t">{fmtMoney(l.total)}</span>
                   <button className="lines__x" aria-label="شيل البند" onClick={() => delLine(l.key)}>
                     <Ico.close size={14} />
@@ -493,11 +494,11 @@ export default function CreditNoteNew() {
           {/* السبب مطلوب — بيتبعت للهيئة */}
           <section className="rail__c">
             <span className="rail__lbl">السبب <em className="req">مطلوب</em></span>
-            <select className={`fld__i${show('reason') ? ' is-bad' : ''}`} value={reason}
+            <Select className={`fld__i${show('reason') ? ' is-bad' : ''}`} value={reason}
               onChange={(e) => setReason(e.target.value)}>
               <option value="">اختر سبب…</option>
               {REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
+            </Select>
             {show('reason') && <em className="fld__e">{errs.reason}</em>}
             <p className="fnote fnote--quiet">بيتكتب في XML الإشعار وبيتبعت للهيئة.</p>
           </section>

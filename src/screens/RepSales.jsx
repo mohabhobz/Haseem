@@ -9,6 +9,7 @@ import { useSort, byDate, byNum, byText, periodRange } from '../components/pagef
 import { fmtDate, fmtMoney, TODAY } from '../lib/format.js'
 import * as R from '../lib/reports.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    تقرير المبيعات.
@@ -151,30 +152,30 @@ export default function RepSales() {
         <>
           <label className="repbar__f">
             <span className="repbar__l">العميل</span>
-            <select className="fld__i" value={cust} onChange={(e) => reset(setCust)(e.target.value)}>
+            <Select className="fld__i" value={cust} onChange={(e) => reset(setCust)(e.target.value)}>
               <option value="all">كل العملاء</option>
               {CUSTS.map((c) => <option key={c.id} value={c.id}>{c.ar}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="repbar__f">
             <span className="repbar__l">الصنف</span>
-            <select className="fld__i" value={item} onChange={(e) => reset(setItem)(e.target.value)}>
+            <Select className="fld__i" value={item} onChange={(e) => reset(setItem)(e.target.value)}>
               <option value="all">كل الأصناف</option>
               {ITEMS.map(([code, ar]) => <option key={code} value={code}>{ar}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="repbar__f">
             <span className="repbar__l">المندوب</span>
-            <select className="fld__i" value={rep} onChange={(e) => reset(setRep)(e.target.value)}>
+            <Select className="fld__i" value={rep} onChange={(e) => reset(setRep)(e.target.value)}>
               <option value="all">كل المندوبين</option>
               {DATA.reps.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="repbar__f">
             <span className="repbar__l">حالة الفاتورة</span>
-            <select className="fld__i" value={st} onChange={(e) => reset(setSt)(e.target.value)}>
+            <Select className="fld__i" value={st} onChange={(e) => reset(setSt)(e.target.value)}>
               {ST.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
-            </select>
+            </Select>
           </label>
           <label className="repbar__f repbar__f--num">
             <span className="repbar__l">المبلغ من</span>

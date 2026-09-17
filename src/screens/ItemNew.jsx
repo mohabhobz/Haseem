@@ -5,6 +5,8 @@ import { Ico, Riyal } from '../components/icons.jsx'
 import { toast, confirmAction } from '../components/feedback.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
+import { DateField } from '../components/datefield.jsx'
 
 /* ============================================================
    صنف جديد / تعديل صنف.
@@ -262,22 +264,22 @@ export default function ItemNew() {
 
               <label className="fld">
                 <span className="fld__l">رمز الوحدة</span>
-                <select className="fld__i" value={f.unitCode}
+                <Select className="fld__i" value={f.unitCode}
                   onChange={(e) => set('unitCode', e.target.value)}>
                   {DATA.units.map((u) => (
                     <option key={u.code} value={u.code}>{u.ar} ({u.code})</option>
                   ))}
-                </select>
+                </Select>
                 <em className="fld__h">كود قياسي عالمي (UN/ECE) — ده اللي بيتبعت للهيئة.</em>
               </label>
             </div>
 
             <label className="fld" style={{ marginTop: 14 }}>
               <span className="fld__l">فئة الضريبة</span>
-              <select className="fld__i" value={f.tax} onChange={(e) => set('tax', e.target.value)}>
+              <Select className="fld__i" value={f.tax} onChange={(e) => set('tax', e.target.value)}>
                 <option value="">بدون ضريبة افتراضية</option>
                 {DATA.taxRates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-              </select>
+              </Select>
               <em className="fld__h">
                 بتتعبّى لوحدها في بند الفاتورة، وتقدر تغيّرها على البند لو الحالة اختلفت.
               </em>
@@ -313,12 +315,12 @@ export default function ItemNew() {
                     const s = DATA.storeOf(id)
                     return (
                       <div className="oprow" key={id}>
-                        <select className="fld__i" value={id}
+                        <Select className="fld__i" value={id}
                           onChange={(e) => { dropStore(id); setOpenQty(e.target.value, f.open[id]) }}>
                           {[s, ...freeStores].filter(Boolean).map((x) => (
                             <option key={x.id} value={x.id}>{x.ar}</option>
                           ))}
-                        </select>
+                        </Select>
                         <div className="qtyin">
                           <input className="qtyin__i num" inputMode="decimal" value={f.open[id]}
                             onChange={(e) => setOpenQty(id, e.target.value)} placeholder="0" />

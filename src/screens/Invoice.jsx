@@ -278,16 +278,30 @@ export default function Invoice() {
               دائن مش قيمتها الأصلية. كان ناقص في الاتنين: سيستمه وعندنا. */}
           {(() => {
             const cr = DATA.creditedState(v.no, v.total)
-            if (!cr) return null
             const rel = [...DATA.creditNotes.filter((n) => n.src === v.no),
                          ...DATA.debitNotes.filter((n) => n.src === v.no)]
+            /* ★ كان الشرط `if (!cr) return null` — يعني القسم ما بيبانش
+               إلا لما يبقى فيه إشعار دائن **صادر**. فالفاتورة اللي عليها
+               إشعار مسودة، أو إشعار مدين بس، كانت بتبان نضيفة تمامًا
+               والمستند المرتبط مخفي. الربط لازم يبان من ساعة ما يتعمل. */
+            if (rel.length === 0) return null
             return (
               <section className="rail__c">
-                <span className="rail__lbl">المبلغ بعد الإشعارات</span>
-                <div className="rail__v"><SAR v={cr.net} dec /></div>
-                <span className="rail__due">
-                  الأصلي {fmtMoney(v.total)} − إشعارات {fmtMoney(cr.amount)}
+                <span className="rail__lbl">
+                  {cr ? 'المبلغ بعد الإشعارات' : 'الإشعارات المرتبطة'}
                 </span>
+                {cr ? (
+                  <>
+                    <div className="rail__v"><SAR v={cr.net} dec /></div>
+                    <span className="rail__due">
+                      الأصلي {fmtMoney(v.total)} − إشعارات {fmtMoney(cr.amount)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="rail__due">
+                    مربوطة بالفاتورة — الإجمالي ما اتغيّرش لحد ما الإشعار يتصدر
+                  </span>
+                )}
                 <ul className="rail__pays" style={{ marginTop: 14 }}>
                   {rel.map((n) => (
                     <li key={n.no}>

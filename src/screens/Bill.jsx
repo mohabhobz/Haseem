@@ -11,6 +11,7 @@ import { fmtDate, fmtMoney, daysFrom, STATUS } from '../lib/format.js'
 import { useDoc } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    شاشة فاتورة المشتريات.
@@ -432,11 +433,11 @@ function PayModal({ b, rest, onClose }) {
 
       <label className="fld">
         <span className="fld__l">الحساب اللي هيتدفع منه</span>
-        <select className="fld__i" value={acc} onChange={(e) => setAcc(e.target.value)}>
+        <Select className="fld__i" value={acc} onChange={(e) => setAcc(e.target.value)}>
           {DATA.accountsOf('cash').map((a) => (
             <option key={a.id} value={a.id}>{a.ar}</option>
           ))}
-        </select>
+        </Select>
         <em className="fld__h">النقدية والبنوك بس — مش شجرة الحسابات كلها</em>
       </label>
 

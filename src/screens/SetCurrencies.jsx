@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { SettingsShell } from '../components/settingsshell.jsx'
 import { Ico } from '../components/icons.jsx'
 import { toast } from '../components/feedback.jsx'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    العملات.
@@ -83,7 +84,7 @@ export default function SetCurrencies() {
               const inv = inverse(c.rate)
               return (
                 <div className="crow" key={c.id}>
-                  <select className="fld__i" value={c.code} aria-label="العملة"
+                  <Select className="fld__i" value={c.code} aria-label="العملة"
                     onChange={(e) => pickCurr(i, e.target.value)}>
                     {CURRENCIES.map((x) => (
                       <option key={x.code} value={x.code}
@@ -91,7 +92,7 @@ export default function SetCurrencies() {
                         {x.ar} — {x.code}
                       </option>
                     ))}
-                  </select>
+                  </Select>
 
                   <div className="crow__rate">
                     <div className={`crate${inv ? '' : ' is-bad'}`}>

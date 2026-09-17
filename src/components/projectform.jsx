@@ -4,6 +4,7 @@ import { DateField } from './datefield.jsx'
 import { toast } from './feedback.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
+import { Select } from './selectfield.jsx'
 
 /* ============================================================
    مشروع جديد.
@@ -121,10 +122,10 @@ export function ProjectForm({ onClose }) {
       <div className="frow frow--2" style={{ marginTop: 14 }}>
         <label className="fld">
           <span className="fld__l">العميل <em>اختياري</em></span>
-          <select className="fld__i" value={cust} onChange={(e) => setCust(e.target.value)}>
+          <Select className="fld__i" value={cust} onChange={(e) => setCust(e.target.value)}>
             <option value="">مشروع داخلي — من غير عميل</option>
             {DATA.customers.map((x) => <option key={x.id} value={x.id}>{x.ar}</option>)}
-          </select>
+          </Select>
           <em className="fld__h">لو مربوط بعميل، فواتيره بتترشّح للمشروع ده تلقائيًا</em>
         </label>
 

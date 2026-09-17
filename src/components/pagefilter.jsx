@@ -27,7 +27,7 @@ export function activeOf(groups, value) {
 /* الحقول اللي البحث بيدوّر فيها في المستندات: رقم المستند واسم
    العميل بالعربي والإنجليزي. الشاشات اللي سطرها مش مستند — زي
    العملاء — بتمرّر دالّتها بدل دي. */
-const docText = (r) => [r.no, r.c?.ar, r.c?.en]
+export const docText = (r) => [r.no, r.c?.ar, r.c?.en]
 
 /* الفلترة نفسها — كل مجموعة بتضيّق اللي قبلها (AND) */
 export function applyFilter(rows, groups, value, q = '', text = docText) {
@@ -179,6 +179,57 @@ export function FilterChips({ groups, value, onChange, q, onQ, shown, total }) {
    «إيه اللي بنتكلم عنه أصلًا»، عشان كده مكانه فوق مش جوه الجدول.
    القيمة كائن: {id} للفترات الجاهزة، أو {id:'custom', from, to}.
    ============================================================ */
+/* ============================================================
+   دروب داون واحد — «الحالة ▾» · «العميل ▾» · «ترتيب ▾».
+
+   السيستم الأصلي بيحط كل بُعد في قايمته المستقلة جنب البحث،
+   مش كلهم مجمّعين في بوب أوڤر واحد. الفرق مش شكلي: الفلتر
+   المستقل **بيقول قيمته على طول** («العميل: مؤسسة النخبة»)،
+   والمجمّع بيخفيها ورا زرار واحد.
+   ============================================================ */
+export function Pick({ label, value, options, onChange, width }) {
+  const [open, setOpen] = useState(false)
+  const box = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const away = (e) => { if (box.current && !box.current.contains(e.target)) setOpen(false) }
+    const esc = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', away)
+    document.addEventListener('keydown', esc)
+    return () => {
+      document.removeEventListener('mousedown', away)
+      document.removeEventListener('keydown', esc)
+    }
+  }, [open])
+
+  const cur = options.find((o) => o.id === value) || options[0]
+  const on = cur?.id !== (options[0]?.id)
+
+  return (
+    <div className="pick1" ref={box} style={width ? { width } : undefined}>
+      <button className={`pick1__b${on ? ' is-on' : ''}${open ? ' is-open' : ''}`}
+        aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <span className="pick1__l">{label}</span>
+        <b>{cur?.label}</b>
+        <Ico.chevron size={14} />
+      </button>
+      {open && (
+        <div className="pick1__p" role="listbox">
+          {options.map((o) => (
+            <button key={o.id} role="option" aria-selected={o.id === value}
+              className={`pick1__o${o.id === value ? ' is-on' : ''}`}
+              onClick={() => { onChange(o.id); setOpen(false) }}>
+              <span>{o.label}</span>
+              {o.id === value && <Ico.check size={14} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export const PERIODS = [
   { id: 'm',   label: 'هذا الشهر' },
   { id: 'q',   label: 'الربع الحالي' },
@@ -233,6 +284,10 @@ export function periodLabel(p, today) {
   return PERIODS.find((x) => x.id === id)?.label || 'كل الفترات'
 }
 
+const isoDay = (d) =>
+  d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+  '-' + String(d.getDate()).padStart(2, '0')
+
 export function DateRange({ value, onChange, today }) {
   const [open, setOpen] = useState(false)
   const [custom, setCustom] = useState(value?.id === 'custom')
@@ -275,6 +330,12 @@ export function DateRange({ value, onChange, today }) {
         aria-expanded={open} onClick={() => setOpen((v) => !v)}>
         <Ico.calendar size={16} />
         <span>{periodLabel(cur, today)}</span>
+        {/* المدى الفعلي جوّه الزرار نفسه — كان سطر مستقل فوق
+            الشريط بيقول نفس اللي الزرار قايله بصيغة تانية */}
+        {(() => {
+          const r = periodRange(cur, today)
+          return r ? <em className="dr__rg num ltr">{isoDay(r[0])} → {isoDay(r[1])}</em> : null
+        })()}
         <Ico.chevron size={15} className="dr__chev" />
       </button>
 

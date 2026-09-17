@@ -1,141 +1,177 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { AppShell, PageHeader, CurrencyNote } from '../components/layout.jsx'
-import { DataTable, BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
-import { docMenu } from '../components/rowmenu.jsx'
+import { AppShell, PageHeader } from '../components/layout.jsx'
+import { BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
+import { RowMenu, docMenu } from '../components/rowmenu.jsx'
 import { Button, SearchField } from '../components/primitives.jsx'
-import { Money, DateCell, PartyCell, StatusCell, DocNo } from '../components/data.jsx'
-import { GROUPS, groupOf, Group, MoneyHead, ChangeLine, ViewToggle } from '../components/doclist.jsx'
-import { PageFilter, FilterChips, DateRange, applyFilter, emptyFilter, inPeriod,
-  useSort, byDate, byNum, byText, byParty } from '../components/pagefilter.jsx'
-import { daysFrom, TODAY } from '../lib/format.js'
+import { Ico, Riyal } from '../components/icons.jsx'
+import { Pick, DateRange, inPeriod, periodRange, docText } from '../components/pagefilter.jsx'
+import { daysFrom, TODAY, fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import { toast } from '../components/feedback.jsx'
+import { PrintPreview } from '../components/printpreview.jsx'
 
-const LIVE = ['issued', 'partial', 'overdue']
+/* ============================================================
+   فواتير المبيعات — **منقولة من سيستم الكلاينت بالحرف**.
 
-/* التغييرات اللي جت من برة الشاشة */
-const CHANGES = ['فاتورة اترفضت من الهيئة', 'دفعتين اتسجّلوا', 'فاتورة بقت متأخرة']
+   المرجع: التصوير المباشر من app-staging.haseem.com (دوك ١٩).
+   مش من التدقيق المكتوب — ده اللي غلّطنا أول مرة.
 
-/* المدن اللي فيها عملاء فعلًا — مفيش خيار بيرجّع صفر */
-const CITIES = [...new Set(DATA.invoices.map((v) => v.c?.city).filter(Boolean))]
+   ★ ليه مش جدول؟ لأن سيستمهم مش جدول. هو **قايمة كروت**:
+   كل فاتورة كارت مستقل بمسافة بينه وبين اللي بعده، وجواه
+   تلات كتل (من اليمين للشمال):
 
-/* ---------- أبعاد الفلترة جوّه الجدول ----------
-   الفترة مش هنا — دي فوق، لأنها بتغيّر «إيه اللي بنتكلم عنه» مش «إيه اللي بنعرضه». */
-const FGROUPS = [
-  {
-    id: 'state', label: 'الحالة',
-    options: [
-      { id: 'all',    label: 'الكل' },
-      { id: 'act',    label: 'محتاج تصرّف', test: (v) => groupOf(v) === 0 },
-      { id: 'live',   label: 'تحت التحصيل', test: (v) => groupOf(v) === 1 },
-      { id: 'draft',  label: 'مسودات',      test: (v) => v.status === 'draft' },
-      { id: 'closed', label: 'مقفولة',      test: (v) => ['paid', 'void', 'cancelled'].includes(v.status) },
-    ],
-  },
-  {
-    id: 'zatca', label: 'الهيئة',
-    options: [
-      { id: 'all',     label: 'الكل' },
-      { id: 'ok',      label: 'مقبولة',     test: (v) => v.zatca === 'ok' },
-      { id: 'bad',     label: 'مرفوضة',     test: (v) => v.zatca === 'bad' },
-      { id: 'pending', label: 'عند الهيئة', test: (v) => v.zatca === 'pending' },
-      { id: 'none',    label: 'ما اتصدرتش', test: (v) => !v.zatca },
-    ],
-  },
-  {
-    id: 'due', label: 'الاستحقاق',
-    options: [
-      { id: 'all',   label: 'الكل' },
-      { id: 'late',  label: 'متأخرة',     test: (v) => LIVE.includes(v.status) && daysFrom(v.due) < 0 },
-      { id: 'week',  label: 'خلال أسبوع', test: (v) => { const d = daysFrom(v.due); return LIVE.includes(v.status) && d !== null && d >= 0 && d <= 7 } },
-      { id: 'month', label: 'خلال شهر',   test: (v) => { const d = daysFrom(v.due); return LIVE.includes(v.status) && d !== null && d >= 0 && d <= 30 } },
-    ],
-  },
-  {
-    id: 'cred', label: 'الإشعارات',
-    options: [
-      { id: 'all',  label: 'الكل' },
-      { id: 'has',  label: 'مقيّدة بإشعار',
-        test: (v) => !!DATA.creditedState(v.no, v.total) },
-      { id: 'none', label: 'من غير إشعارات',
-        test: (v) => !DATA.creditedState(v.no, v.total) },
-    ],
-  },
-  {
-    id: 'cust', label: 'العميل',
-    options: [
-      { id: 'all', label: 'الكل' },
-      ...DATA.customers.map((c) => ({ id: c.id, label: c.ar, test: (v) => v.c?.id === c.id })),
-    ],
-  },
-  {
-    id: 'city', label: 'المدينة',
-    options: [
-      { id: 'all', label: 'الكل' },
-      ...CITIES.map((c) => ({ id: c, label: c, test: (v) => v.c?.city === c })),
-    ],
-  },
+     يمين  — رقم الفاتورة وجنبه شارات الحالة، تحته العميل
+             والمرجع، وتحتهم المستودع
+     النص  — عنقود الأوامر: تسجيل دفعة · تنزيل PDF · إرسال ▾ · 👁
+     شمال  — المبلغ كبير، فوقه الأصلي مشطوب لو اتقيّد عليه إشعار،
+             وتحته الاستحقاق. وبعده ⋮ على الحافة.
+
+   ★ اتنقلوا زي ما هما عشان مش تفاصيل:
+   ١) **الكارت المتأخر بيتلوّن** — إطار وخلفية وردية خفيفة.
+      ده اللي بيخلّي المتأخرات تبان وإنت بتنزل بعينك.
+   ٢) **حالة المستند وحالة الدفع شارتين منفصلتين**. «صادر» +
+      «مدفوعة جزئياً» + «متأخر» تلاتة مع بعض على نفس الكارت،
+      لأنهم تلات أسئلة مختلفة — والأولى زرقا والتانية خضرا.
+   ٣) **الأمر الرئيسي بيتغيّر مع الحالة** — المسودة «إصدار
+      الفاتورة»، والصادرة اللي عليها متبقي «تسجيل دفعة»،
+      والمدفوعة بالكامل مالهاش أمر رئيسي أصلًا.
+
+   ★ وحاجة السيستم مش بيعرضها: **حالة الهيئة**. الفاتورة
+   المرفوضة شكلها في القايمة زي أي فاتورة صادرة. سايبينها زي
+   الأصل عشان «بالحرف» — وده بند مفتوح للكلاينت.
+   ============================================================ */
+
+const LIVE = ['issued', 'partial', 'overdue', 'paid']
+
+/* ---------- البُعد الأول: حالة المستند ---------- */
+function docState(v) {
+  if (v.status === 'draft') return { id: 'draft', ar: 'مسودة', tone: 'neutral' }
+  if (v.status === 'cancelled' || v.status === 'void')
+    return { id: 'cancelled', ar: 'ملغي', tone: 'critical' }
+  if (DATA.creditedState(v.no, v.total)) return { id: 'credited', ar: 'مقيدة بإشعار', tone: 'info' }
+  return { id: 'issued', ar: 'صادر', tone: 'issued' }
+}
+
+/* ---------- البُعد التاني: حالة الدفع ----------
+   مشتقة من المدفوع مقابل الإجمالي — مش حقل متخزّن، فمستحيل
+   تختلف مع سجل المدفوعات. */
+function payState(v) {
+  if (!LIVE.includes(v.status)) return null
+  if (v.paid >= v.total - 0.009) return { id: 'paid', ar: 'مدفوع', tone: 'positive' }
+  if (v.paid > 0.009) return { id: 'partial', ar: 'مدفوعة جزئياً', tone: 'positive' }
+  return { id: 'unpaid', ar: 'غير مدفوع', tone: 'attention' }
+}
+
+/* «متأخر» علامة منفصلة، مش حالة */
+const isLate = (v) =>
+  LIVE.includes(v.status) && v.paid < v.total - 0.009 && daysFrom(v.due) < 0
+
+const STATES = [
+  { id: 'all',       label: 'الحالة' },
+  { id: 'draft',     label: 'مسودة',        test: (v) => docState(v).id === 'draft' },
+  { id: 'issued',    label: 'صادر',         test: (v) => docState(v).id === 'issued' },
+  { id: 'credited',  label: 'مقيدة بإشعار', test: (v) => docState(v).id === 'credited' },
+  { id: 'cancelled', label: 'ملغي',         test: (v) => docState(v).id === 'cancelled' },
+  { id: 'paid',      label: 'مدفوع',        test: (v) => payState(v)?.id === 'paid' },
+  { id: 'partial',   label: 'مدفوعة جزئياً', test: (v) => payState(v)?.id === 'partial' },
+  { id: 'unpaid',    label: 'غير مدفوع',    test: (v) => payState(v)?.id === 'unpaid' },
+  { id: 'late',      label: 'متأخر',        test: isLate },
 ]
+
+const CUSTS = [
+  { id: 'all', label: 'العملاء' },
+  ...DATA.customers.map((c) => ({ id: c.id, label: c.ar, test: (v) => v.c?.id === c.id })),
+]
+
+const SORTS = [
+  { id: 'date-desc',  label: 'التاريخ: الأحدث أولاً', cmp: (a, b) => String(b.date).localeCompare(a.date) },
+  { id: 'date-asc',   label: 'التاريخ: الأقدم أولاً', cmp: (a, b) => String(a.date).localeCompare(b.date) },
+  { id: 'total-desc', label: 'المبلغ: الأعلى أولاً',  cmp: (a, b) => b.total - a.total },
+  { id: 'total-asc',  label: 'المبلغ: الأقل أولاً',   cmp: (a, b) => a.total - b.total },
+]
+
+/* تاريخ الاستحقاق على الكارت بصيغة السيستم: Apr 26, 2026 */
+const EN_M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const dueFmt = (iso) => {
+  if (!iso) return null
+  const d = new Date(iso)
+  return EN_M[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear()
+}
+/* ★ مش toISOString — دي بتحوّل لـUTC فبترجّع اليوم اللي فات
+   (٣١ ديسمبر بيطلع ٣٠). التاريخ هنا محلي، فبيتبني بالإيد. */
+const isoDay = (d) =>
+  d.getFullYear() + '-' +
+  String(d.getMonth() + 1).padStart(2, '0') + '-' +
+  String(d.getDate()).padStart(2, '0')
 
 export default function Invoices() {
   const nav = useNavigate()
-  const [view, setView] = useState('list')
+  const [tab, setTab] = useState('inv')
   const [period, setPeriod] = useState({ id: 'y' })
-  /* الشاشة بتقبل فلترة جاهزة من الرابط، عشان أي حتة تانية في
-     السيستم (الداشبورد · الإشعارات) تقدر توديك على «الفواتير
-     المرفوضة» مش على «كل الفواتير». مثال: ?zatca=bad */
   const [params] = useSearchParams()
-  const [filter, setFilter] = useState(() => {
-    const f = emptyFilter(FGROUPS)
-    FGROUPS.forEach((g) => {
-      const v = params.get(g.id)
-      if (v && g.options.some((o) => o.id === v)) f[g.id] = v
-    })
-    return f
+  const [state, setState] = useState(() => {
+    const z = params.get('zatca')
+    return z === 'bad' ? 'all' : (params.get('state') || 'all')
   })
+  const [cust, setCust] = useState(params.get('cust') || 'all')
+  const [sort, setSort] = useState('date-desc')
   const [q, setQ] = useState('')
+  const [page, setPage] = useState(1)
   const { selected, toggle, selectAll, clear } = useSelection()
 
-  /* ★ الفترة بتحدّد الشغلانة كلها — الانسايتس والجدول بيقروا من نفس المصدر */
   const all = useDocs('invoices')
-  const inRange = useMemo(
-    () => all.filter((v) => inPeriod(v, period, TODAY)), [all, period])
 
-  /* فلترة الجدول جوّه الفترة */
-  const rows = useMemo(
-    () => applyFilter(inRange, FGROUPS, filter, q), [inRange, filter, q])
+  const rows = useMemo(() => {
+    const st = STATES.find((s) => s.id === state)
+    const cu = CUSTS.find((c) => c.id === cust)
+    const cmp = (SORTS.find((s) => s.id === sort) || SORTS[0]).cmp
+    const needle = q.trim().toLowerCase()
+    return all
+      .filter((v) => inPeriod(v, period, TODAY))
+      .filter((v) => (st?.test ? st.test(v) : true))
+      .filter((v) => (cu?.test ? cu.test(v) : true))
+      .filter((v) => (needle ? docText(v).includes(needle) : true))
+      .sort(cmp)
+  }, [all, period, state, cust, sort, q])
 
-  /* الترتيب — بيشتغل في عرض الجدول. عرض القائمة مرتّب بالأولوية
-     أصلًا، فالترتيب هناك ملهوش معنى. */
-  const S = useSort({
-    no: byText('no'), party: byParty, date: byDate('date'),
-    due: byDate('due'), total: byNum('total'),
-  }, 'due')
+  const [PER, setPER] = useState(12)
+  const pages = Math.max(1, Math.ceil(rows.length / PER))
+  const cur = Math.min(page, pages)
+  const shown = rows.slice((cur - 1) * PER, cur * PER)
 
-  /* ★ الترتيب كان بيسري على الجدول بس، والقائمة مرتّبة بالأولوية
-     جوّه كل مجموعة من غير ما المستخدم يتحكّم. دلوقتي نفس الترتيب
-     بيتطبّق **جوّه كل مجموعة** — فالمبدّل بين العرضين مش بيغيّر
-     المعنى، بيغيّر الشكل بس. */
-  const grouped = useMemo(() => {
-    const g = GROUPS.map(() => [])
-    S.apply(rows).forEach((v) => g[groupOf(v)].push(v))
-    return g
-  }, [rows, S.sort])
+  /* ★ «عرض» بقى دراور جنبي فيه المستند كامل، مش تنقّل لصفحة.
+     السبب: العرض **قراءة**، والقراءة ما تستاهلش تخرجك من
+     القايمة وتضيّع مكانك وفلترتك. اللي عايز الصفحة الكاملة
+     بأوامرها بيدوس على رقم الفاتورة نفسه. */
+  const [peek, setPeek] = useState(null)
+  const open = (no) => nav('/sales/invoices/' + no)
+  const VAT_R = 0.15
+  const peekDoc = (v) => {
+    const lines = DATA.linesOf(v)
+    const net = lines.reduce((a, l) => a + l.total, 0)
+    return {
+      no: v.no, date: v.date, due: v.due, party: v.c,
+      lines: lines.map((l) => ({
+        code: l.code, ar: l.ar, unit: l.unit, qty: l.qty,
+        price: l.price ?? +(l.total / l.qty).toFixed(2),
+        net: l.total, taxAmt: +(l.total * VAT_R).toFixed(2),
+        total: +(l.total * (1 + VAT_R)).toFixed(2),
+      })),
+      net, tax: +(net * VAT_R).toFixed(2), total: v.total,
+      bank: DATA.banks[0], zatcaOk: v.zatca === 'ok',
+    }
+  }
 
-  const open = (no) => nav(`/sales/invoices/${no}`)
-
-  /* كل أوامر الصف بتعدّي من هنا. الشاشة بتعرف «مين» بس؛
-     «إيه اللي بيحصل» عايش في lib/actions.js. */
   const on = (id, v) => {
     switch (id) {
       case 'issue':    return ACT.issueDoc('invoices', v)
       case 'resubmit': return ACT.resubmitZatca('invoices', v)
       case 'pay':      return open(v.no)
+      case 'email':
       case 'mail':     return ACT.sendEmail('invoices', v)
-      case 'email':    return ACT.sendEmail('invoices', v)
       case 'wa':       return ACT.sendWhatsApp('invoices', v)
       case 'correct':  return ACT.correctDoc('invoices', v, () => nav('/sales/invoices/new'))
       case 'view':     return open(v.no)
@@ -144,114 +180,347 @@ export default function Invoices() {
       case 'print':    return ACT.printDoc()
       case 'cn':       return nav('/sales/credit-notes/new')
       case 'cancel':   return ACT.cancelDoc('invoices', v)
+      case 'schedule': return toast.info('جدولة ' + v.no,
+        { sub: 'بتتكرر الفاتورة تلقائيًا — الشاشة في تبويب «الفواتير المجدولة»' })
       default: return undefined
     }
   }
   const bulk = (label) => ACT.bulkAction(label, 'invoices', [...selected]).then(clear)
-  const byNo = (no) => rows.find((v) => v.no === no)
 
-  const tableRows = S.apply(rows).map((v) => {
-    const rem = v.total - v.paid
-    const live = LIVE.includes(v.status)
-    let sub = ''
-    if (v.status === 'overdue') sub = `متأخرة ${v.overdueDays} يوم`
-    if (v.status === 'partial') sub = `سُدِّد ${Math.round((v.paid / v.total) * 100)}٪`
-    const act = v.status === 'draft' ? { label: 'إصدار', onClick: () => on('issue', v) }
-      : v.zatca === 'bad' ? { label: 'إعادة الإرسال', tone: 'crit', onClick: () => on('resubmit', v) }
-      : null
-    return {
-      key: v.no,
-      onOpen: () => open(v.no),
-      action: act,
-      menu: docMenu({ zatca: v.zatca, status: v.status, onView: () => open(v.no), on: (id) => on(id, v) }),
-      cells: [
-        <DocNo value={v.no} />,
-        <PartyCell party={v.c} />,
-        <DateCell value={v.date} />,
-        <DateCell value={v.due} rel={v.status === 'issued' || v.status === 'partial'} />,
-        <span className="stwrap">
-          <StatusCell status={v.status} zatca={v.zatca} zatcaReason={v.zatcaReason} sub={sub} />
-          {(() => {
-            const cr = DATA.creditedState(v.no, v.total)
-            return cr ? (
-              <span className={`st st--${cr.full ? 'neutral' : 'info'} st--mini`}
-                title={`إشعارات بقيمة ${cr.amount} — المبلغ المعدّل ${cr.net}`}>
-                {cr.full ? 'مقيّدة بالكامل' : 'مقيّدة بإشعار'}
-              </span>
-            ) : null
-          })()}
-        </span>,
-        <Money value={v.total} muted={v.status === 'cancelled' || v.status === 'void'} />,
-        live && rem > 0 ? <Money value={rem} /> : <span className="hint" />,
-      ],
-    }
-  })
+  /* جدول ولا كروت — الاختيار بيفضل عبر الجلسة.
+     الجدول هو الافتراضي: بيوري ضعف عدد الفواتير في نفس
+     الشاشة، والمسح بالعين أسرع لما الأعمدة على خط واحد.
+     والكروت باقية لأنها شكل سيستم العميل اللي اتعوّد عليه. */
+  const [view, setView] = useState(() => localStorage.getItem('iv:view') || 'table')
+  const pickView = (v) => { setView(v); try { localStorage.setItem('iv:view', v) } catch {} }
+
+  const pr = periodRange(period, TODAY)
+  const allOn = shown.length > 0 && shown.every((v) => selected.has(v.no))
 
   return (
     <AppShell>
       <div className="tophead">
-        <PageHeader title="فواتير المبيعات" sub={<CurrencyNote />} />
+        <PageHeader title="فواتير المبيعات" sub="إدارة الفواتير وتتبع المستحقات" />
         <div className="tophead__ctrl">
-          <DateRange value={period} onChange={setPeriod} today={TODAY} />
-          <Button label="فاتورة جديدة" variant="primary" icon="＋"
+          <Button label="إنشاء فاتورة مبيعات" variant="primary" icon="＋"
             onClick={() => nav('/sales/invoices/new')} />
         </div>
       </div>
 
-      <MoneyHead rows={inRange} />
-      <ChangeLine items={CHANGES}
-        onOpen={() => toast.info('التغييرات دي بتيجي من سجل النشاط',
-          { sub: 'هتتربط بشاشة السجل لما الموديول بتاعها يتعمل' })} />
+      <div className="doclist" data-component="InvoiceList">
+        {/* ---------- التبويبان — خط تحتاني زي السيستم ---------- */}
+        <div className="dtabs dtabs--line" role="tablist">
+          <button role="tab" aria-selected={tab === 'inv'}
+            className={'dtabs__t' + (tab === 'inv' ? ' is-on' : '')}
+            onClick={() => setTab('inv')}>فواتير المبيعات</button>
+          <button role="tab" aria-selected={tab === 'sch'}
+            className={'dtabs__t' + (tab === 'sch' ? ' is-on' : '')}
+            onClick={() => setTab('sch')}>الفواتير المجدولة</button>
+        </div>
 
-      {/* ---------- الجدول: اسمه ظاهر، والفلترة والعرض بتوعه جنبه ---------- */}
-      <section className="sect" data-component="InvoiceTable">
-        <header className="sect__h">
-          <h2 className="sect__t">الفواتير<span className="sect__n">{rows.length}</span></h2>
-          <div className="sect__ctrl">
-            <SearchField placeholder="ابحث باسم العميل أو رقم الفاتورة…" width={260}
-              value={q} onChange={setQ} />
-            <PageFilter groups={FGROUPS} value={filter} onChange={setFilter} />
-            <ViewToggle value={view} onChange={setView} />
-          </div>
-        </header>
-
-        <FilterChips groups={FGROUPS} value={filter} onChange={setFilter}
-          q={q} onQ={setQ} shown={rows.length} total={inRange.length} />
-
-        {rows.length === 0 ? (
+        {tab === 'sch' ? (
           <div className="sect__empty">
-            <b>مفيش فواتير بالفلترة دي</b>
-            <span>جرّب توسّع الفلترة أو تمسحها، أو غيّر الفترة من فوق.</span>
-          </div>
-        ) : view === 'list' ? (
-          <div className="dlist" data-component="DocList">
-            {GROUPS.map((g, i) => (
-              <Group key={g.id} group={g} rows={grouped[i]}
-                selected={selected} onSelect={toggle} onOpen={open} on={on} />
-            ))}
+            <b>مفيش فواتير مجدولة</b>
+            <span>
+              الفاتورة المجدولة بتتكرر لوحدها كل فترة. تقدر تجدول أي فاتورة
+              من قايمة الأوامر (⋮) على كارتها.
+            </span>
           </div>
         ) : (
           <>
-            <DataTable
-              columns={[
-                S.col('رقم الفاتورة', 'no', { width: '112px' }),
-                S.col('العميل', 'party'),
-                S.col('تاريخ الإصدار', 'date', { width: '116px' }),
-                S.col('الاستحقاق', 'due', { width: '132px' }),
-                { label: 'الحالة', width: '232px' },
-                S.col('المبلغ', 'total', { num: true, width: '125px' }),
-                { label: 'المتبقي', num: true, width: '112px' },
-              ]}
-              rows={tableRows} selected={selected} onSelect={toggle}
-              onSelectAll={(on) => selectAll(on, rows.map((v) => v.no))}
-            />
-            <Pagination from={1} to={rows.length} total={rows.length} />
+            {/* ---------- شريط الأدوات ---------- */}
+            <div className="ltools">
+              <SearchField placeholder="البحث في الفواتير…" width={250}
+                value={q} onChange={(v) => { setQ(v); setPage(1) }} />
+              <Pick label="الحالة" value={state} options={STATES}
+                onChange={(v) => { setState(v); setPage(1) }} />
+              <Pick label="العملاء" value={cust} options={CUSTS}
+                onChange={(v) => { setCust(v); setPage(1) }} />
+              <DateRange value={period} onChange={(v) => { setPeriod(v); setPage(1) }} today={TODAY} />
+              <Pick label="التاريخ" value={sort} options={SORTS} onChange={setSort} />
+              <button className="ltools__more"
+                onClick={() => toast.info('مزيد من الفلاتر',
+                  { sub: 'الفرع · المندوب · المستودع · مركز التكلفة' })}>
+                <Ico.filter size={14} />مزيد من الفلاتر
+              </button>
+
+              {/* مبدّل العرض — آخر الشريط، بعيد عن الفلاتر عشان
+                  ما يتقريش كأنه فلتر */}
+              <div className="vsw" role="group" aria-label="شكل العرض">
+                <button className={view === 'table' ? 'is-on' : ''}
+                  aria-pressed={view === 'table'} title="جدول"
+                  onClick={() => pickView('table')}><Ico.viewtable size={15} /></button>
+                <button className={view === 'cards' ? 'is-on' : ''}
+                  aria-pressed={view === 'cards'} title="كروت"
+                  onClick={() => pickView('cards')}><Ico.viewlist size={15} /></button>
+              </div>
+            </div>
+
+            {rows.length === 0 ? (
+              <div className="sect__empty">
+                <b>مفيش فواتير بالفلترة دي</b>
+                <span>جرّب توسّع الفلترة أو تمسحها، أو غيّر الفترة.</span>
+              </div>
+            ) : (
+              <>
+                {view === 'cards' ? (
+                  <>
+                    {/* شريط تحديد الصفحة — بوكس مستقل فوق الكروت */}
+                    <label className="doclist__all">
+                      <input type="checkbox" checked={allOn}
+                        onChange={(e) => selectAll(e.target.checked, shown.map((v) => v.no))} />
+                      <span>تحديد كل الصفحة</span>
+                    </label>
+
+                    <ul className="ivlist">
+                      {shown.map((v) => (
+                        <InvoiceCard key={v.no} v={v}
+                          on={(id) => on(id, v)} open={() => open(v.no)}
+                          onPeek={() => setPeek(v)}
+                          checked={selected.has(v.no)} onCheck={() => toggle(v.no)} />
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <InvoiceTable rows={shown} allOn={allOn}
+                    onAll={(c) => selectAll(c, shown.map((v) => v.no))}
+                    selected={selected} onCheck={toggle}
+                    on={on} open={open} onPeek={setPeek} />
+                )}
+
+                <Pagination
+                  from={(cur - 1) * PER + 1} to={Math.min(cur * PER, rows.length)}
+                  total={rows.length} page={cur} perPage={PER} onPage={setPage}
+                  onPerPage={(n) => { setPER(n); setPage(1) }} />
+              </>
+            )}
           </>
         )}
-      </section>
+      </div>
+
+      {peek && <PrintPreview doc={peekDoc(peek)} onClose={() => setPeek(null)} />}
 
       <BulkActionBar count={selected.size} onClear={clear} onAction={bulk}
         actions={['تنزيل PDF', 'إرسال بالبريد', 'تعليم كمدفوعة', 'إلغاء المسودات', 'تصدير CSV']} />
     </AppShell>
+  )
+}
+
+/* ============================================================
+   جدول الفواتير — الشكل الافتراضي.
+   ------------------------------------------------------------
+   نفس معلومات الكارت بالظبط، بس على خط واحد. الفرق إن
+   الأعمدة بتخلّي **المقارنة** ممكنة: عينك بتنزل عمود المبلغ
+   لوحده، أو عمود الاستحقاق لوحده، من غير ما تقرا كل صف.
+
+   ★ الأوامر بتظهر عند الهوفر مش على طول. في الكارت كان فيه
+   مساحة تستحمل أربع أزرار في كل صف؛ في الجدول ده بيعمل جدار
+   من الأزرار بيغطي على البيانات. الصف اللي إيدك عليه هو
+   بس اللي بيوري أوامره — والـ⋮ ثابت عشان اللي بالكيبورد.
+
+   ★ الصف المتأخر بياخد شريط أحمر رفيع على حافة اليمين بدل
+   خلفية وردية: في الجدول الخلفية الملوّنة بتتحوّل لبقعة كبيرة
+   بتكسر المسح بالعين.
+   ============================================================ */
+function InvoiceTable({ rows, allOn, onAll, selected, onCheck, on, open, onPeek }) {
+  return (
+    <div className="ivtable__w">
+      <table className="dt ivtable">
+        <thead>
+          <tr>
+            <th className="checkcell">
+              <input type="checkbox" checked={allOn} aria-label="تحديد كل الصفحة"
+                onChange={(e) => onAll(e.target.checked)} />
+            </th>
+            <th>رقم الفاتورة</th>
+            <th>العميل</th>
+            <th>الحالة</th>
+            <th>الاستحقاق</th>
+            <th className="n">المبلغ</th>
+            <th className="ivtable__ac" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((v) => {
+            const ds = docState(v)
+            const ps = payState(v)
+            const late = isLate(v)
+            const live = LIVE.includes(v.status)
+            const rem = v.total - v.paid
+            const credited = DATA.creditedState(v.no, v.total)
+            const now = ds.id === 'cancelled' ? 0 : (credited ? credited.net : v.total)
+            const was = (ds.id === 'cancelled' || credited) ? v.total : null
+            const menu = [
+              ...docMenu({ zatca: v.zatca, status: v.status, onView: () => open(v.no), on: (id) => on(id, v) }),
+              { sep: true },
+              { label: 'جدولة الفاتورة', Ic: Ico.calendar, onClick: () => on('schedule', v) },
+              { label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit',
+                off: ds.id !== 'issued' && ds.id !== 'credited',
+                why: ds.id === 'draft' ? 'المسودة بتتحذف مش بتتلغي' : 'ملغاة أصلًا',
+                onClick: () => on('cancel', v) },
+            ]
+
+            return (
+              <tr key={v.no} className={(selected.has(v.no) ? 'selected' : '') + (late ? ' is-late' : '')}>
+                <td className="checkcell">
+                  <input type="checkbox" checked={selected.has(v.no)}
+                    aria-label={'تحديد ' + v.no} onChange={() => onCheck(v.no)} />
+                </td>
+
+                <td>
+                  <button className="ivt__no" onClick={() => open(v.no)}>{v.no}</button>
+                  <em className="ivt__wh">{DATA.whOf(v.no)?.ar}</em>
+                </td>
+
+                <td>
+                  <span className="ivt__cn">{v.c?.ar}</span>
+                  <em className="ivt__cid ltr num">{v.c?.id}</em>
+                </td>
+
+                <td>
+                  <span className="ivt__st">
+                    <span className={'st st--' + ds.tone}>{ds.ar}</span>
+                    {ps && <span className={'st st--' + ps.tone}>{ps.ar}</span>}
+                    {late && <span className="st st--critical">متأخر</span>}
+                  </span>
+                </td>
+
+                <td>
+                  <span className="ivt__due">
+                    {v.due ? <span className="num ltr">{dueFmt(v.due)}</span> : '—'}
+                  </span>
+                </td>
+
+                <td className="n">
+                  {was != null && (
+                    <s className="ivt__was"><span className="num">{fmtMoney(was)}</span><Riyal /></s>
+                  )}
+                  <b className="ivt__amt"><span className="num">{fmtMoney(now)}</span><Riyal /></b>
+                </td>
+
+                <td className="ivtable__ac">
+                  <div className="ivt__acts">
+                    {/* الأمر الرئيسي **الأول** يعني الأيمن في العربي —
+                        هو اللي المستخدم جاي عشانه، فبيقابل عينه قبل
+                        الأيقونات. والأيقونات بعده ملزوقة بالـ⋮ */}
+                    {ds.id === 'draft' ? (
+                      <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('issue', v)}>
+                        <Ico.check size={13} />إصدار
+                      </button>
+                    ) : live && rem > 0.009 ? (
+                      <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('pay', v)}>
+                        <Ico.wallet size={13} />دفعة
+                      </button>
+                    ) : <span className="ivt__gap" aria-hidden="true" />}
+
+                    <button className="ivt__ic" title="عرض الفاتورة" aria-label={'عرض ' + v.no}
+                      onClick={() => onPeek(v)}><Ico.eye size={16} /></button>
+                    <button className="ivt__ic" title="إرسال" aria-label={'إرسال ' + v.no}
+                      disabled={!live} onClick={() => on('email', v)}><Ico.send size={15} /></button>
+                    <button className="ivt__ic" title="تنزيل PDF" aria-label={'PDF ' + v.no}
+                      disabled={v.zatca !== 'ok'} onClick={() => on('pdf', v)}>
+                      <Ico.download size={15} />
+                    </button>
+
+                    <RowMenu items={menu} label={'أوامر ' + v.no} />
+                  </div>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+/* ============================================================
+   كارت الفاتورة.
+   ============================================================ */
+function InvoiceCard({ v, on, open, onPeek, checked, onCheck }) {
+  const ds = docState(v)
+  const ps = payState(v)
+  const late = isLate(v)
+  const live = LIVE.includes(v.status)
+  const rem = v.total - v.paid
+
+  /* المبلغ المشطوب فوق: الأصلي قبل الإشعارات أو قبل الإلغاء.
+     ده اللي السيستم بيعمله — بيقولك «كان كذا وبقى كذا». */
+  const credited = DATA.creditedState(v.no, v.total)
+  const now = ds.id === 'cancelled' ? 0 : (credited ? credited.net : v.total)
+  const was = (ds.id === 'cancelled' || credited) ? v.total : null
+
+  const menu = [
+    ...docMenu({ zatca: v.zatca, status: v.status, onView: open, on }),
+    { sep: true },
+    { label: 'جدولة الفاتورة', Ic: Ico.calendar, onClick: () => on('schedule') },
+    { label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit',
+      off: ds.id !== 'issued' && ds.id !== 'credited',
+      why: ds.id === 'draft' ? 'المسودة بتتحذف مش بتتلغي' : 'ملغاة أصلًا',
+      onClick: () => on('cancel') },
+  ]
+
+  return (
+    <li className={'ivcard' + (late ? ' is-late' : '')} data-component="InvoiceCard">
+      {/* ---------- ⋮ على حافة الشمال ---------- */}
+      <RowMenu items={menu} label={'أوامر ' + v.no} />
+
+      {/* ---------- شمال: المبلغ ---------- */}
+      <div className="ivcard__amt">
+        {was != null && (
+          <s className="ivcard__was"><span className="num">{fmtMoney(was)}</span><Riyal /></s>
+        )}
+        <b className="ivcard__now"><span className="num">{fmtMoney(now)}</span><Riyal /></b>
+        <span className="ivcard__due">
+          {v.due ? <>مستحق <span className="num ltr">{dueFmt(v.due)}</span></> : 'لم يُرسل بعد'}
+        </span>
+      </div>
+
+      {/* ---------- عنقود الأوامر — نفس ترتيب الجدول ----------
+           الأمر الرئيسي الأيمن، وبعده الأيقونات، وكلهم مخفيين
+           لحد ما إيدك تيجي على الكارت. الكارت والجدول نفس
+           الشاشة بشكلين — فمينفعش الأوامر تترتّب بطريقتين. */}
+      <div className="ivcard__acts">
+        {ds.id === 'draft' ? (
+          <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('issue')}>
+            <Ico.check size={13} />إصدار
+          </button>
+        ) : live && rem > 0.009 ? (
+          <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('pay')}>
+            <Ico.wallet size={13} />دفعة
+          </button>
+        ) : <span className="ivt__gap" aria-hidden="true" />}
+
+        <button className="ivt__ic" title="عرض الفاتورة" aria-label={'عرض ' + v.no}
+          onClick={onPeek}><Ico.eye size={16} /></button>
+        <button className="ivt__ic" title="إرسال" aria-label={'إرسال ' + v.no}
+          disabled={!live} onClick={() => on('email')}><Ico.send size={15} /></button>
+        <button className="ivt__ic" title="تنزيل PDF" aria-label={'PDF ' + v.no}
+          disabled={v.zatca !== 'ok'} onClick={() => on('pdf')}>
+          <Ico.download size={15} />
+        </button>
+      </div>
+
+      {/* ---------- يمين: التعريف ---------- */}
+      <div className="ivcard__id">
+        <div className="ivcard__top">
+          <button className="ivcard__no" onClick={open}>{v.no}</button>
+          <span className={'st st--' + ds.tone}>{ds.ar}</span>
+          {ps && <span className={'st st--' + ps.tone}>{ps.ar}</span>}
+          {late && <span className="st st--critical">متأخر</span>}
+        </div>
+        <div className="ivcard__sub">
+          {v.c?.ar}
+          <span className="ltr num">{v.c?.id}</span>
+        </div>
+        <div className="ivcard__wh">{DATA.whOf(v.no)?.ar}</div>
+      </div>
+
+      {/* ---------- الشيك بوكس على حافة اليمين ---------- */}
+      <label className="ivcard__ck">
+        <input type="checkbox" checked={checked} onChange={onCheck}
+          aria-label={'تحديد ' + v.no} />
+      </label>
+    </li>
   )
 }

@@ -9,6 +9,7 @@ import { PageFilter, FilterChips, applyFilter, emptyFilter,
 import { fmtDate, TODAY} from '../lib/format.js'
 import { toast, confirmAction } from '../components/feedback.jsx'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    تسويات المخزون.
@@ -73,18 +74,18 @@ function Form({ sku, onClose }) {
         <div className="frow frow--2">
           <label className="fld">
             <span className="fld__l">الصنف</span>
-            <select className={`fld__i${show('item') ? ' is-bad' : ''}`} value={item}
+            <Select className={`fld__i${show('item') ? ' is-bad' : ''}`} value={item}
               onChange={(e) => setItem(e.target.value)}>
               <option value="">اختر صنفًا يتتبع المخزون…</option>
               {prods.map((p) => <option key={p.sku} value={p.sku}>{p.ar}</option>)}
-            </select>
+            </Select>
             {show('item') && <em className="fld__e">{show('item')}</em>}
           </label>
           <label className="fld">
             <span className="fld__l">المستودع</span>
-            <select className="fld__i" value={store} onChange={(e) => setStore(e.target.value)}>
+            <Select className="fld__i" value={store} onChange={(e) => setStore(e.target.value)}>
               {DATA.stores.map((s) => <option key={s.id} value={s.id}>{s.ar}</option>)}
-            </select>
+            </Select>
           </label>
         </div>
 

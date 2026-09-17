@@ -9,6 +9,7 @@ import { fmtMoney, fmtDate, TODAY } from '../lib/format.js'
 import * as R from '../lib/reports.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
+import { Select } from '../components/selectfield.jsx'
 
 /* ============================================================
    الإقرار الضريبي — الخانات الـ١٦.
@@ -125,31 +126,31 @@ export default function RepVat() {
         <>
           <label className="repbar__f">
             <span className="repbar__l">دورية الإقرار</span>
-            <select className="fld__i" value={mode} onChange={(e) => setMode(e.target.value)}>
+            <Select className="fld__i" value={mode} onChange={(e) => setMode(e.target.value)}>
               <option value="q">ربع سنوي</option>
               <option value="m">شهري</option>
-            </select>
+            </Select>
           </label>
           {mode === 'q' ? (
             <label className="repbar__f">
               <span className="repbar__l">الربع</span>
-              <select className="fld__i" value={q} onChange={(e) => setQ(+e.target.value)}>
+              <Select className="fld__i" value={q} onChange={(e) => setQ(+e.target.value)}>
                 {[1, 2, 3, 4].map((x) => <option key={x} value={x}>الربع {x}</option>)}
-              </select>
+              </Select>
             </label>
           ) : (
             <label className="repbar__f">
               <span className="repbar__l">الشهر</span>
-              <select className="fld__i" value={month} onChange={(e) => setMonth(+e.target.value)}>
+              <Select className="fld__i" value={month} onChange={(e) => setMonth(+e.target.value)}>
                 {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-              </select>
+              </Select>
             </label>
           )}
           <label className="repbar__f">
             <span className="repbar__l">السنة</span>
-            <select className="fld__i" value={year} onChange={(e) => setYear(+e.target.value)}>
+            <Select className="fld__i" value={year} onChange={(e) => setYear(+e.target.value)}>
               {[2024, 2025, 2026, 2027].map((y) => <option key={y} value={y}>{y}</option>)}
-            </select>
+            </Select>
           </label>
         </>
       }

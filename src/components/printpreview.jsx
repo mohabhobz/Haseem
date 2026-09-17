@@ -3,6 +3,7 @@ import { Ico, Riyal } from './icons.jsx'
 import { fmtMoney, fmtDate } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { toast } from './feedback.jsx'
+import { Select } from './selectfield.jsx'
 
 /* ============================================================
    معاينة الطباعة — ثنائية اللغة زي المطلوب من الهيئة.
@@ -83,12 +84,20 @@ const kindOf = (k) => KINDS[k] || KINDS.invoice
 export function PrintPreview({ doc, onClose }) {
   const [form, setForm] = useState('full')
   const [tpl, setTpl] = useState('default')
+  /* مقاس الورق الحراري — ٥٨مم طابعة جيب، ٨٠مم طابعة كاشير.
+     الفرق مش تزويق: البنود بتتلف على ٥٨ ولازم تتشاف قبل الطبع. */
+  const [mm, setMm] = useState(80)
 
+  /* ★ مش بنقفل سكرول الصفحة ورا.
+     المعاينة **مرجع بتقارن بيه وإنت بتشتغل**، مش مودال بيوقّفك:
+     في سيستم الكلاينت الصفحة بتضيق والمستند يفضل مقروء وإنت
+     بتعدّل. عشان كده بنعلّم على الـbody بس، والـCSS بيزحّق
+     المحتوى بعرض الدروار. */
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', esc)
-    document.body.style.overflow = 'hidden'
-    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = '' }
+    document.body.dataset.pp = '1'
+    return () => { document.removeEventListener('keydown', esc); delete document.body.dataset.pp }
   }, [onClose])
 
   const {
@@ -99,11 +108,20 @@ export function PrintPreview({ doc, onClose }) {
   const K = kindOf(kind)
 
   return (
-    <div className="pp" role="dialog" aria-modal="true" aria-label="معاينة الطباعة">
-      <div className="pp__scrim" onClick={onClose} />
+    <div className="pp" role="complementary" aria-label="معاينة الطباعة">
       <div className="pp__box">
+        {/* الرأس سطرين: السطر الأول اسم الشاشة والإغلاق،
+            والتاني كل الأوامر. قبل كده كانوا كلهم مكدّسين في
+            سطر واحد بيلف، وقالب الطباعة كان كبسولة عايمة فوق
+            الورقة — فكان فيه تلات أسطح بألوان مختلفة فوق بعض. */}
         <header className="pp__h">
-          <span className="pp__t"><Ico.search size={16} />معاينة الطباعة</span>
+          <div className="pp__hr">
+            <span className="pp__t">معاينة الطباعة</span>
+            <button className="pp__x" aria-label="إغلاق" onClick={onClose}>
+              <Ico.close size={18} />
+            </button>
+          </div>
+
           <div className="pp__ctrl">
             {K.thermal && (
               <div className="segs segs--sm" role="group" aria-label="شكل المستند">
@@ -111,6 +129,16 @@ export function PrintPreview({ doc, onClose }) {
                 <button className={form === 'thermal' ? 'on' : ''} onClick={() => setForm('thermal')}>فاتورة حرارية</button>
               </div>
             )}
+
+            <label className="pp__tpl">
+              <span>القالب</span>
+              <Select value={tpl} onChange={(e) => setTpl(e.target.value)} ariaLabel="قالب الطباعة">
+                {DATA.printTemplates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
+              </Select>
+            </label>
+
+            <span className="pp__sp" />
+
             <button className="gbtn2" onClick={() => window.print()}>
               <Ico.print size={14} />طباعة
             </button>
@@ -119,13 +147,18 @@ export function PrintPreview({ doc, onClose }) {
               onClick={() => toast.ok(`${no}.pdf جاهز`, { sub: 'اتنزّل في مجلد التنزيلات' })}>
               <Ico.download size={14} />PDF
             </button>
-            <button className="pp__x" aria-label="إغلاق" onClick={onClose}><Ico.close size={18} /></button>
           </div>
         </header>
 
         <div className="pp__body">
           {form === 'thermal' ? (
-            <Thermal doc={doc} />
+            <>
+              <Thermal doc={doc} mm={mm} />
+              <div className="segs segs--sm pp__mm" role="group" aria-label="مقاس الورق">
+                <button className={mm === 58 ? 'on' : ''} onClick={() => setMm(58)}>٥٨ مم</button>
+                <button className={mm === 80 ? 'on' : ''} onClick={() => setMm(80)}>٨٠ مم</button>
+              </div>
+            </>
           ) : (
           <div className="pp__paper pp__paper--full">
             <h1 className="pp__title">{K.ar} / {K.en}</h1>
@@ -226,14 +259,6 @@ export function PrintPreview({ doc, onClose }) {
           )}
         </div>
 
-        <footer className="pp__f">
-          <label className="pp__tpl">
-            <span>قالب الطباعة</span>
-            <select className="fld__i" value={tpl} onChange={(e) => setTpl(e.target.value)}>
-              {DATA.printTemplates.map((t) => <option key={t.id} value={t.id}>{t.ar}</option>)}
-            </select>
-          </label>
-        </footer>
       </div>
     </div>
   )
@@ -244,7 +269,7 @@ export function PrintPreview({ doc, onClose }) {
    مفيش أعمدة جنب بعض ومفيش بوردرات: كل حاجة تحت بعضها،
    الليبل يمين والقيمة شمال، والجدول أربع أعمدة بس.
    ------------------------------------------------------------ */
-function Thermal({ doc }) {
+function Thermal({ doc, mm = 80 }) {
   const {
     no, date, org = DATA.org, party, lines = [],
     net = 0, disc = 0, tax = 0, total = 0, retention = 0, netDue = total,
@@ -254,7 +279,7 @@ function Thermal({ doc }) {
   const rows = lines.length ? lines : [{ key: 'x', ar: '—', qty: 1, price: 0, total: 0 }]
 
   return (
-    <div className="pp__paper pp__paper--thermal">
+    <div className="pp__paper pp__paper--thermal" style={{ width: mm + 'mm' }}>
       <h1 className="th__title">فاتورة / Invoice</h1>
 
       <dl className="th__meta">
