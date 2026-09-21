@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AppShell } from '../components/layout.jsx'
+import { useNavigate , useParams } from 'react-router-dom'
+import { AppShell, PageHeader } from '../components/layout.jsx'
+import { Alert } from '../components/ob.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
 import { Select } from '../components/selectfield.jsx'
@@ -63,6 +64,8 @@ const vatOk = (v) => /^3\d{13}3$/.test(digits(v))
 const countAr = (n) => (n === 1 ? 'حقل واحد' : n === 2 ? 'حقلان' : `${n} حقول`)
 
 export default function CustomerNew() {
+  const { id: editId } = useParams()
+  const isEdit = !!editId
   const nav = useNavigate()
 
   const [kind, setKind] = useState('biz')        /* شركة | فرد */
@@ -124,16 +127,12 @@ export default function CustomerNew() {
 
   return (
     <AppShell>
-      <div className="dochead">
-        <button className="dochead__back" onClick={() => nav('/sales/customers')}>
-          <Ico.back size={16} />العملاء
-        </button>
-        <div className="dochead__row">
-          <div className="dochead__id">
-            <h1 className="dochead__no dochead__no--ar">عميل جديد</h1>
-          </div>
-        </div>
-      </div>
+      <PageHeader back="/sales/customers" title={isEdit ? 'تعديل بيانات العميل' : 'عميل جديد'}
+        actions={<>
+          <button type="button" className="btn ob-hide-sm" onClick={submit}>حفظ وإنشاء فاتورة</button>
+          <button type="button" className="btn btn--primary ob-hide-sm" onClick={submit}><Ico.check size={20} />حفظ العميل</button>
+        </>} />
+      {tried && nErr > 0 && <div style={{ marginBottom: 12 }}><Alert tone="err">ناقص {countAr(nErr)} — موضّحة في الحقول باللون الأحمر.</Alert></div>}
 
       <div className="docgrid">
         <div className="form">
@@ -449,21 +448,9 @@ export default function CustomerNew() {
         </aside>
       </div>
 
-      <div className="savebar" data-component="SaveBar">
-        <span className={`savebar__s${tried && nErr ? ' is-bad' : ''}`}>
-          {tried && nErr
-            ? <><Ico.close size={15} />ناقص {countAr(nErr)} — موضّحة أعلاه باللون الأحمر</>
-            : nErr === 0
-              ? <><Ico.check size={15} />جاهز</>
-              : 'أكمل الحقول ثم احفظ — سننبّهك إن كان هناك نقص'}
-        </span>
-        <div className="savebar__b">
-          <button className="btn btn--ghost" onClick={() => nav('/sales/customers')}>إلغاء</button>
-          <button className="btn btn--soft" onClick={submit}>حفظ وإنشاء فاتورة</button>
-          <button className="btn btn--primary" onClick={submit}>
-            <Ico.check size={16} />حفظ العميل
-          </button>
-        </div>
+      <div className="ob-stickybar">
+        <button type="button" className="btn" onClick={submit}>حفظ وإنشاء فاتورة</button>
+        <button type="button" className="btn btn--primary" onClick={submit}>حفظ العميل</button>
       </div>
     </AppShell>
   )

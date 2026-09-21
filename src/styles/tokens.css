@@ -1,4 +1,13 @@
 /* ============================================================
+   ★★ Option B — Elevate (تسليم ١٧ سبتمبر ٢٠٢٦)
+   التوكنز دي اتظبطت على §2 في handoff إنشاء الفاتورة:
+     صفحة #FBFAF9 · كروت بيضا ببرواز #E9E5E2 · حقول ببرواز #D9D3CE
+     حبر #38342F / ثانوي #6F675F / عناوين #1C1C1C
+     راديوس 6/8/10/12/16 · تحكّم 44 · مسافات 4…48
+   التعليقات الأقدم تحت (قلب الأسطح، البروايز الشفافة) اتلغت
+   بالقرار ٠-٢ — القيم هي المرجع مش التعليق.
+   ============================================================ */
+/* ============================================================
    HASEEM — DESIGN TOKENS
    ------------------------------------------------------------
    ملف التبديل الوحيد. كل الكومبوننتس بتقرا من هنا.
@@ -34,7 +43,7 @@
    صغيرة (مؤشّر نشِط · شريط تقدّم · نقطة تنبيه). الليموني على
    أبيض تباينه ١٫٢:١ — أي كلمة مكتوبة بيه مش هتتقري.
 
-   الخط: Fustat للعناوين · IBM Plex Sans Arabic للنص.
+   الخط: IBM Plex Sans Arabic بس — العناوين والنص (Option B · قرار ٠-١).
    ============================================================ */
 
 :root{
@@ -98,24 +107,25 @@
   /* ---------- 2. SURFACES ---------- */
   /* ★ مقلوبة: الصفحة بيضا، والرمادي #E9E5E2 على الكروت والقايمة.
      الفصل جاي من فرق السطح نفسه — مفيش ظل ولا برواز على الكارت. */
-  --surface-page:     #FFFFFF;      /* الصفحة — أبيض */
-  --surface-app:      #FFFFFF;      /* منطقة المحتوى */
-  --surface-raised:   var(--w-50);  /* ★ الكروت — تلات درجات أفتح من رمادي الهوية */
+  --surface-page:     #FBFAF9;      /* الصفحة — أبيض */
+  --surface-app:      #FBFAF9;      /* منطقة المحتوى */
+  --surface-raised:   #FFFFFF;  /* ★ الكروت — تلات درجات أفتح من رمادي الهوية */
   --surface-field:    #FFFFFF;      /* الحقول — بير أبيض جوه الكارت */
-  --surface-sunken:   var(--w-200); /* الغاطس — رمادي الهوية نفسه */
-  --surface-hover:    var(--w-100);
-  --surface-selected: #DDEAE4;      /* المكان الوحيد اللي الأخضر بيلمس فيه سطح */
-  --surface-inverse:  #003E31;   /* التلميحات — الأخضر الأساسي */
+  --surface-sunken:   #F4F2F0; /* الغاطس — رمادي الهوية نفسه */
+  --surface-hover:    #F4F2F0;
+  --surface-selected: #F4F2F0;      /* المكان الوحيد اللي الأخضر بيلمس فيه سطح */
+  --surface-inverse:  #23201D;   /* التلميحات — الأخضر الأساسي */
 
   /* ---------- 3. INK — رمادي محايد. مفيش نص أخضر فاتح خالص ---------- */
+  --ink-label:   #524C46;   /* لِيبل الحقول وأسطر البيانات (Option B #524C46) */
   --ink-strong:  #1C1C1C;   /* ★ أسود الهوية */
-  --ink-base:    #4A4B4D;
+  --ink-base:    #38342F;
   /* ★ الهادي والخافت **غمقوا درجة** بعد قلب الأسطح: الكارت بقى
      رمادي #E9E5E2 مش أبيض، فنفس الحبر فقد ٢٥٪ من تباينه.
      ولما الكارت طلع أفتح (w-100) رجعوا خطوة لورا تاني —
      الهادي دلوقتي 4.67:1 فوق الكارت، والخافت 3.20:1. */
-  --ink-muted:   #6A6C6F;
-  --ink-faint:   #85878A;
+  --ink-muted:   #6F675F;
+  --ink-faint:   #6F675F;
   --ink-inverse: #FFFFFF;
 
   /* ---------- 4. BORDERS ---------- */
@@ -133,16 +143,16 @@
      — الأزرار والحقول والمبدّلات. مش استثناء مزاجي: الزرار
      والحقل حاجات **بتتداس وبيتكتب فيها**، ولازم يبان إن ليها
      حدود قبل ما تلمسها. الكارت مش كده — الكارت بيتقرا. */
-  --border-strong: transparent;
-  --border-base:   transparent;
-  --border-faint:  transparent;
+  --border-strong: #D9D3CE;
+  --border-base:   #E9E5E2;
+  --border-faint:  #F4F2F0;
   /* ★ خفّ في باص المنيمال — من #DBD5D0 لرمادي الهوية نفسه.
      الحقل بيتعرّف من سطحه ومكانه؛ الخط مجرد تأكيد، مش إعلان. */
-  --border-control: var(--w-200);
+  --border-control: #D9D3CE;
   /* ★ خطوط الجدول رجعت — الجدول هو الحاجة الوحيدة اللي النبرة
      لوحدها ما بتكفّيهاش: صفوف تحت بعض بنفس اللون وبنفس المسافة،
      العين محتاجة خط يقول «ده صف وده صف». باقي الصفحة لأ. */
-  --border-table:   #E4E0DC;
+  --border-table:   #E9E5E2;
 
   /* ---------- 5. NAVIGATION ---------- */
   /* ★ القايمة بيضا — بطلب من مهاب.
@@ -159,19 +169,19 @@
      بقت سطحين بس: أبيض للخلفية، وكريمي واحد لكل حاجة قاعدة
      فوقها (القايمة والكروت). الحافة بتبان من فرق النبرة مع
      الأبيض، من غير خط ولا ظل. */
-  --nav-bg:         var(--w-50);
-  --nav-ink:        #55585B;
+  --nav-bg:         #FFFFFF;
+  --nav-ink:        #524C46;
   --nav-ink-hover:  #1C1C1C;
   --nav-ink-active: #FFFFFF;
   --nav-active-bg:  #003E31;
-  --nav-hover-bg:   var(--w-100);
-  --nav-border:     transparent;    /* مفيش خط — الفصل بالنبرة */
-  --nav-section:    #9A9C9F;
+  --nav-hover-bg:   #F4F2F0;
+  --nav-border:     #E9E5E2;    /* مفيش خط — الفصل بالنبرة */
+  --nav-section:    #6F675F;
 
   /* ---------- 6. ACCENT ---------- */
   --accent:           #003E31;   /* ★ #003E31 من الجايد لاين */
   --accent-ink:       #FFFFFF;
-  --accent-quiet:     #E8F1EC;
+  --accent-quiet:     rgba(0,62,49,.08);
   --accent-indicator: #003E31;
   /* درجتين أغمق من اللون الأساسي — للتلميحات وخلفيات شاشة الدخول */
   --accent-deep:      #002F25;
@@ -184,7 +194,7 @@
      شريط صغير، مؤشّر، أو حبر **فوق الأخضر الغامق** (تباين ١٣:١). */
   --lime:             #E7FF25;
   --lime-on-dark:     #E7FF25;   /* فوق --accent فقط */
-  --lime-quiet:       #F7FFC9;   /* خلفية تلميح خفيفة */
+  --lime-quiet:       #F4F2F0;   /* خلفية تلميح خفيفة */
 
   /* ---------- 6b. حبر ثابت لا يتبع الهوية ولا الوضع ----------
      دي القيم الوحيدة اللي مش بتتغيّر لا مع لون المنشأة ولا مع
@@ -193,42 +203,42 @@
   --on-media:    #FFFFFF;   /* حبر وأسطح فوق الصور */
 
   /* ---------- 7. STATUS ---------- */
-  --state-positive:  #006E57;   /* حبر الشارة — غمق درجة عشان يعدّي 4.5:1 فوق
+  --state-positive:  #15803D;   /* حبر الشارة — غمق درجة عشان يعدّي 4.5:1 فوق
                                    خلفية الشارة الفاتحة. لون البراند نفسه
                                    #008267 باقي في --g-600 و--chart-2. */
-  --state-attention: #C2410C;   /* تنبيه — بادچات بس، مش لون كتابة */
-  --state-critical:  #B4453A;   /* الخطأ الحقيقي بس: رفض الهيئة */
-  --state-info:      #5C636B;   /* صادرة وماشية — رمادي، مش لون */
-  --ink-info:        #2A5FC4;   /* ★ لون الكتابة التالت — للمعلومة بس */
+  --state-attention: #B45309;   /* تنبيه — بادچات بس، مش لون كتابة */
+  --state-critical:  #B91C1C;   /* الخطأ الحقيقي بس: رفض الهيئة */
+  --state-info:      #524C46;   /* صادرة وماشية — رمادي، مش لون */
+  --ink-info:        #1D4ED8;   /* ★ لون الكتابة التالت — للمعلومة بس */
 
   /* ألوان الرسم — أزهى، للأشرطة والنقط. مش للنص. */
   --viz-positive:  #12B981;
   --viz-attention: #E0A33C;
   --viz-info:      #5B8DEF;
   --viz-neutral:   #C7CBD2;
-  --viz-faint:     #DFDAD5;
+  --viz-faint:     #E9E5E2;
   /* ألوان سلاسل الرسوم — خطوة لكل وضع، متحقّق منها بمدقّق اللوحة:
      نطاق الإضاءة · أرضية التشبّع · فصل عمى الألوان · التباين. */
   --series-1:      #5B8DEF;   /* السلسلة الوحيدة — كل الأعمدة بلون واحد */
   --series-2:      #B5791A;   /* فئة مختلفة فعلًا (المرسمل)، مش ترتيب */
-  --series-track:  #DFDAD5;   /* مسار العمود — خافت، مرجع محاذاة بس */
-  --state-neutral:   #9AA0A8;
+  --series-track:  #E9E5E2;   /* مسار العمود — خافت، مرجع محاذاة بس */
+  --state-neutral:   #6F675F;
   /* ★ شارة «صادر» — زرقا فاتحة. منقولة من سيستم الكلاينت زي ما هي:
      عنده حالة المستند زرقا وحالة الدفع خضرا، والفرق في اللون هو
      اللي بيخلّي العين تفرّق بين البُعدين من غير ما تقرا. */
-  --state-issued:    #2A5FC4;
+  --state-issued:    #1D4ED8;
 
-  --state-positive-bg:  #E4F5EE;
-  --state-attention-bg: #FBEDE7;
-  --state-critical-bg:  #FAEEEC;
+  --state-positive-bg:  #DCFCE7;
+  --state-attention-bg: #FEF3C7;
+  --state-critical-bg:  #FEE2E2;
   /* ★ اتدفّت بعد القلب — الرمادي البارد كان بيتخانق مع
      رمادي الهوية الدافي، ولازم تفضل **أفتح** من الكارت
      عشان الشارة تبان مرفوعة عنه. */
   /* ★ أغمق من الكارت مش أفتح — الكارت بقى قريب من الأبيض،
      فالشارة الفاتحة كانت هتختفي فيه. */
-  --state-info-bg:      var(--w-200);
-  --state-neutral-bg:   #EBE7E3;
-  --state-issued-bg:    #E8EFFA;
+  --state-info-bg:      #E9E5E2;
+  --state-neutral-bg:   #E9E5E2;
+  --state-issued-bg:    #DBEAFE;
 
   /* ---------- 8. CHART RAMP ----------
      بالِت سيكوينشال: لون واحد، إضاءة متدرّجة.
@@ -238,16 +248,16 @@
   --chart-2: #008267;   /* الوسط — التركوازي المساند */
   --chart-3: #8CC7B5;   /* الفاتح — المميّز */
   --chart-critical: #A32B22;
-  --chart-grid:  #DCD6D0;
-  --chart-axis:  #9AA2A3;
-  --chart-track: #EDF9F4;
+  --chart-grid:  #E9E5E2;
+  --chart-axis:  #6F675F;
+  --chart-track: #F4F2F0;
 
   /* ---------- 9. ICON TINTS ----------
      خلفية واحدة فاتحة ولون أيقونة واحد — كل الأيقونات متطابقة. */
-  --tint-bg:   #EAF5F1;   /* خلفية مربّع الأيقونة — فاتحة */
+  --tint-bg:   #F4F2F0;   /* خلفية مربّع الأيقونة — فاتحة */
   --tint-ink:  #003E31;   /* لون كل الأيقونات — الأساسي */
-  --tint-crit-bg:  #FDF1F0;
-  --tint-crit-ink: #A32B22;
+  --tint-crit-bg:  #FEF2F2;
+  --tint-crit-ink: #B91C1C;
   /* توافق */
   --tint-1: var(--tint-bg); --tint-ink-1: var(--tint-ink);
   --tint-2: var(--tint-bg); --tint-ink-2: var(--tint-ink);
@@ -265,18 +275,18 @@
      الدرجات دي هي نفس سلّم الهوية بالظبط. */
   --paper-bg:     #FFFFFF;
   --paper-ink:    #1C1C1C;   /* أسود البراند */
-  --paper-mute:   #6A6C6F;
-  --paper-faint:  #85878A;
-  --paper-line:   #E4E0DC;
+  --paper-mute:   #6F675F;
+  --paper-faint:  #6F675F;
+  --paper-line:   #E9E5E2;
   --paper-rule:   #D2CAC4;
   --paper-soft:   #DFD9D5;
   --paper-hair:   #F3F1EF;
   --paper-sunken: #F7F6F5;
-  --paper-crit:   #B4453A;
+  --paper-crit:   #B91C1C;
 
   /* ---------- 10. SPACING ---------- */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
-  --sp-5: 20px; --sp-6: 28px; --sp-7: 40px; --sp-8: 56px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 48px;
 
   /* ---------- 11. RADIUS ----------
      ريديَس واحد لكل الكروت بلا استثناء. الأصغر للعناصر الداخلية فقط. */
@@ -304,20 +314,20 @@
 
      `--ctl-h` هي المصدر الوحيد. الأسماء التلاتة فاضلة عشان
      الكود القديم يفضل شغّال، وكلها بتشاور على نفس الرقم. */
-  --ctl-h:  38px;
+  --ctl-h:  44px;
   --ctl-lg: var(--ctl-h);
   --ctl-md: var(--ctl-h);
   --ctl-sm: var(--ctl-h);
   --ctl-px: 12px;      /* الحشو الأفقي الموحّد */
 
-  --r-card: 22px;   /* ★ كل الكروت والألواح */
-  --r-ctrl: 10px;   /* الأزرار، الحقول، عناصر القائمة */
-  --r-chip: 8px;    /* مربعات الأيقونات والشارات */
+  --r-card: 12px;   /* ★ كل الكروت والألواح */
+  --r-ctrl: 8px;   /* الأزرار، الحقول، عناصر القائمة */
+  --r-chip: 6px;    /* مربعات الأيقونات والشارات */
   --r-full: 999px;
   /* توافق مع الأسماء القديمة */
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 24px;
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 16px;
 
   /* ---------- 12. TYPE — خط واحد ---------- */
   /* الافتراضي — وبيتبدّل من «هوية المنشأة» في الإعدادات.
@@ -325,11 +335,8 @@
      والعربي بعده بياخد الحروف العربية تلقائيًا. */
   --font-ar: 'IBM Plex Sans Arabic';
   --font-en: 'IBM Plex Sans Arabic';
-  /* ★ الجايد لاين بتفصل بين الاتنين:
-       Fustat              → العناوين والتترات الرئيسية
-       IBM Plex Sans Arabic → النص، عربي وإنجليزي
-     Fustat ثنائي اللغة فعلًا، فمش محتاج ستاك لاتيني منفصل معاه. */
-  --font-display: 'Fustat', var(--font-ar), system-ui, sans-serif;
+  /* ★ Option B: خط واحد للعناوين والنص. Fustat اتشال من التطبيق كله. */
+  --font-display: var(--font-ar), system-ui, sans-serif;
   --font-ui:      var(--font-ar), system-ui, sans-serif;
   --font-mono:    var(--font-ar), system-ui, sans-serif;
 
@@ -346,25 +353,25 @@
   --shadow-pill: 0 1px 2px rgba(20,24,28,.09);          /* للعنصر المرفوع جوه مبدّل فقط */
   /* الظل محايد مش مخضّر — الظل مش جزء من الهوية، وأي ميل لوني
      فيه بيضرب مع لون منشأة مختلف. */
-  --shadow-app:  0 20px 56px rgba(14,18,22,.10);
-  --shadow-pop:  0 12px 36px rgba(14,18,22,.16);
+  --shadow-app:  0 20px 60px rgba(35,32,29,.25);
+  --shadow-pop:  0 12px 32px rgba(35,32,29,.16);
   --shadow: var(--shadow-card);
 
   /* طبقة التعتيم اللي تحت شريط تنقّل الموبايل — أبيض شفاف
      بيتضاف عليه بلور، والتدرّج بيخلّي الحافة تختفي. */
-  --scrim-glass: rgba(255,255,255,.55);
+  --scrim-glass: rgba(35,32,29,.45);
 
   /* الأسطح الزجاجية: أبيض شفاف + لمسة نعناعي من سلّم الهوية */
-  --glass-surface: rgba(255,255,255,.66);
-  --glass-edge:    rgba(255,255,255,.55);
-  --glass-tint:    rgba(140,199,181,.38);
+  --glass-surface: #FFFFFF;
+  --glass-edge:    #E9E5E2;
+  --glass-tint:    transparent;
 
   /* ---------- 14. LAYOUT ---------- */
-  --nav-w: 252px;   /* يستوعب أطول عنصر «المشتريات والمصروفات» في سطر واحد */
-  --nav-w-collapsed: 72px;
+  --nav-w: 260px;   /* يستوعب أطول عنصر «المشتريات والمصروفات» في سطر واحد */
+  --nav-w-collapsed: 76px;
   --aside-w: 268px;   /* ★ عرض العمود الجانبي — واحد في كل الصفوف */
   --gap: 16px;        /* ★ فراغ واحد بين كل الكروت */
-  --topbar-h: 0px;
+  --topbar-h: 64px;
   --row-h: 52px;
   --tap-min: 44px;
   --app-inset: 0px;
@@ -382,54 +389,55 @@
    ============================================================ */
 [data-theme="dark"]{
   /* ---------- الأسطح: أسود محايد ---------- */
-  --surface-page:     var(--k-990);
-  --surface-app:      var(--k-950);
-  --surface-raised:   var(--k-900);
+  --surface-page:     #171513;
+  --surface-app:      #171513;
+  --surface-raised:   #201D1A;
   /* في الداكن الحقل **أفتح** من الكارت مش أغمق — نفس المنطق
      بالمقلوب: البير بيبان بفرق الإضاءة، والاتجاه بيتقلب. */
-  --surface-field:    var(--k-850);
-  --surface-sunken:   var(--k-820);
-  --surface-hover:    var(--k-820);
-  --surface-selected: var(--k-750);
-  --surface-inverse:  var(--k-50);
+  --surface-field:    #26221F;
+  --surface-sunken:   #2A2622;
+  --surface-hover:    #2A2622;
+  --surface-selected: #2A2622;
+  --surface-inverse:  #F4F2F0;
 
   /* ---------- الحبر ---------- */
-  --ink-strong:  var(--k-50);
-  --ink-base:    var(--k-300);
-  --ink-muted:   var(--k-500);
-  --ink-faint:   var(--k-600);
-  --ink-inverse: var(--k-990);
+  --ink-label:   #C9C0B7;
+  --ink-strong:  #F6F2EE;
+  --ink-base:    #DDD6CF;
+  --ink-muted:   #A89F96;
+  --ink-faint:   #A89F96;
+  --ink-inverse: #171513;
 
   /* ---------- الحدود ---------- */
-  --border-strong: transparent;
-  --border-base:   transparent;
-  --border-faint:  transparent;
-  --border-control: var(--k-700);
-  --border-table:   var(--k-800);
+  --border-strong: #4A433D;
+  --border-base:   #352F2A;
+  --border-faint:  #2A2622;
+  --border-control: #4A433D;
+  --border-table:   #352F2A;
 
   /* ---------- القائمة ---------- */
-  --nav-bg:         var(--k-920);
-  --nav-ink:        var(--k-400);
+  --nav-bg:         #201D1A;
+  --nav-ink:        #C9C0B7;
   --nav-ink-hover:  var(--k-50);
   --nav-ink-active: #FFFFFF;
-  --nav-active-bg:  var(--g-600);   /* أخضر حسيم — العنصر النشط */
-  --nav-hover-bg:   var(--k-850);
-  --nav-border:     var(--k-880);
-  --nav-section:    var(--k-600);
+  --nav-active-bg:  #2E9E85;   /* أخضر حسيم — العنصر النشط */
+  --nav-hover-bg:   #2A2622;
+  --nav-border:     #352F2A;
+  --nav-section:    #A89F96;
 
   /* ---------- الأكشن: أخضر حسيم، مفيش غيره ---------- */
-  --accent:           var(--g-600);   /* #178064 */
+  --accent:           #2E9E85;   /* #178064 */
   --accent-ink:       #FFFFFF;
-  --accent-quiet:     var(--g-800);
+  --accent-quiet:     rgba(46,158,133,.16);
   --accent-indicator: var(--g-500);
   --accent-deep:      var(--g-800);
   --accent-deeper:    var(--g-950);
   --accent-glow:      rgba(46,158,133,.22);
 
   /* ---------- الحالات ---------- */
-  --state-positive:  #34D6A0;
-  --state-attention: #F08B5A;
-  --state-critical:  #E08B7C;
+  --state-positive:  #6FD49A;
+  --state-attention: #F0B35A;
+  --state-critical:  #F59A93;
 
   --viz-positive:  #24D69C;
   --viz-attention: #E0A33C;
@@ -441,19 +449,19 @@
   --series-1:      #4A7FE0;
   --series-2:      #B8801F;
   --series-track:  #262A2F;
-  --state-info:      #9AA0A8;
+  --state-info:      #C9C0B7;
   --ink-info:        #7FA9F7;
   --state-neutral:   var(--k-500);
 
   /* خلفية «محصّلة» ليها قيمتها الخاصة مش من سلّم البراند —
      الحالة معنى ثابت، فمينفعش تتحرّك مع هوية المنشأة. */
-  --state-positive-bg:  #0A3527;
-  --state-attention-bg: #2E1A12;
-  --state-critical-bg:  var(--red-900);
-  --state-info-bg:      var(--k-820);
-  --state-neutral-bg:   var(--k-850);
-  --state-issued:       #7FA9F7;
-  --state-issued-bg:    #16223A;
+  --state-positive-bg:  #12291B;
+  --state-attention-bg: #2D2310;
+  --state-critical-bg:  #301615;
+  --state-info-bg:      #2A2622;
+  --state-neutral-bg:   #2A2622;
+  --state-issued:       #8FB2FF;
+  --state-issued-bg:    #162238;
 
   /* ---------- الرسوم ---------- */
   --chart-1: var(--g-500);

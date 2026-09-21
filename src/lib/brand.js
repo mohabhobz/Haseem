@@ -257,30 +257,14 @@ export function resetBrand() {
 export function applyBrand(b = getBrand()) {
   if (typeof document === 'undefined') return
   const root = document.documentElement
-  const dark = root.dataset.theme === 'dark'
-  const color = b.color || DEFAULT_BRAND.color
-  const vars = ramp(color, dark)
-
-  if (color.toLowerCase() === DEFAULT_BRAND.color.toLowerCase()) {
-    /* اللون الافتراضي = بالِت حسيم الأصلية. بنشيل التخصيص خالص
-       بدل ما نعيد حسابه، عشان الشكل يفضل مطابق ١٠٠٪ للتوكنز. */
-    Object.keys(vars).forEach((k) => root.style.removeProperty(k))
-  } else {
-    Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v))
-  }
-
-  const ar = FONTS_AR.find((f) => f.id === b.fontAr) || FONTS_AR[0]
-  const en = FONTS_EN.find((f) => f.id === b.fontEn) || FONTS_EN[0]
-  const stack = `${en.css}, ${ar.css}, system-ui, sans-serif`
-  root.style.setProperty('--font-ui', stack)
-  root.style.setProperty('--font-mono', `${en.css}, system-ui, sans-serif`)
-  /* ★ `--font-display` مش بيتغيّر مع هوية المنشأة.
-     Fustat هو صوت **حسيم** نفسه في العناوين — زي ما الجايد لاين
-     بتفصل: Fustat للعناوين، وخط النص للمحتوى. المنشأة بتختار خط
-     المحتوى، وعناوين المنتج بتفضل بصوت المنتج. */
+  /* ★ Option B (سبتمبر ٢٠٢٦ · قرار ٠-٥): هوية المنشأة **ما بتلمسش
+     الواجهة**. التسليم: «IBM Plex Sans Arabic بس» و«مفيش أخضر تاني».
+     لون المنشأة وخطها بقوا للّوجو والفاتورة المطبوعة بس
+     (printpreview بيقراهم من getBrand مباشرة).
+     بنشيل أي قيمة قديمة اتحطت على <html> من نسخة قبل كده. */
+  Object.keys(ramp(DEFAULT_BRAND.color, false)).forEach((k) => root.style.removeProperty(k))
+  root.style.removeProperty('--font-ui')
+  root.style.removeProperty('--font-mono')
   root.style.setProperty('--brand-logo', `url("${b.logo || DEFAULT_BRAND.logo}")`)
-
-  /* خلفية صفحة الدخول: صورة المستخدم لو رفع واحدة، وإلا `none`
-     فتفضل الخلفية المولّدة من لون المنشأة هي اللي باينة. */
   root.style.setProperty('--auth-bg', b.authBg ? `url("${b.authBg}")` : 'none')
 }

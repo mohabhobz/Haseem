@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AppShell, CurrencyNote } from '../components/layout.jsx'
+import { AppShell, CurrencyNote, PageHeader } from '../components/layout.jsx'
+import { Chip, Alert } from '../components/ob.jsx'
+import { DateField } from '../components/datefield.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
 import { fmtMoney, fmtDate, TODAY } from '../lib/format.js'
@@ -249,14 +251,7 @@ export default function CreditNoteNew() {
   if (!src) {
     return (
       <AppShell>
-        <div className="dochead">
-          <button className="dochead__back" onClick={() => nav('/sales/credit-notes')}>
-            <Ico.back size={16} />الإشعارات الدائنة
-          </button>
-          <div className="dochead__row">
-            <div className="dochead__id"><h1 className="dochead__no dochead__no--ar">إشعار دائن جديد</h1></div>
-          </div>
-        </div>
+      <PageHeader back="/sales/credit-notes" title="إشعار دائن جديد" sub="اختر الفاتورة اللي الإشعار هيتعمل عليها" />
         <div className="form form--solo"><PickInvoice onPick={pick} /></div>
       </AppShell>
     )
@@ -264,22 +259,13 @@ export default function CreditNoteNew() {
 
   return (
     <AppShell>
-      <div className="dochead">
-        <button className="dochead__back" onClick={() => nav('/sales/credit-notes')}>
-          <Ico.back size={16} />الإشعارات الدائنة
-        </button>
-        <CurrencyNote />
-        <div className="dochead__row">
-          <div className="dochead__id">
-            <h1 className="dochead__no dochead__no--ar">إشعار دائن جديد</h1>
-          </div>
-          <div className="dochead__act">
-            <button className="btn btn--soft" onClick={() => setPreview(true)}>
-              <Ico.search size={15} />معاينة
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader back="/sales/credit-notes" title="إشعار دائن جديد" chip={<Chip tone="draft">مسودة</Chip>}
+        actions={<>
+          <button type="button" className="btn" onClick={() => setPreview(true)}><Ico.eye size={20} />معاينة</button>
+          <button type="button" className="btn ob-hide-sm" onClick={saveDraft}>حفظ كمسودة</button>
+          <button type="button" className="btn btn--primary ob-hide-sm" onClick={submit}><Ico.send size={20} className="ob-dir" />إصدار الإشعار</button>
+        </>} />
+      {tried && nErr > 0 && <div style={{ marginBottom: 12 }}><Alert tone="err">صحّح الحقول المعلّمة قبل الإصدار.</Alert></div>}
 
       <div className="docgrid">
         <div className="form">
@@ -321,17 +307,8 @@ export default function CreditNoteNew() {
                       </div>
                     )}
                   </div>
-                  <label className="fld">
-                    <span className="fld__l">تاريخ الإصدار</span>
-                    <input className="fld__i" type="date" value={date}
-                      onChange={(e) => setDate(e.target.value)} />
-                  </label>
-                  <label className="fld">
-                    <span className="fld__l">تاريخ التوريد</span>
-                    <input className="fld__i" type="date" value={supply}
-                      onChange={(e) => setSupply(e.target.value)} />
-                    <em className="fld__h">من الفاتورة الأصلية</em>
-                  </label>
+                  <DateField label="تاريخ الإصدار" value={date} onChange={setDate} />
+                  <DateField label="تاريخ التوريد" value={supply} onChange={setSupply} hint="من الفاتورة الأصلية" />
                 </div>
 
                 <label className="fld" style={{ marginTop: 14 }}>
@@ -387,9 +364,9 @@ export default function CreditNoteNew() {
                   <span className="lines__i">{i + 1}</span>
                   <input className="fld__i" value={l.ar} placeholder="وصف البند"
                     onChange={(e) => setLine(l.key, { ar: e.target.value })} />
-                  <input className="fld__i n" type="number" min="0" value={l.qty}
+                  <input className="fld__i n" inputMode="decimal" value={l.qty}
                     onChange={(e) => setLine(l.key, { qty: e.target.value })} />
-                  <input className="fld__i n" type="number" min="0" step="0.01" value={l.price}
+                  <input className="fld__i n" inputMode="decimal" value={l.price}
                     onChange={(e) => setLine(l.key, { price: e.target.value })} />
                   <Select className="fld__i" value={l.tax}
                     onChange={(e) => setLine(l.key, { tax: e.target.value })}>
@@ -471,7 +448,7 @@ export default function CreditNoteNew() {
               <div><dt>ضريبة القيمة المضافة</dt><dd><SAR v={calc.tax} dec /></dd></div>
             </dl>
             <span className="fld__l" style={{ marginTop: 14, display: 'block' }}>خصم على الإشعار</span>
-            <input className="fld__i n" type="number" min="0" step="0.01" placeholder="0"
+            <input className="fld__i n" inputMode="decimal" placeholder="0"
               value={disc} onChange={(e) => setDisc(e.target.value)} />
           </section>
 
@@ -515,21 +492,9 @@ export default function CreditNoteNew() {
         </aside>
       </div>
 
-      <div className="savebar" data-component="SaveBar">
-        <span className={`savebar__s${tried && nErr ? ' is-bad' : ''}`}>
-          {tried && nErr
-            ? <><Ico.close size={15} />ناقص {nErr === 1 ? 'حقل واحد' : nErr === 2 ? 'حقلان' : `${nErr} حقول`} — موضّحة أعلاه باللون الأحمر</>
-            : nErr === 0
-              ? <><Ico.check size={15} />جاهز</>
-              : 'أكمل الحقول ثم أصدر — سننبّهك إن كان هناك نقص'}
-        </span>
-        <div className="savebar__b">
-          <button className="btn btn--ghost" onClick={() => nav('/sales/credit-notes')}>إلغاء</button>
-          <button className="btn btn--soft" onClick={saveDraft}>حفظ كمسودة</button>
-          <button className="btn btn--primary" onClick={submit}>
-            <Ico.send size={16} />إصدار وإرسال للهيئة
-          </button>
-        </div>
+      <div className="ob-stickybar">
+        <button type="button" className="btn" onClick={saveDraft}>حفظ كمسودة</button>
+        <button type="button" className="btn btn--primary" onClick={submit}>إصدار الإشعار</button>
       </div>
 
       {preview && (

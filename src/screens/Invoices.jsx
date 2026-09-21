@@ -1,387 +1,328 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { AppShell, PageHeader } from '../components/layout.jsx'
-import { BulkActionBar, Pagination, useSelection } from '../components/table.jsx'
-import { RowMenu, docMenu } from '../components/rowmenu.jsx'
-import { Button, SearchField } from '../components/primitives.jsx'
-import { Ico, Riyal } from '../components/icons.jsx'
-import { Pick, DateRange, inPeriod, periodRange, docText } from '../components/pagefilter.jsx'
-import { daysFrom, TODAY, fmtMoney } from '../lib/format.js'
+import { AppShell, PageHeader, UsageLine } from '../components/layout.jsx'
+import { useSelection } from '../components/table.jsx'
+import { Ico } from '../components/icons.jsx'
+import { docText } from '../components/pagefilter.jsx'
+import { fmtDate, daysFrom } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { useDocs } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import { toast } from '../components/feedback.jsx'
-import { PrintPreview } from '../components/printpreview.jsx'
 import { Drawer } from '../components/drawer.jsx'
 import { SelectField } from '../components/selectfield.jsx'
+import {
+  Amt, Chip, InvChips, invKey, invNet, invRemaining, invLateDays, INV_LIVE,
+  QuietSelect, usePop, Check, Alert, PaymentModal, PreviewPanel, paperOfInvoice,
+} from '../components/ob.jsx'
 
 /* ============================================================
-   فواتير المبيعات — **منقولة من سيستم الكلاينت بالحرف**.
+   فواتير المبيعات — Option B · Elevate (handoff القايمة v1.0).
 
-   المرجع: التصوير المباشر من app-staging.haseem.com (دوك ١٩).
-   مش من التدقيق المكتوب — ده اللي غلّطنا أول مرة.
-
-   ★ ليه مش جدول؟ لأن سيستمهم مش جدول. هو **قايمة كروت**:
-   كل فاتورة كارت مستقل بمسافة بينه وبين اللي بعده، وجواه
-   تلات كتل (من اليمين للشمال):
-
-     يمين  — رقم الفاتورة وجنبه شارات الحالة، تحته العميل
-             والمرجع، وتحتهم المستودع
-     النص  — عنقود الأوامر: تسجيل دفعة · تنزيل PDF · إرسال ▾ · 👁
-     شمال  — المبلغ كبير، فوقه الأصلي مشطوب لو اتقيّد عليه إشعار،
-             وتحته الاستحقاق. وبعده ⋮ على الحافة.
-
-   ★ اتنقلوا زي ما هما عشان مش تفاصيل:
-   ١) **الكارت المتأخر بيتلوّن** — إطار وخلفية وردية خفيفة.
-      ده اللي بيخلّي المتأخرات تبان وإنت بتنزل بعينك.
-   ٢) **حالة المستند وحالة الدفع شارتين منفصلتين**. «صادر» +
-      «مدفوعة جزئياً» + «متأخر» تلاتة مع بعض على نفس الكارت،
-      لأنهم تلات أسئلة مختلفة — والأولى زرقا والتانية خضرا.
-   ٣) **الأمر الرئيسي بيتغيّر مع الحالة** — المسودة «إصدار
-      الفاتورة»، والصادرة اللي عليها متبقي «تسجيل دفعة»،
-      والمدفوعة بالكامل مالهاش أمر رئيسي أصلًا.
-
-   ★ وحاجة السيستم مش بيعرضها: **حالة الهيئة**. الفاتورة
-   المرفوضة شكلها في القايمة زي أي فاتورة صادرة. سايبينها زي
-   الأصل عشان «بالحرف» — وده بند مفتوح للكلاينت.
+   اتبدّلت كروت «بالحرف» (دوك ١٩) بجدول مضغوط بقرار الكلاينت
+   (قرار ٠-٩). اللي اتغيّر عن اللي قبله:
+   • صف واحد لكل فاتورة · أكشن سياقي واحد soft · الباقي ورا ⋮
+   • شارة دفع واحدة لكل صف (List §5) — «صادر» مش شارة
+   • الصف المتأخر: #FFFAF9 + شريط أحمر ٣px (مش برواز)
+   • المعاينة لوحة جانبية والجدول يتضغط جنبها
+   • الترقيم 10/25/50 بدل القايمة المتصلة
    ============================================================ */
 
-const LIVE = ['issued', 'partial', 'overdue', 'paid']
-
-/* ---------- البُعد الأول: حالة المستند ---------- */
-function docState(v) {
-  if (v.status === 'draft') return { id: 'draft', ar: 'مسودة', tone: 'neutral' }
-  if (v.status === 'cancelled' || v.status === 'void')
-    return { id: 'cancelled', ar: 'ملغي', tone: 'critical' }
-  if (DATA.creditedState(v.no, v.total)) return { id: 'credited', ar: 'مقيدة بإشعار', tone: 'info' }
-  return { id: 'issued', ar: 'صادر', tone: 'issued' }
-}
-
-/* ---------- البُعد التاني: حالة الدفع ----------
-   مشتقة من المدفوع مقابل الإجمالي — مش حقل متخزّن، فمستحيل
-   تختلف مع سجل المدفوعات. */
-function payState(v) {
-  if (!LIVE.includes(v.status)) return null
-  if (v.paid >= v.total - 0.009) return { id: 'paid', ar: 'مدفوع', tone: 'positive' }
-  if (v.paid > 0.009) return { id: 'partial', ar: 'مدفوعة جزئياً', tone: 'positive' }
-  return { id: 'unpaid', ar: 'غير مدفوع', tone: 'attention' }
-}
-
-/* «متأخر» علامة منفصلة، مش حالة */
-const isLate = (v) =>
-  LIVE.includes(v.status) && v.paid < v.total - 0.009 && daysFrom(v.due) < 0
-
-const STATES = [
-  { id: 'all',       label: 'الحالة' },
-  { id: 'draft',     label: 'مسودة',        test: (v) => docState(v).id === 'draft' },
-  { id: 'issued',    label: 'صادر',         test: (v) => docState(v).id === 'issued' },
-  { id: 'credited',  label: 'مقيدة بإشعار', test: (v) => docState(v).id === 'credited' },
-  { id: 'cancelled', label: 'ملغي',         test: (v) => docState(v).id === 'cancelled' },
-  { id: 'paid',      label: 'مدفوع',        test: (v) => payState(v)?.id === 'paid' },
-  { id: 'partial',   label: 'مدفوعة جزئياً', test: (v) => payState(v)?.id === 'partial' },
-  { id: 'unpaid',    label: 'غير مدفوع',    test: (v) => payState(v)?.id === 'unpaid' },
-  { id: 'late',      label: 'متأخر',        test: isLate },
+const PILLS = [
+  { id: 'all',     label: 'الكل' },
+  { id: 'draft',   label: 'مسودة',      dot: '#948B82' },
+  { id: 'unpaid',  label: 'غير مدفوعة', dot: '#F59E0B' },
+  { id: 'overdue', label: 'متأخرة',     dot: '#EF4444' },
+  { id: 'paid',    label: 'مدفوعة',     dot: '#22C55E' },
+  { id: 'sched',   label: 'مجدولة',     dot: '#3B82F6' },
 ]
+const pillTest = (id, v) => id === 'all' ? true : id === 'sched' ? !!v.rec : invKey(v) === id
 
-const CUSTS = [
-  { id: 'all', label: 'العملاء' },
-  ...DATA.customers.map((c) => ({ id: c.id, label: c.ar, test: (v) => v.c?.id === c.id })),
+const PERIODS = [
+  { id: 'd30',  label: 'آخر 30 يومًا', days: 30 },
+  { id: 'd90',  label: 'آخر 90 يومًا', days: 90 },
+  { id: 'd180', label: 'آخر 180 يومًا', days: 180 },
+  { id: 'y',    label: 'السنة الحالية' },
+  { id: 'all',  label: 'كل الفترات' },
 ]
+const inPer = (v, id) => {
+  if (id === 'all' || !v.date) return true
+  const d = new Date(v.date), t = new Date(DATA.TODAY)
+  if (id === 'y') return d.getFullYear() === t.getFullYear()
+  const p = PERIODS.find((x) => x.id === id)
+  return (t - d) / 86400000 <= p.days
+}
 
 const SORTS = [
   { id: 'date-desc',  label: 'التاريخ: الأحدث أولاً', cmp: (a, b) => String(b.date).localeCompare(a.date) },
   { id: 'date-asc',   label: 'التاريخ: الأقدم أولاً', cmp: (a, b) => String(a.date).localeCompare(b.date) },
-  { id: 'total-desc', label: 'المبلغ: الأعلى أولاً',  cmp: (a, b) => b.total - a.total },
-  { id: 'total-asc',  label: 'المبلغ: الأقل أولاً',   cmp: (a, b) => a.total - b.total },
+  { id: 'amt-desc',   label: 'المبلغ: من الأعلى',     cmp: (a, b) => invNet(b) - invNet(a) },
+  { id: 'amt-asc',    label: 'المبلغ: من الأدنى',     cmp: (a, b) => invNet(a) - invNet(b) },
+  { id: 'due-asc',    label: 'الاستحقاق: الأقرب أولاً', cmp: (a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) },
 ]
 
-/* تاريخ الاستحقاق على الكارت بصيغة السيستم: Apr 26, 2026 */
-const EN_M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const dueFmt = (iso) => {
-  if (!iso) return null
-  const d = new Date(iso)
-  return EN_M[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear()
+/* الباقة — للعرض (List §6-6). «حد الباقة» بيتجرّب من ?plan=limit */
+const PLAN = { name: 'الفوترة', used: 118, limit: 300 }
+
+/* العرض المتاح للجدول → جدول كامل / مضغوط / كروت (List §4) */
+function useAvail(pv, ref) {
+  /* ★ العرض الفعلي للكارت (ResizeObserver) — مش حساب من عرض الشاشة:
+     السايدبار ممكن يكون ٧٦ أو ٢٦٠، والمعاينة ٥٦٠ أو ٤٤٠ */
+  const [w, setW] = useState(1200)
+  useEffect(() => {
+    const el = ref?.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setW(e.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [pv, ref])
+  return w
 }
-/* ★ مش toISOString — دي بتحوّل لـUTC فبترجّع اليوم اللي فات
-   (٣١ ديسمبر بيطلع ٣٠). التاريخ هنا محلي، فبيتبني بالإيد. */
-const isoDay = (d) =>
-  d.getFullYear() + '-' +
-  String(d.getMonth() + 1).padStart(2, '0') + '-' +
-  String(d.getDate()).padStart(2, '0')
 
 export default function Invoices() {
   const nav = useNavigate()
-  const [tab, setTab] = useState('inv')
-  const [period, setPeriod] = useState({ id: 'y' })
   const [params] = useSearchParams()
-  const [state, setState] = useState(() => {
-    const z = params.get('zatca')
-    return z === 'bad' ? 'all' : (params.get('state') || 'all')
-  })
+  const [tab, setTab] = useState('inv')
+  const [pill, setPill] = useState(params.get('state') || 'all')
+  const [per, setPer] = useState('y')
   const [cust, setCust] = useState(params.get('cust') || 'all')
   const [sort, setSort] = useState('date-desc')
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
+  const [size, setSize] = useState(10)
+  const [peek, setPeek] = useState(null)
+  const [pay, setPay] = useState(null)
   const { selected, toggle, selectAll, clear } = useSelection()
+  const boxRef = useRef(null)
+  const limitHit = params.get('plan') === 'limit'
+  const [loading, setLoading] = useState(params.get('state') === 'loading')
+  useEffect(() => { if (!loading) return; const t = setTimeout(() => setLoading(false), 900); return () => clearTimeout(t) }, [loading])
 
   const all = useDocs('invoices')
+  const emptyAll = params.get('state') === 'empty'
+  const base = emptyAll ? [] : all
 
-  /* ---------- الفلاتر الإضافية ----------
-     أربع أبعاد مش في الشريط الرئيسي عشان مش كل يوم بتتفلتر
-     بيها. مكانها دراور — زي أي عرض معلومات في السيستم — والشريط
-     بيقول كام واحدة منها شغّالة، وفوق الجدول بتبان كشارات
-     تتشال بنقرة. من غير الشارات دي المستخدم ممكن ينسى إن
-     الجدول مفلتر ويقرا رقم ناقص على إنه الرقم الكامل. */
+  /* «المزيد» — الأبعاد الإضافية في دراور (الفرع · المندوب · المستودع · مركز التكلفة) */
   const ADV = [
-    { id: 'branch', label: 'الفرع',         opts: DATA.branches.map((x) => ({ id: x.id, label: x.ar })),
-      of: (v) => DATA.branchOfDoc(v.no)?.id },
-    { id: 'rep',    label: 'المندوب',        opts: DATA.reps.map((x) => ({ id: x.id, label: x.ar })),
-      of: (v) => DATA.repOfDoc(v.no)?.id },
-    { id: 'wh',     label: 'المستودع',       opts: DATA.warehouses.map((x) => ({ id: x.id, label: x.ar })),
-      of: (v) => DATA.whOf(v.no)?.id },
-    { id: 'cc',     label: 'مركز التكلفة',   opts: DATA.costCenters.map((x) => ({ id: x.id, label: x.ar })),
-      of: (v) => DATA.ccOfDoc(v.no)?.id },
+    { id: 'branch', label: 'الفرع', opts: DATA.branches.map((x) => ({ id: x.id, label: x.ar })), of: (v) => DATA.branchOfDoc(v.no)?.id },
+    { id: 'rep', label: 'المندوب', opts: DATA.reps.map((x) => ({ id: x.id, label: x.ar })), of: (v) => DATA.repOfDoc(v.no)?.id },
+    { id: 'wh', label: 'المستودع', opts: DATA.warehouses.map((x) => ({ id: x.id, label: x.ar })), of: (v) => DATA.whOf(v.no)?.id },
+    { id: 'cc', label: 'مركز التكلفة', opts: DATA.costCenters.map((x) => ({ id: x.id, label: x.ar })), of: (v) => DATA.ccOfDoc(v.no)?.id },
   ]
   const [advOpen, setAdvOpen] = useState(false)
   const [adv, setAdv] = useState({})
-  const advOn = ADV.filter((f) => adv[f.id])
-  const advLabel = (f) => f.opts.find((o) => o.id === adv[f.id])?.label
+  const advN = ADV.filter((f) => adv[f.id]).length
 
+  const CUSTS = [{ id: 'all', label: 'كل العملاء' }, ...DATA.customers.map((c) => ({ id: c.id, label: c.ar }))]
+
+  const scoped = useMemo(() => base
+    .filter((v) => inPer(v, per))
+    .filter((v) => cust === 'all' || v.c?.id === cust)
+    .filter((v) => ADV.every((f) => !adv[f.id] || f.of(v) === adv[f.id]))
+    .filter((v) => !q.trim() || docText(v).includes(q.trim().toLowerCase())), [base, per, cust, adv, q])
+
+  const counts = Object.fromEntries(PILLS.map((p) => [p.id, scoped.filter((v) => pillTest(p.id, v)).length]))
   const rows = useMemo(() => {
-    const st = STATES.find((s) => s.id === state)
-    const cu = CUSTS.find((c) => c.id === cust)
     const cmp = (SORTS.find((s) => s.id === sort) || SORTS[0]).cmp
-    const needle = q.trim().toLowerCase()
-    return all
-      .filter((v) => inPeriod(v, period, TODAY))
-      .filter((v) => (st?.test ? st.test(v) : true))
-      .filter((v) => (cu?.test ? cu.test(v) : true))
-      .filter((v) => (needle ? docText(v).includes(needle) : true))
-      .filter((v) => ADV.every((f) => !adv[f.id] || f.of(v) === adv[f.id]))
-      .sort(cmp)
-  }, [all, period, state, cust, sort, q, adv])
+    return scoped.filter((v) => pillTest(pill, v)).sort(cmp)
+  }, [scoped, pill, sort])
 
-  const [PER, setPER] = useState(12)
-  const pages = Math.max(1, Math.ceil(rows.length / PER))
+  const pages = Math.max(1, Math.ceil(rows.length / size))
   const cur = Math.min(page, pages)
-  const shown = rows.slice((cur - 1) * PER, cur * PER)
+  const shown = rows.slice((cur - 1) * size, cur * size)
+  const allOn = shown.length > 0 && shown.every((v) => selected.has(v.no))
+  const selRows = all.filter((v) => selected.has(v.no))
+  const payable = selRows.filter((v) => invRemaining(v) > 0.009)
 
-  /* ★ «عرض» بقى دراور جنبي فيه المستند كامل، مش تنقّل لصفحة.
-     السبب: العرض **قراءة**، والقراءة ما تستاهلش تخرجك من
-     القايمة وتضيّع مكانك وفلترتك. اللي عايز الصفحة الكاملة
-     بأوامرها بيدوس على رقم الفاتورة نفسه. */
-  const [peek, setPeek] = useState(null)
-  const open = (no) => nav('/sales/invoices/' + no)
-  const VAT_R = 0.15
-  const peekDoc = (v) => {
-    const lines = DATA.linesOf(v)
-    const net = lines.reduce((a, l) => a + l.total, 0)
-    return {
-      no: v.no, date: v.date, due: v.due, party: v.c,
-      lines: lines.map((l) => ({
-        code: l.code, ar: l.ar, unit: l.unit, qty: l.qty,
-        price: l.price ?? +(l.total / l.qty).toFixed(2),
-        net: l.total, taxAmt: +(l.total * VAT_R).toFixed(2),
-        total: +(l.total * (1 + VAT_R)).toFixed(2),
-      })),
-      net, tax: +(net * VAT_R).toFixed(2), total: v.total,
-      bank: DATA.banks[0], zatcaOk: v.zatca === 'ok',
-    }
-  }
+  const avail = useAvail((peek ? 'p' : '') + tab, boxRef)
+  const layout = avail < 600 ? 'cards' : (peek || avail < 860) ? 'compact' : 'full'
 
-  const on = (id, v) => {
+  const reset = () => { setPill('all'); setPer('all'); setCust('all'); setAdv({}); setQ(''); setPage(1) }
+  const filtered = pill !== 'all' || per !== 'y' || cust !== 'all' || advN > 0 || q.trim()
+
+  /* الأوامر — كلها بتروح لـ lib/actions.js (نقطة الربط مع الـAPI) */
+  const run = (id, v) => {
     switch (id) {
-      case 'issue':    return ACT.issueDoc('invoices', v)
-      case 'resubmit': return ACT.resubmitZatca('invoices', v)
-      case 'pay':      return open(v.no)
-      case 'email':
-      case 'mail':     return ACT.sendEmail('invoices', v)
-      case 'wa':       return ACT.sendWhatsApp('invoices', v)
-      case 'correct':  return ACT.correctDoc('invoices', v, () => nav('/sales/invoices/new'))
-      case 'view':     return open(v.no)
-      case 'pdf':      return ACT.downloadPdf('invoices', v)
-      case 'xml':      return ACT.downloadXml('invoices', v)
-      case 'print':    return ACT.printDoc()
-      case 'cn':       return nav('/sales/credit-notes/new')
-      case 'cancel':   return ACT.cancelDoc('invoices', v)
-      case 'schedule': return toast.info('جدولة ' + v.no,
-        { sub: 'بتتكرر الفاتورة تلقائيًا — الشاشة في تبويب «الفواتير المجدولة»' })
+      case 'view':  return setPeek(v.no)
+      case 'open':  return nav('/sales/invoices/' + v.no)
+      case 'edit':  return nav('/sales/invoices/new?draft=' + v.no)
+      case 'issue': return ACT.issueDoc('invoices', v)
+      case 'pay':   return setPay(v)
+      case 'pdf':   return ACT.downloadPdf('invoices', v)
+      case 'wa':    return ACT.sendWhatsApp('invoices', v)
+      case 'mail':  return ACT.sendEmail('invoices', v)
+      case 'dup':   toast.ok('اتعملت نسخة كمسودة', { sub: 'من ' + v.no }); return nav('/sales/invoices/new')
+      case 'cn':    return nav('/sales/credit-notes/new?src=' + v.no)
+      case 'resub': return ACT.resubmitZatca('invoices', v)
+      case 'sched': return toast.info('جدولة ' + v.no, { sub: 'الفاتورة هتتكرر تلقائيًا وتظهر في «الفواتير المجدولة»' })
+      case 'cancel':return ACT.cancelDoc('invoices', v)
+      case 'del':   return ACT.deleteDraft('invoices', v)
       default: return undefined
     }
   }
-  const bulk = (label) => ACT.bulkAction(label, 'invoices', [...selected]).then(clear)
+  const bulk = (label) => ACT.bulkAction(label, 'invoices', [...selected]).then((ok) => ok !== false && clear())
 
-  /* جدول ولا كروت — الاختيار بيفضل عبر الجلسة.
-     الجدول هو الافتراضي: بيوري ضعف عدد الفواتير في نفس
-     الشاشة، والمسح بالعين أسرع لما الأعمدة على خط واحد.
-     والكروت باقية لأنها شكل سيستم العميل اللي اتعوّد عليه. */
-  const [view, setView] = useState(() => localStorage.getItem('iv:view') || 'table')
-  const pickView = (v) => { setView(v); try { localStorage.setItem('iv:view', v) } catch {} }
-
-  const pr = periodRange(period, TODAY)
-  const allOn = shown.length > 0 && shown.every((v) => selected.has(v.no))
+  const pv = peek && all.find((v) => v.no === peek)
+  const aside = pv && (
+    <PreviewPanel
+      title={pv.no}
+      chip={<InvChips v={pv} />}
+      doc={paperOfInvoice(pv)}
+      onClose={() => setPeek(null)}
+      actions={<>
+        <ContextBtn v={pv} run={run} big />
+        <button type="button" className="btn" onClick={() => run('mail', pv)} disabled={!INV_LIVE.includes(pv.status)}><Ico.send size={20} />إرسال</button>
+        <button type="button" className="btn" onClick={() => run('open', pv)}><Ico.file size={20} />عرض الفاتورة</button>
+      </>} />
+  )
 
   return (
-    <AppShell>
-      <div className="tophead">
-        <PageHeader title="فواتير المبيعات" sub="إدارة الفواتير وتتبع المستحقات" />
-        <div className="tophead__ctrl">
-          <Button label="إنشاء فاتورة مبيعات" variant="primary" icon="＋"
-            onClick={() => nav('/sales/invoices/new')} />
+    <AppShell aside={aside}>
+      <PageHeader title="فواتير المبيعات"
+        sub="إدارة الفواتير وتتبع المستحقات"
+        usage={<UsageLine used={limitHit ? 50 : PLAN.used} limit={limitHit ? 50 : PLAN.limit} />}
+        actions={
+          <button type="button" className="btn btn--primary ob-hide-sm" disabled={limitHit}
+            onClick={() => nav('/sales/invoices/new')}><Ico.plus size={20} />إنشاء فاتورة مبيعات</button>
+        } />
+
+      {limitHit && (
+        <div style={{ marginBottom: 12 }}>
+          <Alert tone="warn" title="وصلت إلى حد باقة الفوترة هذا الشهر (50 فاتورة)."
+            actions={<button type="button" className="ob-link" onClick={() => toast.info('ترقية الباقة')}><Ico.lock size={16} />ترقية الباقة</button>}>
+            <small>يمكنك عرض الفواتير وتسجيل الدفعات، وإنشاء فواتير جديدة يبدأ من الشهر القادم أو بترقية الباقة.</small>
+          </Alert>
         </div>
+      )}
+
+      <div className="ob-tabs" role="tablist">
+        <button type="button" role="tab" aria-selected={tab === 'inv'} onClick={() => setTab('inv')}>
+          فواتير المبيعات<small><span className="num">{base.length}</span></small></button>
+        <button type="button" role="tab" aria-selected={tab === 'sch'} onClick={() => setTab('sch')}>
+          الفواتير المجدولة<small><span className="num">{DATA.scheduled.length}</span></small></button>
       </div>
 
-      <div className="doclist" data-component="InvoiceList">
-        {/* ---------- التبويبان — خط تحتاني زي السيستم ---------- */}
-        <div className="dtabs dtabs--line" role="tablist">
-          <button role="tab" aria-selected={tab === 'inv'}
-            className={'dtabs__t' + (tab === 'inv' ? ' is-on' : '')}
-            onClick={() => setTab('inv')}>فواتير المبيعات</button>
-          <button role="tab" aria-selected={tab === 'sch'}
-            className={'dtabs__t' + (tab === 'sch' ? ' is-on' : '')}
-            onClick={() => setTab('sch')}>الفواتير المجدولة</button>
-        </div>
-
-        {tab === 'sch' ? (
-          <div className="sect__empty">
-            <b>مفيش فواتير مجدولة</b>
-            <span>
-              الفاتورة المجدولة بتتكرر لوحدها كل فترة. تقدر تجدول أي فاتورة
-              من قايمة الأوامر (⋮) على كارتها.
-            </span>
-          </div>
-        ) : (
-          <>
-            {/* ---------- شريط الأدوات ---------- */}
-            <div className="ltools">
-              <SearchField placeholder="البحث في الفواتير…" width={250}
-                value={q} onChange={(v) => { setQ(v); setPage(1) }} />
-
-              {/* الفلاتر في صفّها الخاص — على الموبايل بتبقى شريط
-                  بيتسحب أفقيًا تحت البحث، وعلى الديسكتوب بتفضل
-                  في نفس سطر البحث عادي */}
-              <div className="ltools__row">
-              <Pick label="الحالة" value={state} options={STATES}
-                onChange={(v) => { setState(v); setPage(1) }} />
-              <Pick label="العملاء" value={cust} options={CUSTS}
-                onChange={(v) => { setCust(v); setPage(1) }} />
-              <DateRange value={period} onChange={(v) => { setPeriod(v); setPage(1) }} today={TODAY} />
-              <Pick label="التاريخ" value={sort} options={SORTS} onChange={setSort} />
-              <button className={'ltools__more' + (advOn.length ? ' is-on' : '')}
-                aria-expanded={advOpen} onClick={() => setAdvOpen(true)}>
-                <Ico.filter size={14} /><span className="ltools__more-t">مزيد من الفلاتر</span>
-                {advOn.length > 0 && <b className="ltools__n">{advOn.length}</b>}
-              </button>
-
-              {/* مبدّل العرض — آخر الشريط، بعيد عن الفلاتر عشان
-                  ما يتقريش كأنه فلتر */}
-              <div className="vsw" role="group" aria-label="شكل العرض">
-                <button className={view === 'table' ? 'is-on' : ''}
-                  aria-pressed={view === 'table'} title="جدول"
-                  onClick={() => pickView('table')}><Ico.viewtable size={15} /></button>
-                <button className={view === 'cards' ? 'is-on' : ''}
-                  aria-pressed={view === 'cards'} title="كروت"
-                  onClick={() => pickView('cards')}><Ico.viewlist size={15} /></button>
-              </div>
-              </div>
+      {tab === 'sch' ? <Scheduled nav={nav} /> : (
+        <div className="ob-card" data-component="InvoiceList" ref={boxRef}>
+          {/* ---------- الفلاتر (List §3) ---------- */}
+          <div className="ob-fbar">
+            <label className="search">
+              <Ico.search size={20} />
+              <input value={q} placeholder="ابحث برقم الفاتورة أو اسم العميل" aria-label="بحث"
+                onChange={(e) => { setQ(e.target.value); setPage(1) }} />
+              {q && <button type="button" className="search__x" aria-label="مسح البحث" onClick={() => setQ('')}><Ico.close size={16} /></button>}
+            </label>
+            <div className="ob-pills" role="group" aria-label="الحالة">
+              {PILLS.map((p) => (
+                <button key={p.id} type="button" aria-pressed={pill === p.id} onClick={() => { setPill(p.id); setPage(1) }}>
+                  {p.dot && <i style={{ background: p.dot }} />}{p.label}<small>{counts[p.id]}</small>
+                </button>
+              ))}
             </div>
-
-            {advOn.length > 0 && (
-              <div className="advchips">
-                {advOn.map((f) => (
-                  <button key={f.id} className="advchip"
-                    onClick={() => setAdv((a) => ({ ...a, [f.id]: '' }))}>
-                    <span>{f.label}: <b>{advLabel(f)}</b></span>
-                    <Ico.close size={12} />
-                  </button>
-                ))}
-                <button className="advchips__x" onClick={() => setAdv({})}>مسح الكل</button>
-              </div>
-            )}
-
-            {rows.length === 0 ? (
-              <div className="sect__empty">
-                <b>مفيش فواتير بالفلترة دي</b>
-                <span>جرّب توسّع الفلترة أو تمسحها، أو غيّر الفترة.</span>
-              </div>
-            ) : (
-              <>
-                {view === 'cards' ? (
-                  <>
-                    {/* شريط تحديد الصفحة — بوكس مستقل فوق الكروت */}
-                    <label className="doclist__all">
-                      <input type="checkbox" checked={allOn}
-                        onChange={(e) => selectAll(e.target.checked, shown.map((v) => v.no))} />
-                      <span>تحديد كل الصفحة</span>
-                    </label>
-
-                    <ul className="ivlist">
-                      {shown.map((v) => (
-                        <InvoiceCard key={v.no} v={v}
-                          on={(id) => on(id, v)} open={() => open(v.no)}
-                          onPeek={() => setPeek(v)}
-                          checked={selected.has(v.no)} onCheck={() => toggle(v.no)} />
-                      ))}
-                    </ul>
-                  </>
-                ) : (
-                  <InvoiceTable rows={shown} allOn={allOn}
-                    onAll={(c) => selectAll(c, shown.map((v) => v.no))}
-                    selected={selected} onCheck={toggle}
-                    on={on} open={open} onPeek={setPeek} />
-                )}
-
-                <Pagination
-                  from={(cur - 1) * PER + 1} to={Math.min(cur * PER, rows.length)}
-                  total={rows.length} page={cur} perPage={PER} onPage={setPage}
-                  onPerPage={(n) => { setPER(n); setPage(1) }} />
-              </>
-            )}
-          </>
-        )}
-      </div>
-
-      <Drawer open={advOpen} onClose={() => setAdvOpen(false)}
-        title="مزيد من الفلاتر" meta="أبعاد إضافية على نفس القائمة"
-        footer={(
-          <div className="advdrw__f">
-            <button className="btn btn--sec" onClick={() => setAdv({})}>مسح الكل</button>
-            <button className="btn btn--primary" onClick={() => setAdvOpen(false)}>
-              عرض {rows.length} فاتورة
+          </div>
+          <div className="ob-fbar" style={{ marginTop: -4 }}>
+            <QuietSelect label="الفترة" value={per} options={PERIODS} onChange={(v) => { setPer(v); setPage(1) }} />
+            <QuietSelect label="العميل" value={cust} options={CUSTS} onChange={(v) => { setCust(v); setPage(1) }} />
+            <QuietSelect label="الترتيب" value={sort} options={SORTS} onChange={setSort} />
+            <span className="ob-sp" />
+            <button type="button" className="btn btn--ghost" aria-expanded={advOpen} onClick={() => setAdvOpen(true)}>
+              <Ico.columns size={20} />المزيد{advN > 0 && <Chip tone="info">{advN}</Chip>}
             </button>
           </div>
-        )}>
-        <div className="advdrw">
-          {/* ★ الفلاتر الأساسية بتتكرّر هنا **للموبايل بس** — شريطها
-              الأفقي بيتخفي تحت ٩٠٠px، فلو مش هنا المستخدم مش هيقدر
-              يفلتر أصلًا. على الديسكتوب البلوك ده مخفي بالـCSS
-              لأن الفلاتر ظاهرة في سطرها عادي. */}
-          <div className="advdrw__base">
-            <label className="advdrw__f1">
-              <span className="fld__l">الحالة</span>
-              <SelectField value={state} ariaLabel="الحالة"
-                options={STATES.map((o) => ({ id: o.id, label: o.id === 'all' ? 'كل الحالات' : o.label }))}
-                onChange={(v) => { setState(v); setPage(1) }} />
-            </label>
-            <label className="advdrw__f1">
-              <span className="fld__l">العميل</span>
-              <SelectField value={cust} ariaLabel="العميل" search
-                options={CUSTS.map((o) => ({ id: o.id, label: o.id === 'all' ? 'كل العملاء' : o.label }))}
-                onChange={(v) => { setCust(v); setPage(1) }} />
-            </label>
-            <div className="advdrw__f1">
-              <span className="fld__l">الفترة</span>
-              <DateRange value={period} onChange={(v) => { setPeriod(v); setPage(1) }} today={TODAY} />
-            </div>
-            <label className="advdrw__f1">
-              <span className="fld__l">الترتيب</span>
-              <SelectField value={sort} ariaLabel="الترتيب" options={SORTS}
-                onChange={setSort} />
-            </label>
-          </div>
 
+          {/* ---------- الأوامر الجماعية ---------- */}
+          {selected.size > 0 && (
+            <div className="ob-bulk" role="region" aria-label="الأوامر الجماعية">
+              <b><span className="num">{selected.size}</span> محددة</b>
+              <button type="button" className="btn" onClick={() => bulk('إرسال بالبريد')}><Ico.send size={20} />إرسال</button>
+              <button type="button" className="btn" onClick={() => bulk('تنزيل PDF')}><Ico.download size={20} />تنزيل PDF</button>
+              <button type="button" className="btn" disabled={payable.length === 0} onClick={() => bulk('تعليم كمدفوعة')}><Ico.wallet size={20} />تسجيل دفعة</button>
+              <BulkMore bulk={bulk} />
+              <button type="button" className="iconbtn" aria-label="إلغاء التحديد" onClick={clear}><Ico.close size={20} /></button>
+            </div>
+          )}
+
+          {loading ? <Skeleton /> : base.length === 0 ? (
+            <div className="ob-emptybig">
+              <Ico.invoice size={32} />
+              <h3>لا توجد فواتير بعد</h3>
+              <p>أنشئ أول فاتورة وستظهر هنا مع حالتها ومستحقاتها.</p>
+              <button type="button" className="btn btn--primary" onClick={() => nav('/sales/invoices/new')}><Ico.plus size={20} />إنشاء فاتورة مبيعات</button>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="ob-emptybig">
+              <Ico.search size={32} />
+              <h3>لا توجد فواتير تطابق البحث</h3>
+              <p>جرّب كلمة أخرى أو امسح الفلاتر.</p>
+              <button type="button" className="btn" onClick={reset}>مسح الفلاتر</button>
+            </div>
+          ) : layout === 'cards' ? (
+            <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'minmax(0,1fr)' }}>
+              <label className="ob-row" style={{ minHeight: 44 }}>
+                <Check on={allOn} onChange={(c) => selectAll(c, shown.map((v) => v.no))} label="تحديد كل الصفحة" />
+                <span className="ob-muted" style={{ fontSize: 13 }}>تحديد كل الصفحة</span>
+              </label>
+              {shown.map((v, i) => (
+                <InvCard key={v.no} v={v} run={run} sel={selected.has(v.no)} onSel={() => toggle(v.no)} up={i >= shown.length - 3} />
+              ))}
+            </div>
+          ) : (
+            <div className="ob-tblwrap">
+              <table className="ob-tbl">
+                <thead>
+                  <tr>
+                    <th style={{ width: 44 }}><Check on={allOn} onChange={(c) => selectAll(c, shown.map((v) => v.no))} label="تحديد كل الصفحة" /></th>
+                    {layout === 'full' ? <>
+                      <th>الفاتورة</th><th>العميل</th><th>التاريخ</th><th>الاستحقاق</th><th>الحالة</th>
+                      <th className="n">المبلغ</th><th className="n">المتبقي</th>
+                    </> : <>
+                      <th>الفاتورة</th><th>الاستحقاق</th><th>الحالة</th><th className="n">المتبقي</th>
+                    </>}
+                    <th><span className="ob-sr">الأوامر</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shown.map((v, i) => (
+                    <InvRow key={v.no} v={v} run={run} compact={layout === 'compact'}
+                      sel={selected.has(v.no)} onSel={() => toggle(v.no)} on={peek === v.no}
+                      up={i >= shown.length - 3} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {!loading && rows.length > 0 && (
+            <div className="ob-pager">
+              <span>عرض <span className="num">{(cur - 1) * size + 1}–{Math.min(cur * size, rows.length)}</span> من <span className="num">{rows.length}</span></span>
+              <QuietSelect label="" value={size} up
+                options={[10, 25, 50].map((n) => ({ id: n, label: `${n} في الصفحة` }))}
+                onChange={(n) => { setSize(n); setPage(1) }} />
+              <span className="ob-pager__sp" />
+              <button type="button" className="btn" disabled={cur <= 1} onClick={() => setPage(cur - 1)}>
+                <Ico.back size={20} className="ob-dir" />السابق</button>
+              <span className="num">{cur} / {pages}</span>
+              <button type="button" className="btn" disabled={cur >= pages} onClick={() => setPage(cur + 1)}>
+                التالي<Ico.arrowEnd size={20} className="ob-dir" /></button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* بار تحتاني على الموبايل */}
+      <div className="ob-stickybar">
+        <button type="button" className="btn btn--primary" disabled={limitHit} onClick={() => nav('/sales/invoices/new')}>
+          <Ico.plus size={20} />إنشاء فاتورة مبيعات</button>
+      </div>
+
+      <Drawer open={advOpen} onClose={() => setAdvOpen(false)} title="المزيد من الفلاتر" meta="أبعاد إضافية على نفس القائمة"
+        footer={<div className="ob-row" style={{ justifyContent: 'flex-end', width: '100%' }}>
+          <button type="button" className="btn" onClick={() => setAdv({})}>مسح الفلاتر</button>
+          <button type="button" className="btn btn--primary" onClick={() => setAdvOpen(false)}>عرض <span className="num">{rows.length}</span> فاتورة</button>
+        </div>}>
+        <div style={{ display: 'grid', gap: 14 }}>
           {ADV.map((f) => (
-            <label key={f.id} className="advdrw__f1">
+            <label key={f.id} className="fld">
               <span className="fld__l">{f.label}</span>
               <SelectField value={adv[f.id] || ''} placeholder="الكل" ariaLabel={f.label}
                 options={[{ id: '', label: 'الكل' }, ...f.opts]}
@@ -391,229 +332,187 @@ export default function Invoices() {
         </div>
       </Drawer>
 
-      {peek && <PrintPreview doc={peekDoc(peek)} onClose={() => setPeek(null)} />}
-
-      <BulkActionBar count={selected.size} onClear={clear} onAction={bulk}
-        actions={['تنزيل PDF', 'إرسال بالبريد', 'تعليم كمدفوعة', 'إلغاء المسودات', 'تصدير CSV']} />
+      {pay && <PaymentModal v={pay} onClose={() => setPay(null)} />}
     </AppShell>
   )
 }
 
-/* ============================================================
-   جدول الفواتير — الشكل الافتراضي.
-   ------------------------------------------------------------
-   نفس معلومات الكارت بالظبط، بس على خط واحد. الفرق إن
-   الأعمدة بتخلّي **المقارنة** ممكنة: عينك بتنزل عمود المبلغ
-   لوحده، أو عمود الاستحقاق لوحده، من غير ما تقرا كل صف.
+/* ---------- الأكشن السياقي: تسجيل دفعة / إصدار / ولا حاجة ---------- */
+function ContextBtn({ v, run, big, icon }) {
+  const cls = big ? 'btn btn--primary' : 'btn btn--soft'
+  if (v.status === 'draft')
+    return <button type="button" className={cls} onClick={(e) => { e.stopPropagation(); run('issue', v) }}>{(big || icon) && <Ico.file size={20} />}إصدار</button>
+  if (invRemaining(v) > 0.009)
+    return <button type="button" className={cls} onClick={(e) => { e.stopPropagation(); run('pay', v) }}>{(big || icon) && <Ico.wallet size={20} />}تسجيل دفعة</button>
+  return big ? null : <span className="ob-actph" aria-hidden="true" />
+}
 
-   ★ الأوامر بتظهر عند الهوفر مش على طول. في الكارت كان فيه
-   مساحة تستحمل أربع أزرار في كل صف؛ في الجدول ده بيعمل جدار
-   من الأزرار بيغطي على البيانات. الصف اللي إيدك عليه هو
-   بس اللي بيوري أوامره — والـ⋮ ثابت عشان اللي بالكيبورد.
-
-   ★ الصف المتأخر بياخد شريط أحمر رفيع على حافة اليمين بدل
-   خلفية وردية: في الجدول الخلفية الملوّنة بتتحوّل لبقعة كبيرة
-   بتكسر المسح بالعين.
-   ============================================================ */
-function InvoiceTable({ rows, allOn, onAll, selected, onCheck, on, open, onPeek }) {
+/* ---------- قايمة ⋮ (List §4) ---------- */
+function RowMenu({ v, run, up }) {
+  const p = usePop()
+  const draft = v.status === 'draft'
+  const issued = INV_LIVE.includes(v.status)
+  const go = (id) => (e) => { e.stopPropagation(); p.setOpen(false); run(id, v) }
   return (
-    <div className="ivtable__w">
-      <table className="dt ivtable">
-        <thead>
-          <tr>
-            <th className="checkcell">
-              <input type="checkbox" checked={allOn} aria-label="تحديد كل الصفحة"
-                onChange={(e) => onAll(e.target.checked)} />
-            </th>
-            <th>رقم الفاتورة</th>
-            <th>العميل</th>
-            <th>الحالة</th>
-            <th>الاستحقاق</th>
-            <th className="n">المبلغ</th>
-            <th className="ivtable__ac" />
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((v) => {
-            const ds = docState(v)
-            const ps = payState(v)
-            const late = isLate(v)
-            const live = LIVE.includes(v.status)
-            const rem = v.total - v.paid
-            const credited = DATA.creditedState(v.no, v.total)
-            const now = ds.id === 'cancelled' ? 0 : (credited ? credited.net : v.total)
-            const was = (ds.id === 'cancelled' || credited) ? v.total : null
-            const menu = [
-              ...docMenu({ zatca: v.zatca, status: v.status, onView: () => open(v.no), on: (id) => on(id, v) }),
-              { sep: true },
-              { label: 'جدولة الفاتورة', Ic: Ico.calendar, onClick: () => on('schedule', v) },
-              { label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit',
-                off: ds.id !== 'issued' && ds.id !== 'credited',
-                why: ds.id === 'draft' ? 'المسودة بتتحذف مش بتتلغي' : 'ملغاة أصلًا',
-                onClick: () => on('cancel', v) },
-            ]
+    <span className="ob-picker" ref={p.ref} onClick={(e) => e.stopPropagation()}>
+      <button type="button" className="iconbtn" aria-label={'أوامر ' + v.no} aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}>
+        <Ico.dotsV size={20} />
+      </button>
+      {p.open && (
+        <div className={`ob-menu is-end${up ? ' is-up' : ''}`} role="menu" style={{ minWidth: 220 }}>
+          <button type="button" role="menuitem" className="ob-menu__i" onClick={go('view')}><Ico.eye size={20} />عرض</button>
+          {draft && <button type="button" role="menuitem" className="ob-menu__i" onClick={go('edit')}><Ico.edit size={20} />تعديل</button>}
+          <button type="button" role="menuitem" className="ob-menu__i" onClick={go('pdf')} disabled={v.zatca !== 'ok'}><Ico.download size={20} />تنزيل PDF</button>
+          {issued && <button type="button" role="menuitem" className="ob-menu__i" onClick={go('wa')}><Ico.whatsapp size={20} />إرسال عبر واتساب</button>}
+          {issued && <button type="button" role="menuitem" className="ob-menu__i" onClick={go('mail')}><Ico.mail size={20} />إرسال بالبريد</button>}
+          <button type="button" role="menuitem" className="ob-menu__i" onClick={go('dup')}><Ico.copy size={20} />إنشاء نسخة</button>
+          {issued && <button type="button" role="menuitem" className="ob-menu__i" onClick={go('cn')}><Ico.receivable size={20} />إشعار دائن</button>}
+          {v.zatca === 'bad' && <button type="button" role="menuitem" className="ob-menu__i" onClick={go('resub')}><Ico.retry size={20} />إعادة الإرسال للهيئة</button>}
+          {issued && <button type="button" role="menuitem" className="ob-menu__i" onClick={go('sched')}><Ico.calendar size={20} />جدولة الفاتورة</button>}
+          {(issued || draft) && <hr />}
+          {issued && invRemaining(v) > 0.009 && <button type="button" role="menuitem" className="ob-menu__i ob-menu__i--danger" onClick={go('cancel')}><Ico.ban size={20} />إلغاء الفاتورة</button>}
+          {draft && <button type="button" role="menuitem" className="ob-menu__i ob-menu__i--danger" onClick={go('del')}><Ico.trash size={20} />حذف المسودة</button>}
+        </div>
+      )}
+    </span>
+  )
+}
 
-            return (
-              <tr key={v.no} className={(selected.has(v.no) ? 'selected' : '') + (late ? ' is-late' : '')}>
-                <td className="checkcell">
-                  <input type="checkbox" checked={selected.has(v.no)}
-                    aria-label={'تحديد ' + v.no} onChange={() => onCheck(v.no)} />
-                </td>
+function BulkMore({ bulk }) {
+  const p = usePop()
+  return (
+    <span className="ob-picker" ref={p.ref}>
+      <button type="button" className="iconbtn" aria-label="أوامر جماعية أخرى" aria-expanded={p.open} onClick={p.toggle}><Ico.dotsV size={20} /></button>
+      {p.open && (
+        <div className="ob-menu is-end" role="menu" style={{ minWidth: 200 }}>
+          <button type="button" role="menuitem" className="ob-menu__i" onClick={() => { p.setOpen(false); bulk('تصدير CSV') }}><Ico.download size={20} />تصدير CSV</button>
+          <button type="button" role="menuitem" className="ob-menu__i" onClick={() => { p.setOpen(false); bulk('إعادة الإرسال للهيئة') }}><Ico.retry size={20} />إعادة الإرسال للهيئة</button>
+          <hr />
+          <button type="button" role="menuitem" className="ob-menu__i ob-menu__i--danger" onClick={() => { p.setOpen(false); bulk('إلغاء المسودات') }}><Ico.ban size={20} />إلغاء المسودات</button>
+        </div>
+      )}
+    </span>
+  )
+}
 
-                <td>
-                  <button className="ivt__no" onClick={() => open(v.no)}>{v.no}</button>
-                  <em className="ivt__wh">{DATA.whOf(v.no)?.ar}</em>
-                </td>
-
-                <td>
-                  <span className="ivt__cn">{v.c?.ar}</span>
-                  <em className="ivt__cid ltr num">{v.c?.id}</em>
-                </td>
-
-                <td>
-                  <span className="ivt__st">
-                    <span className={'st st--' + ds.tone}>{ds.ar}</span>
-                    {ps && <span className={'st st--' + ps.tone}>{ps.ar}</span>}
-                    {late && <span className="st st--critical">متأخر</span>}
-                  </span>
-                </td>
-
-                <td>
-                  <span className="ivt__due">
-                    {v.due ? <span className="num ltr">{dueFmt(v.due)}</span> : '—'}
-                  </span>
-                </td>
-
-                <td className="n">
-                  {was != null && (
-                    <s className="ivt__was"><span className="num">{fmtMoney(was)}</span><Riyal /></s>
-                  )}
-                  <b className="ivt__amt"><span className="num">{fmtMoney(now)}</span><Riyal /></b>
-                </td>
-
-                <td className="ivtable__ac">
-                  <div className="ivt__acts">
-                    {/* الأمر الرئيسي **الأول** يعني الأيمن في العربي —
-                        هو اللي المستخدم جاي عشانه، فبيقابل عينه قبل
-                        الأيقونات. والأيقونات بعده ملزوقة بالـ⋮ */}
-                    {ds.id === 'draft' ? (
-                      <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('issue', v)}>
-                        <Ico.check size={13} />إصدار
-                      </button>
-                    ) : live && rem > 0.009 ? (
-                      <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('pay', v)}>
-                        <Ico.wallet size={13} />دفعة
-                      </button>
-                    ) : <span className="ivt__gap" aria-hidden="true" />}
-
-                    <button className="ivt__ic" title="عرض الفاتورة" aria-label={'عرض ' + v.no}
-                      onClick={() => onPeek(v)}><Ico.eye size={16} /></button>
-                    <button className="ivt__ic" title="إرسال" aria-label={'إرسال ' + v.no}
-                      disabled={!live} onClick={() => on('email', v)}><Ico.send size={15} /></button>
-                    <button className="ivt__ic" title="تنزيل PDF" aria-label={'PDF ' + v.no}
-                      disabled={v.zatca !== 'ok'} onClick={() => on('pdf', v)}>
-                      <Ico.download size={15} />
-                    </button>
-
-                    <RowMenu items={menu} label={'أوامر ' + v.no} />
-                  </div>
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
+/* ---------- عمود الاستحقاق ---------- */
+function Due({ v }) {
+  if (v.status === 'draft') return <span className="ob-muted">لم تُرسل بعد</span>
+  if (!v.due) return <span className="ob-muted">—</span>
+  const late = invLateDays(v)
+  return (
+    <div>
+      <span className="num" style={late ? { color: '#B91C1C', fontWeight: 500 } : undefined}>{fmtDate(v.due)}</span>
+      {late > 0 && <div className="ob-sub" style={{ color: '#B91C1C' }}>متأخرة <span className="num">{late}</span> {late > 10 ? 'يومًا' : late > 2 ? 'أيام' : late === 2 ? 'يومان' : 'يوم'}</div>}
     </div>
   )
 }
 
-/* ============================================================
-   كارت الفاتورة.
-   ============================================================ */
-function InvoiceCard({ v, on, open, onPeek, checked, onCheck }) {
-  const ds = docState(v)
-  const ps = payState(v)
-  const late = isLate(v)
-  const live = LIVE.includes(v.status)
-  const rem = v.total - v.paid
-
-  /* المبلغ المشطوب فوق: الأصلي قبل الإشعارات أو قبل الإلغاء.
-     ده اللي السيستم بيعمله — بيقولك «كان كذا وبقى كذا». */
-  const credited = DATA.creditedState(v.no, v.total)
-  const now = ds.id === 'cancelled' ? 0 : (credited ? credited.net : v.total)
-  const was = (ds.id === 'cancelled' || credited) ? v.total : null
-
-  const menu = [
-    ...docMenu({ zatca: v.zatca, status: v.status, onView: open, on }),
-    { sep: true },
-    { label: 'جدولة الفاتورة', Ic: Ico.calendar, onClick: () => on('schedule') },
-    { label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit',
-      off: ds.id !== 'issued' && ds.id !== 'credited',
-      why: ds.id === 'draft' ? 'المسودة بتتحذف مش بتتلغي' : 'ملغاة أصلًا',
-      onClick: () => on('cancel') },
-  ]
-
+function InvRow({ v, run, compact, sel, onSel, on, up }) {
+  const late = invLateDays(v) > 0
+  const rem = invRemaining(v)
+  const cls = [late && 'is-late', (sel || on) && 'is-sel', v.status === 'draft' && 'is-draft'].filter(Boolean).join(' ')
   return (
-    <li className={'ivcard' + (late ? ' is-late' : '')} data-component="InvoiceCard">
-      {/* ---------- ⋮ على حافة الشمال ---------- */}
-      <RowMenu items={menu} label={'أوامر ' + v.no} />
-
-      {/* ---------- شمال: المبلغ ---------- */}
-      <div className="ivcard__amt">
-        {was != null && (
-          <s className="ivcard__was"><span className="num">{fmtMoney(was)}</span><Riyal /></s>
-        )}
-        <b className="ivcard__now"><span className="num">{fmtMoney(now)}</span><Riyal /></b>
-        <span className="ivcard__due">
-          {v.due ? <>مستحق <span className="num ltr">{dueFmt(v.due)}</span></> : 'لم يُرسل بعد'}
-        </span>
-      </div>
-
-      {/* ---------- عنقود الأوامر — نفس ترتيب الجدول ----------
-           الأمر الرئيسي الأيمن، وبعده الأيقونات، وكلهم مخفيين
-           لحد ما إيدك تيجي على الكارت. الكارت والجدول نفس
-           الشاشة بشكلين — فمينفعش الأوامر تترتّب بطريقتين. */}
-      <div className="ivcard__acts">
-        {ds.id === 'draft' ? (
-          <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('issue')}>
-            <Ico.check size={13} />إصدار
-          </button>
-        ) : live && rem > 0.009 ? (
-          <button className="gbtn2 gbtn2--go ivt__go" onClick={() => on('pay')}>
-            <Ico.wallet size={13} />دفعة
-          </button>
-        ) : <span className="ivt__gap" aria-hidden="true" />}
-
-        <button className="ivt__ic" title="عرض الفاتورة" aria-label={'عرض ' + v.no}
-          onClick={onPeek}><Ico.eye size={16} /></button>
-        <button className="ivt__ic" title="إرسال" aria-label={'إرسال ' + v.no}
-          disabled={!live} onClick={() => on('email')}><Ico.send size={15} /></button>
-        <button className="ivt__ic" title="تنزيل PDF" aria-label={'PDF ' + v.no}
-          disabled={v.zatca !== 'ok'} onClick={() => on('pdf')}>
-          <Ico.download size={15} />
-        </button>
-      </div>
-
-      {/* ---------- يمين: التعريف ---------- */}
-      <div className="ivcard__id">
-        <div className="ivcard__top">
-          <button className="ivcard__no" onClick={open}>{v.no}</button>
-          <span className={'st st--' + ds.tone}>{ds.ar}</span>
-          {ps && <span className={'st st--' + ps.tone}>{ps.ar}</span>}
-          {late && <span className="st st--critical">متأخر</span>}
+    <tr data-row className={cls} onClick={() => run('view', v)}>
+      <td onClick={(e) => e.stopPropagation()}><Check on={sel} onChange={onSel} label={'تحديد ' + v.no} /></td>
+      {compact ? (
+        <td>
+          <div className="ob-strong num">{v.no}</div>
+          <div className="ob-sub" style={{ color: 'var(--ink-base)' }}>{v.c?.ar}</div>
+        </td>
+      ) : <>
+        <td>
+          <div className="ob-strong num">{v.no}</div>
+          {v.rec && <div className="ob-sub">من الجدولة · <span className="num">{v.rec}</span></div>}
+        </td>
+        <td style={{ maxWidth: 260 }}><span style={{ fontWeight: 500, color: 'var(--ink-strong)' }}>{v.c?.ar}</span></td>
+        <td className="num" style={{ whiteSpace: 'nowrap' }}>{fmtDate(v.date)}</td>
+      </>}
+      <td style={{ whiteSpace: 'nowrap' }}><Due v={v} /></td>
+      <td><InvChips v={v} /></td>
+      {!compact && <td className="n"><Amt v={invNet(v)} /></td>}
+      <td className="n">{v.status === 'draft' || !INV_LIVE.includes(v.status) ? <span className="ob-muted">—</span> : <Amt v={rem} bold className="ob-strong" />}</td>
+      <td onClick={(e) => e.stopPropagation()}>
+        <div className="ob-acts">
+          {!compact && <ContextBtn v={v} run={run} />}
+          <button type="button" className="iconbtn" aria-label={'عرض ' + v.no} title="عرض" onClick={() => run('view', v)}><Ico.eye size={20} /></button>
+          <RowMenu v={v} run={run} up={up} />
         </div>
-        <div className="ivcard__sub">
-          {v.c?.ar}
-          <span className="ltr num">{v.c?.id}</span>
-        </div>
-        <div className="ivcard__wh">{DATA.whOf(v.no)?.ar}</div>
-      </div>
+      </td>
+    </tr>
+  )
+}
 
-      {/* ---------- الشيك بوكس على حافة اليمين ---------- */}
-      <label className="ivcard__ck">
-        <input type="checkbox" checked={checked} onChange={onCheck}
-          aria-label={'تحديد ' + v.no} />
-      </label>
-    </li>
+/* ---------- كارت < 640px (List §4) ---------- */
+function InvCard({ v, run, sel, onSel, up }) {
+  const late = invLateDays(v) > 0
+  return (
+    <div className="ob-card" style={{ padding: '12px 14px', display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0,1fr)', minWidth: 0,
+      ...(late ? { borderInlineStart: '3px solid #EF4444', background: '#FFFAF9' } : {}) }}
+      onClick={() => run('view', v)} role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') run('view', v) }}>
+      <div className="ob-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="ob-row" style={{ flexWrap: 'nowrap', minWidth: 0, flex: '1 1 160px' }} onClick={(e) => e.stopPropagation()}>
+          <Check on={sel} onChange={onSel} label={'تحديد ' + v.no} />
+          <div style={{ minWidth: 0 }}>
+            <div className="ob-strong num">{v.no}</div>
+            <div className="ob-muted" style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.c?.ar}</div>
+          </div>
+        </div>
+        <InvChips v={v} />
+      </div>
+      <div className="ob-row" style={{ justifyContent: 'space-between', fontSize: 13 }}>
+        <span className="ob-muted ob-row" style={{ gap: 6, alignItems: 'baseline' }}>الاستحقاق <Due v={v} /></span>
+        {INV_LIVE.includes(v.status) ? <Amt v={invRemaining(v)} className="ob-strong" /> : <span className="ob-muted">—</span>}
+      </div>
+      <div className="ob-row" style={{ flexWrap: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+        {(v.status === 'draft' || invRemaining(v) > 0.009) && <div style={{ flex: 1, display: 'flex' }}><ContextBtn v={v} run={run} icon /></div>}
+        <button type="button" className="btn" style={{ flex: 1 }} onClick={() => run('view', v)}><Ico.eye size={20} />عرض</button>
+        <RowMenu v={v} run={run} up={up} />
+      </div>
+    </div>
+  )
+}
+
+function Skeleton() {
+  return (
+    <div aria-busy="true" aria-label="بيحمّل الفواتير">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'center', height: 64, borderBottom: '1px solid var(--border-faint)' }}>
+          <span className="ob-skel" style={{ width: 20 }} /><span className="ob-skel" style={{ width: 110 }} />
+          <span className="ob-skel" style={{ width: 180 }} /><span className="ob-skel" style={{ width: 90 }} />
+          <span className="ob-skel" style={{ flex: 1 }} /><span className="ob-skel" style={{ width: 100 }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* ---------- الفواتير المجدولة — نفس الجدول (List §6-7) ---------- */
+function Scheduled({ nav }) {
+  const rows = DATA.scheduled
+  return (
+    <div className="ob-card">
+      <div className="ob-tblwrap">
+        <table className="ob-tbl">
+          <thead><tr><th>الجدولة</th><th>العميل</th><th>التكرار</th><th>التاريخ القادم</th><th>الحالة</th><th className="n">المبلغ</th><th /></tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.no}>
+                <td><div className="ob-strong num">{r.no}</div><div className="ob-sub">آخر فاتورة <span className="num">{fmtDate(r.last)}</span></div></td>
+                <td><span style={{ fontWeight: 500, color: 'var(--ink-strong)' }}>{r.c.ar}</span></td>
+                <td>{r.every}{r.left != null && <div className="ob-sub">باقي <span className="num">{r.left}</span></div>}</td>
+                <td className="num">{fmtDate(r.next)}</td>
+                <td><Chip tone="info">مجدولة</Chip></td>
+                <td className="n"><Amt v={r.total} /></td>
+                <td><div className="ob-acts">
+                  <button type="button" className="btn btn--soft" onClick={() => toast.info('تعديل الجدولة ' + r.no)}>تعديل</button>
+                </div></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }

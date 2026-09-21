@@ -90,7 +90,8 @@ export function SAR({ v, dec = false, className = '' }) {
   const t = fmtMoney(v)
   return (
     <span data-component="SAR" className={`sar ${className}`}>
-      <span className="num">{dec ? t : t.split('.')[0]}</span>
+      {/* ★ Option B: خانتين عشريتين دايمًا (Create §2) — `dec` اتلغى */}
+      <span className="num">{t}</span>
       <Riyal />
     </span>
   )

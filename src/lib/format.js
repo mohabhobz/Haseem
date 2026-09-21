@@ -2,8 +2,17 @@
 export const MONTHS = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 export const TODAY = new Date('2026-08-17')
 
+/* ★ Option B: DD-MM-YYYY في العرض والإدخال — أرقام لاتينية (INV-CREATE-06). */
 export function fmtDate(iso) {
   if (!iso) return 'غير محدد'
+  const d = new Date(iso)
+  if (isNaN(d)) return String(iso)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()}`
+}
+/* الصيغة الطويلة (١٧ أغسطس ٢٠٢٦) — للنص الجاري بس، مش للجداول ولا الحقول */
+export function fmtDateLong(iso) {
+  if (!iso) return ''
   const d = new Date(iso)
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
@@ -33,8 +42,11 @@ export const dayAr = (n) =>
     : n <= 10 ? `${n} أيام`
     : `${n} يومًا`
 
+/* ★ السالب بعلامة الطرح الحقيقية «−» مش الشرطة (Create §2). */
 export function fmtMoney(v) {
-  return Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const n = Number(v) || 0
+  const t = Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return n < 0 && t !== '0.00' ? `−${t}` : t
 }
 
 /* قاموس الحالات — كلها مؤنثة لأنها تصف «الفاتورة» (إصلاح C1) */

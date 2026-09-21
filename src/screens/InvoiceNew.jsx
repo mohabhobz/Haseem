@@ -1,928 +1,774 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { AppShell, PageHeader } from '../components/layout.jsx'
+import { AppShell, PageHeader, UsageLine } from '../components/layout.jsx'
 import { Ico, Riyal } from '../components/icons.jsx'
 import { DateField } from '../components/datefield.jsx'
-import { SelectField } from '../components/selectfield.jsx'
-import { SAR } from '../components/data.jsx'
-import { fmtMoney, TODAY } from '../lib/format.js'
-import { PrintPreview } from '../components/printpreview.jsx'
+import { fmtMoney, fmtDate } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
-import { toast, confirmAction } from '../components/feedback.jsx'
+import { toast } from '../components/feedback.jsx'
+import {
+  Amt, Chip, QuietSelect, QuietSelectBox, usePop, Switch, Seg, Disc, Alert, LockRow,
+  ObModal, PreviewPanel,
+} from '../components/ob.jsx'
 
 /* ============================================================
-   إنشاء فاتورة مبيعات — **منقولة من سيستم الكلاينت بالحرف**.
-   المرجع: التصوير المباشر من app-staging.haseem.com (دوك ١٩).
+   إنشاء فاتورة مبيعات — Option B · Elevate (handoff v1.0 §3).
 
-   ★ الفكرة اللي الكلاينت متمسّك بيها، وهي سبب الشاشة دي كلها:
+   تلات كروت: التفاصيل · الجسم (العميل ← البنود ← المطبوع +
+   الإجماليات) · المرفقات. الأوامر فوق: رجوع · معاينة · حفظ
+   كمسودة · «إصدار الفاتورة» (الـprimary الوحيد في المنطقة).
 
-     «هما بيملوا الداتا وهي شبه الفاتورة وقريبة منها، فأماكن
-      ظهور الحاجة عندهم معتبرينها أفضل.»
+   ★ اللي فضل من النسخة القديمة لأنه مش شكل:
+     • فئة الضريبة لكل بند + كود الإعفاء VATEX (من غيره الهيئة بترفض)
+     • الاستحقاق بيتحسب من شروط العميل ويتعدّل يدويًا
+     • طريقة التسعير: خالي / شامل الضريبة
+     • النوع (فاتورة · مبدئية · عرض سعر) من ?kind=
 
-   يعني الفورم **مش فورم**. هو **الفاتورة نفسها وإنت بتكتب فيها**:
-   ورقة بيضا واحدة، الرقم والتواريخ في ركنها اليمين زي ما هيتطبعوا،
-   والمنشأة والشعار في ركنها الشمال زي ما هيتطبعوا، وجدول البنود في
-   النص، والإجماليات تحت على الشمال. المستخدم بيشوف المستند وهو
-   بيعمله، مش بيملا خانات وبعدين يتفاجئ بالشكل.
-
-   ★ عشان كده اتشال اللي كان عندنا:
-   • الكروت المنفصلة (بيانات المستند · البنود · العميل · الملاحظات)
-     بقت **أقسام في ورقة واحدة** يفصلها خط، زي السيستم.
-   • **الرَّيل الجانبي** اللي كان فيه الإجماليات والدفعة الأولى
-     وحسن التنفيذ — اتشال. الإجماليات نزلت **تحت على الشمال**
-     جوه الورقة، والدفعة وحسن التنفيذ بقوا زرارين بيتفتحوا من
-     تحت الإجمالي (`+ إظهار حالة الدفع` · `+ إضافة حسن تنفيذ`)
-     بالظبط زي السيستم.
-   • **شريط الحفظ السفلي** اتشال — الأوامر فوق على الشمال:
-     معاينة · حفظ كمسودة ▾ (وجواها: إصدار · جدولة). والرجوع سهم
-     قبل اسم الشاشة — تنقّل مش أمر مستند.
-
-   ★ واللي **ما اتشالش** رغم إن السيستم مش بيعمله: التحقق.
-   الزرار لسه شغّال دايمًا وبيوَرّي الناقص جوّه الحقول (قاعدة
-   البورد)، وكود إعفاء الهيئة `VATEX-SA-xx` لسه بيظهر على البند
-   المعفي — من غيره الفاتورة بتترفض من الهيئة. دول مش شكل.
+   ★ للتجربة: ?plan=billing (باقة الفوترة ٤٧/٥٠ + القفل)،
+     ?flag=old (فلاج invoice_primary_issue مقفول — الترتيب القديم).
    ============================================================ */
 
-const KINDS = [
-  { id: 'inv',   label: 'فاتورة ضريبية', px: 'INV', go: 'إصدار وإرسال للهيئة', due: 'تاريخ الاستحقاق' },
-  { id: 'prf',   label: 'فاتورة مبدئية', px: 'PRF', go: 'حفظ وإرسال للعميل',   due: 'صالحة حتى' },
-  { id: 'quote', label: 'عرض سعر',       px: 'QUO', go: 'إرسال للعميل',        due: 'صالح حتى' },
-]
-
-/* شروط السداد بتعيش في ملف العميل — هنا بنقراها ونحوّلها أيام.
-   المستخدم بيشوف تاريخ استحقاق حقيقي يقدر يعدّله، مش قايمة تانية يملاها. */
-const termDays = (c) => {
-  if (!c) return 30
-  const m = String(c.terms).match(/\d+/)
-  return m ? +m[0] : 0
+const KINDS = {
+  inv:   { title: 'إنشاء فاتورة مبيعات', px: 'INV', issue: 'إصدار الفاتورة', due: 'تاريخ الاستحقاق', noL: 'رقم الفاتورة' },
+  prf:   { title: 'إنشاء فاتورة مبدئية', px: 'PRF', issue: 'حفظ وإرسال',     due: 'صالحة حتى',       noL: 'رقم المستند' },
+  quote: { title: 'إنشاء عرض سعر',       px: 'QUO', issue: 'إرسال للعميل',   due: 'صالح حتى',        noL: 'رقم العرض' },
 }
 
-const iso = (d) =>
-  d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
-  '-' + String(d.getDate()).padStart(2, '0')
-const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x }
-const num = (x) => Number(x) || 0
-/* العربي مش بيعدّ زي الإنجليزي — مفرد ومثنى وجمع */
-const countAr = (n) => (n === 1 ? 'حقل واحد' : n === 2 ? 'حقلان' : n + ' حقول')
+const CASH = { id: 'CASH', ar: 'عميل نقدي', cash: true }
+const iso = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+const addDays = (s, n) => { const x = new Date(s); x.setDate(x.getDate() + n); return iso(x) }
+const termDays = (c) => { if (!c || c.cash) return 0; const m = String(c.terms).match(/\d+/); return m ? +m[0] : 0 }
+const num = (x) => Number(String(x).replace(/,/g, '')) || 0
 
-const emptyLine = () => ({
-  key: Math.random().toString(36).slice(2),
-  code: '', ar: '', unit: 'وحدة', desc: '', qty: 1, price: 0,
-  dpc: 0, tax: 'S', acct: '', cc: '',
-})
+/* الأصناف: خدمات الكتالوج + منتجات المخزون (برصيدها في المستودعات) */
+const ITEMS = [
+  ...DATA.items.map((i) => ({ code: i.sku, ar: i.ar, unit: i.unitName, price: i.sell, stock: i.open || null, tax: i.tax || 'S' })),
+  ...DATA.catalog.map((i) => ({ code: i.code, ar: i.ar, unit: i.unit, price: i.price, stock: null, tax: 'S' })),
+]
+const itemOf = (code) => ITEMS.find((x) => x.code === code)
 
-/* ---------- «تعديل الحقول» — نفس القايمة اللي في السيستم بالحرف ----------
-   الترتيب والافتراضيات منقولة زي ما هي: اسم الوحدة والمبلغ مفتوحين،
-   والباقي مقفول. `بند الفاتورة` و`الوصف` و`الكمية` و`سعر الوحدة`
-   و`الضريبة` أعمدة ثابتة — من غيرهم مفيش بند أصلًا. */
 const COLS = [
-  { id: 'dpc',  label: 'نسبة الخصم %' },
-  { id: 'acct', label: 'الحساب'        },
-  { id: 'unit', label: 'اسم الوحدة'    },
-  { id: 'amt',  label: 'المبلغ'        },
-  { id: 'img',  label: 'الصورة'        },
+  { id: 'dpc',  label: 'الخصم %' },
+  { id: 'acct', label: 'الحساب' },
+  { id: 'unit', label: 'اسم الوحدة' },
+  { id: 'amt',  label: 'المبلغ' },
+  { id: 'img',  label: 'الصورة' },
 ]
-const COLS_DEFAULT = { dpc: false, acct: false, unit: true, amt: true, img: false }
+const COLS_KEY = 'ob:inv-cols:' + DATA.user.initials   /* per user (handoff §10-2) */
+const COLS_DEF = { dpc: false, acct: false, unit: false, amt: true, img: false }
+const XTRA = [{ id: 'rep', label: 'مندوب المبيعات' }, { id: 'prj', label: 'المشروع' }, { id: 'ref', label: 'المرجع' }]
 
-/* ---------- «حقول إضافية» — نفس التلاتة اللي في السيستم ---------- */
-const XTRA = [
-  { id: 'rep', label: 'مندوب المبيعات' },
-  { id: 'prj', label: 'المشروع'        },
-  { id: 'ref', label: 'المرجع'         },
-]
-
-const RET_PC = [5, 10]
-
-/* قايمة صغيرة بتتقفل لما تدوس بره — بتتكرر تلات مرات في الشاشة */
-function useAway(open, close) {
-  const ref = useRef(null)
-  useEffect(() => {
-    if (!open) return
-    const away = (e) => { if (ref.current && !ref.current.contains(e.target)) close() }
-    const esc = (e) => { if (e.key === 'Escape') close() }
-    document.addEventListener('mousedown', away)
-    document.addEventListener('keydown', esc)
-    return () => {
-      document.removeEventListener('mousedown', away)
-      document.removeEventListener('keydown', esc)
-    }
-  }, [open, close])
-  return ref
-}
+let seq = 0
+const emptyLine = () => ({ key: 'l' + (++seq), code: '', ar: '', desc: '', qty: '1', price: '', dpc: '', tax: 'S', vatex: '', acct: '', unit: '' })
 
 export default function InvoiceNew() {
   const nav = useNavigate()
   const [sp] = useSearchParams()
-  const k0 = KINDS.some((k) => k.id === sp.get('kind')) ? sp.get('kind') : 'inv'
-  const K = KINDS.find((k) => k.id === k0)
+  const kind = KINDS[sp.get('kind')] ? sp.get('kind') : 'inv'
+  const K = KINDS[kind]
+  const plan = sp.get('plan') === 'billing' ? { name: 'الفوترة', used: 47, limit: 50, locked: true } : { name: 'الأساسية', used: 118, limit: 300, locked: false }
+  const oldOrder = sp.get('flag') === 'old'
 
-  const [kind] = useState(k0)
-  const [no, setNo]         = useState(K.px + '-27123')
-  const [editNo, setEditNo] = useState(false)
-  const [noDraft, setNoDraft] = useState('')
-  const [date, setDate]     = useState(iso(new Date(TODAY)))
-  const [dueOv, setDueOv]   = useState('')
-  const [editDate, setEditDate] = useState(false)
-  const [editDue, setEditDue]   = useState(false)
-  const [cust, setCust]     = useState('')
-  const [wh, setWh]         = useState(DATA.warehouses[0].id)
-  const [bank, setBank]     = useState(DATA.banks[0].id)
-  const [bankOpen, setBankOpen] = useState(false)
-
-  /* حقول إضافية — checkbox لكل واحد، واللي اتعلّم بيتزوّد سطر في الرأس */
-  const [xtra, setXtra]     = useState({ rep: false, prj: false, ref: false })
-  const [xtraOpen, setXtraOpen] = useState(false)
-  const [rep, setRep]       = useState(DATA.reps[0].id)
-  const [prj, setPrj]       = useState('')
-  const [ref, setRef]       = useState('')
-
-  const [cols, setCols]     = useState(COLS_DEFAULT)
-  const [colsOpen, setColsOpen] = useState(false)
-  /* الشعار مرفوع افتراضيًا — المنشأة عندها شعار في إعداداتها،
-     فالفاتورة تبدأ بيه بدل ما تبدأ بمربّع فاضي كل مرة */
-  const [logo, setLogo]     = useState(true)
-  const [stamp, setStamp]   = useState(false)
-  const [preview, setPreview] = useState(false)
-  const [saveOpen, setSaveOpen] = useState(false)
-
-  /* حسن التنفيذ — مبلغ بيتحجز لحد ما فترة الضمان تخلص */
-  const [ret, setRet]         = useState(false)
-  const [retMode, setRetMode] = useState('pc')
-  const [retVal, setRetVal]   = useState(5)
-  const [retBase, setRetBase] = useState('net')
-  const [retDate, setRetDate] = useState('')
-  const [retCond, setRetCond] = useState('')
-
-  /* الدفعة الأولى — بتتسجّل مع الإصدار */
-  const [showPay, setShowPay]   = useState(false)
-  const [payState, setPayState] = useState('none')
-  const [payAmt, setPayAmt]     = useState('')
-
-  const [incl, setIncl]   = useState(false)
-  const [taxOpen, setTaxOpen] = useState(false)
-  const [whOpen, setWhOpen]   = useState(false)
-  const [disc, setDisc]   = useState('')
-  const [discPc, setDiscPc] = useState(false)
-  const [editDisc, setEditDisc] = useState(false)
-  const [note, setNote]   = useState('')
-  const [editNote, setEditNote] = useState(false)
+  /* ---------- الحالة ---------- */
+  const [no, setNo] = useState(K.px + '-027123')
+  const [date, setDate] = useState(DATA.TODAY)
+  const [dueOv, setDueOv] = useState('')
+  const [xtra, setXtra] = useState({ rep: false, prj: false, ref: false })
+  const [rep, setRep] = useState(DATA.reps[0].id)
+  const [prj, setPrj] = useState('')
+  const [ref, setRef] = useState('')
+  const [branch, setBranch] = useState(DATA.branches[0].id)
+  const [custId, setCustId] = useState('')
+  const [wh, setWh] = useState(DATA.warehouses[0].id)
+  const [incl, setIncl] = useState('ex')
+  const [cols, setCols] = useState(() => { try { return { ...COLS_DEF, ...JSON.parse(localStorage.getItem(COLS_KEY) || '{}') } } catch { return COLS_DEF } })
+  const [lines, setLines] = useState(() => [emptyLine()])
+  const [moving, setMoving] = useState(null)
+  const [drag, setDrag] = useState(null)
+  const [note, setNote] = useState('')
+  const [bank, setBank] = useState('none')
+  const [stamp, setStamp] = useState(true)
+  const [disc, setDisc] = useState(null)          /* null = مفيش خصم */
+  const [payOn, setPayOn] = useState(false)
+  const [payState, setPayState] = useState('unpaid')
+  const [pay, setPay] = useState({ amt: '', acc: '1020', date: DATA.TODAY, way: 'transfer', ref: '' })
+  const [retOn, setRetOn] = useState(false)
+  const [ret, setRet] = useState({ mode: 'pct', pct: '5', fixed: '', base: 'pre', date: '', cond: '' })
   const [files, setFiles] = useState([])
-  const [lines, setLines] = useState([emptyLine()])
+  const [pv, setPv] = useState(false)
   const [tried, setTried] = useState(false)
+  const [confirm, setConfirm] = useState(false)
+  const [issued, setIssued] = useState(false)
+  const fileRef = useRef(null)
 
-  const colsRef = useAway(colsOpen, () => setColsOpen(false))
-  const xtraRef = useAway(xtraOpen, () => setXtraOpen(false))
-  const saveRef = useAway(saveOpen, () => setSaveOpen(false))
-  const taxRef  = useAway(taxOpen,  () => setTaxOpen(false))
-  const whRef   = useAway(whOpen,   () => setWhOpen(false))
-  const bankRef = useAway(bankOpen, () => setBankOpen(false))
+  useEffect(() => { try { localStorage.setItem(COLS_KEY, JSON.stringify(cols)) } catch {} }, [cols])
 
-  const startEditNo = () => { setNoDraft(no); setEditNo(true) }
-  const saveNo   = () => { setNo(noDraft.trim() || no); setEditNo(false) }
-  const cancelNo = () => setEditNo(false)
+  const cust = custId === 'CASH' ? CASH : DATA.customers.find((c) => c.id === custId)
+  const due = dueOv || addDays(date, termDays(cust))
+  const ro = issued
 
-  const c = DATA.customers.find((x) => x.id === cust)
-  const autoDue = iso(addDays(date, termDays(c)))
-  const due = dueOv || autoDue
-  const bankObj = DATA.banks.find((b) => b.id === bank)
-  const whObj = DATA.warehouses.find((w) => w.id === wh)
-
-  /* ---------- الحساب: كل سطر بفئته الضريبية، والسعر ممكن يكون شامل ---------- */
+  /* ---------- الحساب — بيتحدّث مع كل حرف (handoff §7-2) ---------- */
   const calc = useMemo(() => {
-    let net = 0, tax = 0, lineDisc = 0
+    let sub = 0, vat = 0
     const per = lines.map((l) => {
+      const rate = DATA.rateOf(l.tax) / 100
       const gross = num(l.qty) * num(l.price)
-      const rate  = DATA.rateOf(l.tax) / 100
-      const base  = incl ? gross / (1 + rate) : gross
-      const dAmt  = base * (num(l.dpc) / 100)
-      const n     = Math.max(0, base - dAmt)
-      const t     = n * rate
-      net += n; tax += t; lineDisc += dAmt
-      return { ...l, discAmt: +dAmt.toFixed(2), net: +n.toFixed(2),
-               taxAmt: +t.toFixed(2), total: +(n + t).toFixed(2) }
+      const base = incl === 'in' ? gross / (1 + rate) : gross
+      const n = base * (1 - Math.min(100, num(l.dpc)) / 100)
+      sub += n; vat += n * rate
+      return { ...l, net: n, amount: incl === 'in' ? n * (1 + rate) : n }
     })
-    const d = discPc ? net * (num(disc) / 100) : num(disc)
-    const dNet  = Math.max(0, net - d)
-    const ratio = net ? dNet / net : 0
-    const dTax  = tax * ratio
-    const total = dNet + dTax
+    const d = disc == null ? 0 : Math.min(num(disc), sub)
+    const ratio = sub ? (sub - d) / sub : 0
+    const vatT = vat * ratio
+    const total = sub - d + vatT
+    const retAmt = !retOn ? 0 : ret.mode === 'pct'
+      ? (ret.base === 'pre' ? sub - d : total) * num(ret.pct) / 100
+      : Math.min(num(ret.fixed), total)
+    const netDue = total - retAmt
+    const paid = !payOn ? 0 : payState === 'full' ? netDue : payState === 'partial' ? Math.min(num(pay.amt), netDue) : 0
+    return { per, sub, disc: d, vat: vatT, total, retAmt, netDue, paid, rem: netDue - paid }
+  }, [lines, incl, disc, retOn, ret, payOn, payState, pay.amt])
 
-    const rBase = retBase === 'net' ? dNet : total
-    const rAmt  = !ret ? 0
-      : retMode === 'pc' ? rBase * (num(retVal) / 100)
-      : Math.min(num(retVal), total)
+  /* ---------- التحقق (handoff §7-1,2 · INV-CREATE-03) ---------- */
+  const lineErr = (l) => (l.code || l.ar || l.desc) && num(l.price) <= 0
+  const vatexErr = (l) => (l.code || l.ar) && DATA.needsVatex(l.tax) && !l.vatex
+  const stockWarn = (l) => {
+    const it = itemOf(l.code)
+    if (!it?.stock) return false
+    return num(l.qty) > (it.stock[wh] || 0)
+  }
+  const filled = lines.filter((l) => l.code || l.ar || l.desc)
+  const errs = {
+    cust: !cust,
+    lines: filled.length === 0 || filled.some((l) => num(l.price) <= 0) || filled.some(vatexErr),
+  }
+  const hasErr = errs.cust || errs.lines
+  const show = tried && !issued
 
-    const paid = payState === 'full' ? total - rAmt
-               : payState === 'part' ? Math.min(num(payAmt), total - rAmt)
-               : 0
-
-    return {
-      per,
-      lineDisc: +lineDisc.toFixed(2),
-      net:   +net.toFixed(2),
-      disc:  +Math.min(d, net).toFixed(2),
-      tax:   +dTax.toFixed(2),
-      total: +total.toFixed(2),
-      ret:   +rAmt.toFixed(2),
-      netDue: +(total - rAmt).toFixed(2),
-      paid:  +paid.toFixed(2),
-      rest:  +(total - rAmt - paid).toFixed(2),
-    }
-  }, [lines, incl, disc, discPc, ret, retMode, retVal, retBase, payState, payAmt])
-
-  /* ---------- الأخطاء: بتتحسب دايمًا، بتتعرض بعد أول محاولة بس ---------- */
-  const errs = {}
-  if (!cust) errs.cust = 'لازم تختار عميل'
-  if (!no.trim()) errs.no = 'رقم المستند مطلوب'
-  if (!lines.some((l) => l.ar || l.desc)) errs.lines = 'ضيف بند واحد على الأقل'
-  else if (calc.total <= 0) errs.lines = 'المبلغ لازم يكون أكبر من صفر'
-  const show = (k) => (tried ? errs[k] : null)
-  const nErr = Object.keys(errs).length
-
-  const setLine = (key, patch) =>
-    setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...patch } : l)))
+  const setLine = (key, p) => setLines((ls) => ls.map((l) => (l.key === key ? { ...l, ...p } : l)))
   const addLine = () => setLines((ls) => [...ls, emptyLine()])
   const delLine = (key) => setLines((ls) => (ls.length > 1 ? ls.filter((l) => l.key !== key) : [emptyLine()]))
-
-  const pick = (key, code) => {
-    const it = DATA.catalog.find((x) => x.code === code)
-    if (!it) { setLine(key, { code: '', ar: '', unit: 'وحدة', price: 0 }); return }
-    setLine(key, { code: it.code, ar: it.ar, unit: it.unit, price: it.price })
+  const move = (key, dir) => setLines((ls) => {
+    const i = ls.findIndex((l) => l.key === key), j = i + dir
+    if (j < 0 || j >= ls.length) return ls
+    const n = [...ls]; [n[i], n[j]] = [n[j], n[i]]; return n
+  })
+  const dropOn = (key) => setLines((ls) => {
+    if (!drag || drag === key) return ls
+    const from = ls.findIndex((l) => l.key === drag), to = ls.findIndex((l) => l.key === key)
+    const n = [...ls]; const [x] = n.splice(from, 1); n.splice(to, 0, x); return n
+  })
+  const pickItem = (key, code) => {
+    const it = itemOf(code)
+    if (!it) return
+    setLine(key, { code: it.code, ar: it.ar, price: String(it.price), unit: it.unit, qty: '1', tax: it.tax, vatex: '' })
   }
 
-  /* ---------- عرض أعمدة الجدول بيتبني من اللي ظاهر ----------
-     لازم عدد الأعمدة هنا = عدد الخانات اللي بترتسم بالظبط، وإلا
-     الخانة الأخيرة (زرار الشيل) بتنزل سطر تحت. */
-  /* ★★ أعمدة بتضيق، مش أعمدة ثابتة.
-     كانت مكتوبة بأرقام صمّاء (423px للوصف مثلًا) — فعلى شاشة
-     لابتوب ١٠٠٠px مجموع الأعمدة بيعدّي عرض الكارت والجدول
-     بيطلّع سكرول أفقي. دلوقتي كل عمود `minmax(أقل مقاس مقروء,
-     المقاس المفضّل)`: على الشاشة الواسعة بياخد المفضّل، وعلى
-     الضيّقة بينزل لحدّه الأدنى بدل ما يدفع الجدول برّه. */
-  const lcols = [
-    '18px',                                   /* # */
-    cols.img  && '40px',
-    'minmax(96px,1.1fr)',                     /* بند الفاتورة */
-    'minmax(84px,1.1fr)',                     /* الوصف */
-    /* الكمية + الوحدة في خانة واحدة جنب بعض */
-    cols.unit ? 'minmax(118px,176px)' : 'minmax(68px,104px)',
-    'minmax(78px,128px)',                     /* سعر الوحدة */
-    cols.dpc  && 'minmax(64px,96px)',
-    cols.acct && 'minmax(0,.85fr)',
-    'minmax(124px,.95fr)',                    /* الضريبة */
-    cols.amt  && 'minmax(86px,112px)',
-    'var(--ctl-h)',                           /* زرار الشيل */
-  ].filter(Boolean).join(' ')
-
-  /* ★ الزرار شغّال دايمًا — بيوَرّي الناقص، مش بيمنعك.
-     ولو الفورم سليم، الإصدار بيسأل الأول لأنه مالوش رجعة. */
-  const submit = async () => {
+  /* ---------- الأوامر ---------- */
+  const tryIssue = () => {
     setTried(true)
-    if (Object.keys(errs).length) {
-      toast.bad('ناقص ' + countAr(nErr), { sub: 'موضّحة في المستند باللون الأحمر' })
-      return
-    }
-    const ok = await confirmAction({
-      title: 'إصدار الفاتورة ' + no + '؟',
-      body: 'الإصدار مالوش رجعة.',
-      tone: 'primary',
-      confirm: 'إصدار وإرسال للهيئة',
-      consequences: [
-        'المستند بياخد رقمه النهائي ومينفعش يتعدّل بعدها',
-        'بيتبعت لهيئة الزكاة والضريبة والجمارك فورًا',
-        'التعديل بعد كده بيبقى بإشعار دائن أو مدين بس',
-      ],
-    })
-    if (!ok) return
-    toast.ok('الفاتورة ' + no + ' اتصدرت', { sub: 'الهيئة قبلتها' })
-    nav('/sales/invoices')
+    if (hasErr) { (document.querySelector('.ob-main__c') || document.querySelector('.ob-main'))?.scrollTo({ top: 0, behavior: 'auto' }); return }
+    setConfirm(true)
+  }
+  const doIssue = () => {
+    setConfirm(false); setIssued(true); setPv(false)
+    toast.ok(`تم إصدار الفاتورة ${no}`, { sub: 'اتقيّدت في الحسابات' })
+  }
+  const saveDraft = () => toast.ok('تم حفظ المسودة', { sub: no })
+  const schedule = () => toast.info('جدولة الفاتورة', { sub: 'بتتكرر تلقائيًا كل فترة تحدّدها — هتظهر في «الفواتير المجدولة»' })
+
+  const bankObj = DATA.banks.find((b) => b.id === bank)
+  const brObj = DATA.branches.find((b) => b.id === branch)
+  const itemsN = filled.length
+  const nLabel = itemsN === 1 ? 'بند واحد' : itemsN === 2 ? 'بندان' : `${itemsN} بنود`
+
+  const paperDoc = {
+    no, date, due, party: cust?.cash ? null : cust,
+    lines: calc.per.filter((l) => l.code || l.ar || l.desc).map((l) => ({ ar: l.ar || l.desc, qty: num(l.qty), price: num(l.price), disc: num(l.dpc) })),
+    sub: calc.sub, disc: calc.disc, vat: calc.vat, total: calc.total, notes: note, zatcaOk: issued,
   }
 
-  /* الحفظ كمسودة ليه رجعة، فبيتنفّذ على طول */
-  const saveDraft = () => {
-    toast.ok('الفاتورة ' + no + ' اتحفظت كمسودة', { sub: 'تقدر تكمّلها وتصدرها بعدين' })
-    nav('/sales/invoices')
-  }
+  const aside = pv && (
+    <PreviewPanel title="معاينة الطباعة" doc={paperDoc} onClose={() => setPv(false)} />
+  )
 
-  const org = DATA.org
+  const actions = issued ? <>
+    <button type="button" className="btn btn--ghost" onClick={() => nav('/sales/invoices')}>رجوع</button>
+    <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: no + '.pdf' })}><Ico.download size={20} />PDF</button>
+    <button type="button" className="btn btn--primary" onClick={() => toast.ok('اتبعتت للعميل', { sub: cust?.ar })}><Ico.send size={20} className="ob-dir" />إرسال للعميل</button>
+  </> : <>
+    <button type="button" className="btn btn--ghost" onClick={() => nav('/sales/invoices')}>رجوع</button>
+    <button type="button" className="btn" aria-pressed={pv} onClick={() => setPv((v) => !v)}><Ico.eye size={20} />{pv ? 'غلق المعاينة' : 'معاينة'}</button>
+    <span className="ob-contents ob-hide-sm">{oldOrder ? <>
+      <button type="button" className="btn" onClick={tryIssue}>{K.issue}</button>
+      <button type="button" className="btn btn--primary" onClick={saveDraft}>حفظ كمسودة</button>
+    </> : <>
+      <button type="button" className="btn" onClick={saveDraft}>حفظ كمسودة</button>
+      <IssueSplit label={K.issue} onIssue={tryIssue} onSchedule={schedule} />
+    </>}</span>
+  </>
 
   return (
-    <AppShell>
-      {/* ---------- الرأس والأوامر — زي السيستم، مش شريط سفلي ---------- */}
-      <div className="tophead">
-        <PageHeader back="/sales/invoices"
-          title="إنشاء فاتورة مبيعات" sub="إدارة الفواتير وتتبع المستحقات" />
-        <div className="tophead__ctrl docact">
-          <div className="splitb" ref={saveRef}>
-            <button className="btn btn--primary" onClick={saveDraft}>حفظ كمسودة</button>
-            <button className="splitb__t" aria-label="خيارات الحفظ" aria-expanded={saveOpen}
-              onClick={() => setSaveOpen((v) => !v)}>
-              <Ico.chevron size={14} />
-            </button>
-            {saveOpen && (
-              <div className="splitb__p" role="menu">
-                <button role="menuitem" onClick={() => { setSaveOpen(false); submit() }}>
-                  <Ico.send size={15} />إصدار
-                </button>
-                <button role="menuitem" onClick={() => { setSaveOpen(false)
-                  toast.info('جدولة الفاتورة', { sub: 'بتتكرر تلقائيًا كل فترة تحدّدها' }) }}>
-                  <Ico.calendar size={15} />جدولة الفاتورة
-                </button>
-              </div>
-            )}
-          </div>
-          <button className={'btn btn--sec' + (preview ? ' is-on' : '')}
-            aria-pressed={preview} onClick={() => setPreview((v) => !v)}>
-            {preview ? 'غلق المعاينة' : 'معاينة'}
-          </button>
-        </div>
+    <AppShell aside={aside}>
+      <PageHeader title={K.title}
+        chip={<Chip tone={issued ? 'ok' : 'draft'}>{issued ? 'صادرة' : 'مسودة'}</Chip>}
+        usage={<UsageLine used={plan.used} limit={plan.limit} />}
+        actions={actions} />
+
+      <div style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
+        {plan.locked && plan.used / plan.limit >= 0.9 && !issued && (
+          <Alert tone="warn">بقي لك <span className="num">{plan.limit - plan.used}</span> فواتير في باقة الفوترة هذا الشهر.</Alert>
+        )}
+        {show && hasErr && <Alert tone="err">صحّح البنود المعلّمة قبل الإصدار.</Alert>}
+        {issued && (
+          <Alert tone="ok" title={`تم إصدار الفاتورة ${no}`}
+            actions={<button type="button" className="ob-link" onClick={() => nav('/sales/invoices')}>عرض الفاتورة</button>}>
+            <small className="ob-row" style={{ gap: 6 }}><Chip tone="zatca">الهيئة</Chip>بانتظار الإرسال للهيئة — الحساب غير مربوط بمنصة فاتورة</small>
+          </Alert>
+        )}
       </div>
 
-      {/* ============================================================
-          الورقة — المستند كله قسم واحد، والأقسام جواه يفصلها خط.
-          ده اللي بيخلّي الفورم «شبه الفاتورة».
-          ============================================================ */}
-      <div className="sheet" data-component="InvoiceSheet">
-
-        {/* ---------- ١) الرأس: الأرقام يمين والمنشأة شمال ---------- */}
-        <div className="sheet__sec sheet__head">
-          <div className="sheet__meta">
-            <p className="smeta">
-              <span className="smeta__k">رقم الفاتورة</span>
-              {editNo ? (
-                <span className="smeta__edit">
-                  <input className={'fld__i' + (show('no') ? ' is-bad' : '')} value={noDraft} autoFocus
-                    onChange={(e) => setNoDraft(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') { e.preventDefault(); saveNo() }
-                      if (e.key === 'Escape') cancelNo()
-                    }} />
-                  <button className="lnk" onClick={saveNo}>حفظ</button>
-                  <button className="lnk lnk--mute" onClick={cancelNo}>إلغاء</button>
-                </span>
-              ) : (
-                <>
-                  <b className={'smeta__v num ltr' + (show('no') ? ' is-bad' : '')}>{no}</b>
-                  <button className="smeta__p" onClick={startEditNo}>تغيير</button>
-                </>
-              )}
-            </p>
-            <p className="smeta">
-              <span className="smeta__k">تاريخ الإصدار</span>
-              {editDate ? (
-                <span className="smeta__edit">
-                  <DateField value={date} onChange={(d) => { setDate(d); setEditDate(false) }} />
-                </span>
-              ) : (
-                <>
-                  <b className="smeta__v num ltr">{date}</b>
-                  <button className="smeta__p" onClick={() => setEditDate(true)}>تغيير</button>
-                </>
-              )}
-            </p>
-
-            <p className="smeta">
-              <span className="smeta__k">{K.due}</span>
-              {editDue ? (
-                <span className="smeta__edit">
-                  <DateField value={due} min={date} onChange={(d) => { setDueOv(d); setEditDue(false) }} />
-                </span>
-              ) : (
-                <>
-                  <b className="smeta__v num ltr">{due}</b>
-                  <button className="smeta__p" onClick={() => setEditDue(true)}>تغيير</button>
-                </>
-              )}
-            </p>
-            {/* شروط العميل بتشرح التاريخ اللي اتحسب لوحده */}
-            {c && !dueOv && <p className="smeta__hint">شروط العميل: {c.terms}</p>}
-            {dueOv && (
-              <p className="smeta__hint">
-                معدّل يدويًا ·{' '}
-                <button className="lnk" onClick={() => setDueOv('')}>رجّع شروط العميل</button>
-              </p>
-            )}
-
-            {/* الحقول اللي المستخدم فتحها بتتزوّد هنا كسطور زيادة */}
-            {xtra.rep && (
-              <p className="smeta">
-                <span className="smeta__k">مندوب المبيعات</span>
-                <SelectField className="smeta__sel" value={rep} onChange={setRep}
-                  ariaLabel="مندوب المبيعات"
-                  options={DATA.reps.map((r) => ({ id: r.id, label: r.ar }))} />
-              </p>
-            )}
-            {xtra.prj && (
-              <p className="smeta">
-                <span className="smeta__k">المشروع</span>
-                <input className="smeta__in" placeholder="—" value={prj}
-                  onChange={(e) => setPrj(e.target.value)} />
-              </p>
-            )}
-            {xtra.ref && (
-              <p className="smeta">
-                <span className="smeta__k">المرجع</span>
-                <input className="smeta__in" placeholder="—" value={ref}
-                  onChange={(e) => setRef(e.target.value)} />
-              </p>
-            )}
-
-            <div className="xtra" ref={xtraRef}>
-              {/* ★ بقى زرار له شكل زرار. كان نص سايب تحت سطور
-                  البيانات — فبيتقرا كإنه **سطر رابع من المستند**
-                  لِيبله مكتوب وقيمته ناقصة. وهو مش بيان أصلًا،
-                  هو أمر بيزوّد بيانات. */}
-              <button className={'xtra__b' + (xtraOpen ? ' on' : '')}
-                aria-expanded={xtraOpen} onClick={() => setXtraOpen((v) => !v)}>
-                <Ico.plus size={13} />حقول إضافية
-              </button>
-              {xtraOpen && (
-                <div className="xtra__p">
-                  {XTRA.map((x) => (
-                    <label key={x.id} className="xtra__i">
-                      <input type="checkbox" checked={!!xtra[x.id]}
-                        onChange={() => setXtra((v) => ({ ...v, [x.id]: !v[x.id] }))} />
-                      <span>{x.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+      {/* ================= ١) تفاصيل الفاتورة ================= */}
+      <section className="ob-card" aria-label="تفاصيل الفاتورة">
+        <div className="ob-g2 ob-g2--hdr">
+          <div className="ob-kv ob-kv--compact">
+            <div>
+              <label className="ob-kv__k" htmlFor="inv-no">{K.noL}</label>
+              <span className="ob-in ob-in--sm n"><input id="inv-no" value={no} disabled={ro} onChange={(e) => setNo(e.target.value)} /></span>
             </div>
+            <div><span className="ob-kv__k">تاريخ الإصدار</span><CompactDate value={date} onChange={setDate} disabled={ro} /></div>
+            <div><span className="ob-kv__k">{K.due}</span><CompactDate value={due} min={date} onChange={setDueOv} disabled={ro} /></div>
+            {xtra.rep && <div><span className="ob-kv__k">مندوب المبيعات</span>
+              <span style={{ flex: 1, maxWidth: 240 }}><QuietSelectBox value={rep} disabled={ro} label="مندوب المبيعات" onChange={setRep} options={DATA.reps.map((r) => ({ id: r.id, label: r.ar }))} /></span></div>}
+            {xtra.prj && <div><span className="ob-kv__k">المشروع</span>
+              {plan.locked ? <span style={{ flex: 1, maxWidth: 380 }}><LockRow>تتبع المشاريع متاح في الباقة الأساسية</LockRow></span>
+                : <span style={{ flex: 1, maxWidth: 240 }}><QuietSelectBox value={prj} disabled={ro} label="المشروع" placeholder="اختر المشروع" onChange={setPrj} options={DATA.projects.map((p) => ({ id: p.id, label: p.ar }))} /></span>}</div>}
+            {xtra.ref && <div><label className="ob-kv__k" htmlFor="inv-ref">المرجع</label>
+              <span className="ob-in ob-in--sm"><input id="inv-ref" value={ref} disabled={ro} onChange={(e) => setRef(e.target.value)} placeholder="رقم أمر الشراء مثلًا" /></span></div>}
+            {!ro && <XtraMenu xtra={xtra} setXtra={setXtra} />}
+            {cust && !cust.cash && !dueOv && <span className="ob-muted" style={{ fontSize: 12 }}>الاستحقاق من شروط العميل: {cust.terms}</span>}
+            {dueOv && !ro && <button type="button" className="ob-link ob-link--quiet" style={{ minHeight: 32, fontSize: 12 }} onClick={() => setDueOv('')}>رجّع الاستحقاق لشروط العميل</button>}
           </div>
 
-          {/* شمال: المنشأة والشعار — زي ما هيتطبعوا على الفاتورة */}
-          <div className="sheet__org">
-            <div className="sorg__tx">
-              <b>
-                {org.nameAr}
-                {/* بتفتح دراور المنشآت اللي في القايمة — نفس
-                    الدراور بالظبط، مش نسخة تانية منه. الحدث ده
-                    أنضف من تمرير الحالة من الـShell للشاشة ورا
-                    بعضه عشان زرار واحد. */}
-                <button className="smeta__p"
-                  onClick={() => window.dispatchEvent(new CustomEvent('haseem:orgs'))}>
-                  تغيير
-                </button>
-              </b>
-              <span>{DATA.branches[0].address}</span>
-              <span>{DATA.branches[0].city}, {DATA.branches[0].zip}</span>
-            </div>
-            {/* الشعار مرفوع — الهوفر بيطلّع «إزالة الشعار» فوقه.
-                المربّع بيقول حالته، والأمر بيظهر لما تقرّب بس. */}
-            <div className={'logobox' + (logo ? ' is-set' : '')}>
-              {logo ? (
-                <>
-                  <img src={org.logo} alt={org.nameAr} />
-                  <button className="logobox__x" onClick={() => setLogo(false)}>
-                    <Ico.trash size={14} />إزالة الشعار
-                  </button>
-                </>
-              ) : (
-                <button className="logobox__up" onClick={() => setLogo(true)}>
-                  <Ico.plus size={16} /><em>رفع الشعار</em>
-                </button>
-              )}
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            <span className="ob-logo"><img src={DATA.org.logo} alt={DATA.org.nameAr} /></span>
+            <div style={{ display: 'grid', gap: 6, minWidth: 0, flex: 1 }}>
+              <div className="ob-row" style={{ justifyContent: 'space-between', flexWrap: 'nowrap' }}>
+                <b style={{ fontSize: 15, color: 'var(--ink-strong)' }}>{DATA.org.nameAr}</b>
+                {!ro && <button type="button" className="ob-link ob-link--quiet" onClick={() => nav('/settings/organization')}><Ico.edit size={16} />تعديل</button>}
+              </div>
+              <QuietSelectBox value={branch} disabled={ro} label="الفرع" onChange={setBranch}
+                options={DATA.branches.map((b) => ({ id: b.id, label: `${b.ar} — ${b.code}` }))} />
+              <span style={{ fontSize: 13, color: 'var(--ink-label)' }}>الرقم الضريبي: <span className="num">{DATA.org.vat}</span></span>
+              <span style={{ fontSize: 13, color: 'var(--ink-label)' }}>السجل التجاري: <span className="num">{DATA.org.cr}</span> · {brObj?.city}</span>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* ---------- ٢) العميل ----------
-            دروب داون واحدة وخلاص: بيدوس عليها، بيدوّر بالاسم أو
-            بالرقم الضريبي، بيختار. ومن غير أزرار «تغيير» و«تعديل»
-            — التغيير هو نفس الدروب داون، والحقل اللي بيتعدّل من
-            نفسه أبسط من حقل + زرارين بيعملوا حاجات مختلفة.
-            وبيانات العميل بتتكتب في كارت على الشمال في الآخر
-            خالص، فالقراية والتحكّم كل واحد في ناحية. */}
-        <div className={'sheet__sec sheet__cust' + (show('cust') ? ' is-bad' : '')}>
-          <div className="scust__pick">
-            <span className="sheet__lbl">العميل</span>
-            <SelectField className="scust__sel" value={cust} search
-              placeholder="اختر عميل…" ariaLabel="العميل"
-              onChange={(v) => { setCust(v); setDueOv('') }}
-              options={DATA.customers.map((x) => ({ id: x.id, label: x.ar, sub: x.vat }))} />
-            {show('cust') && <em className="fld__e">{errs.cust}</em>}
-          </div>
-
-          {/* بيانات العميل سطر جنب الحقل، مش كارت على الشمال —
-              الاسم أصلًا مكتوب جوّه الحقل، فالكارت كان بيكرّره
-              ويزوّد طول السيكشن عشان معلومتين */}
-          {c && (
-            <p className="scust__meta">
-              السجل التجاري / الرقم الموحد: <span className="num ltr">{c.vat}</span>
-              <i className="sep">·</i>{c.city}
-            </p>
+      {/* ================= ٢) جسم الفاتورة ================= */}
+      <section className="ob-card" style={{ marginTop: 12 }} aria-label="جسم الفاتورة">
+        {/* ---- العميل ---- */}
+        <div className="ob-sec">
+          <h3>العميل <span className="ob-req">*</span></h3>
+          {cust ? (
+            <div className="ob-box ob-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
+              <div style={{ lineHeight: 1.6, minWidth: 0 }}>
+                <b style={{ fontSize: 15, color: 'var(--ink-strong)', display: 'block' }}>{cust.ar}</b>
+                {cust.cash ? <span className="ob-muted" style={{ fontSize: 13 }}>فاتورة ضريبية مبسطة</span> : <>
+                  <span style={{ fontSize: 13, color: 'var(--ink-label)', display: 'block' }}>{cust.en}</span>
+                  <span style={{ fontSize: 13, color: 'var(--ink-label)', display: 'block' }}>الرقم الضريبي: <span className="num">{cust.vat}</span> · {cust.city}</span>
+                  <span style={{ fontSize: 13, color: 'var(--ink-label)', display: 'block' }}>الجوال: <span className="num">{cust.phone}</span> · شروط الدفع: {cust.terms}</span>
+                </>}
+              </div>
+              {!ro && <div className="ob-row">
+                <CustPicker onPick={(id) => { setCustId(id); setDueOv('') }} label="تغيير" nav={nav} />
+                {!cust.cash && <button type="button" className="btn" onClick={() => nav(`/sales/customers/${cust.id}/edit`)}><Ico.edit size={20} />تعديل</button>}
+              </div>}
+            </div>
+          ) : (
+            <div className={`ob-empty${show && errs.cust ? ' is-err' : ''}`}>
+              <p>{show && errs.cust ? <><Ico.alert size={16} />اختر العميل قبل الإصدار</> : <><Ico.info size={16} />الفاتورة تحتاج عميلًا. للبيع النقدي اختر «عميل نقدي».</>}</p>
+              <CustPicker onPick={(id) => { setCustId(id); setDueOv('') }} label="اختيار العميل" primaryIcon nav={nav} />
+            </div>
           )}
         </div>
 
-        {/* ---------- ٣) البنود ---------- */}
-        <div className="sheet__sec sheet__lines">
-          {/* العنوان والأدوات في سطر واحد: العنوان يمين،
-              الأدوات شمال، ومتوسّطين مع بعض رأسيًا */}
-          <div className="slhead">
-          <span className="sheet__lbl">بنود الفاتورة</span>
-          <div className="sltools">
-            <div className="colmenu" ref={colsRef}>
-              <button className={'gbtn2' + (colsOpen ? ' on' : '')}
-                aria-expanded={colsOpen} onClick={() => setColsOpen((v) => !v)}>
-                تعديل الحقول
-              </button>
-              {colsOpen && (
-                <div className="colmenu__p">
-                  <span className="colmenu__t">إظهار في الجدول</span>
-                  {COLS.map((x) => (
-                    <label key={x.id} className="colmenu__i">
-                      <span>{x.label}</span>
-                      <input type="checkbox" checked={!!cols[x.id]}
-                        onChange={() => setCols((v) => ({ ...v, [x.id]: !v[x.id] }))} />
-                      <i className="sw" />
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
+        <hr className="ob-divider" />
 
-            {/* المستودع وطريقة السعر — كبسولتين بسهم و«×» زي السيستم */}
-            <div className="ptag" ref={whRef}>
-              <button className="ptag__b" aria-expanded={whOpen} onClick={() => setWhOpen((v) => !v)}>
-                <span className="ltr num">{whObj?.id}</span> — {whObj?.ar}
-                <Ico.chevron size={13} />
-              </button>
-              {whOpen && (
-                <div className="ptag__p">
-                  {DATA.warehouses.map((w) => (
-                    <button key={w.id} className={w.id === wh ? 'on' : ''}
-                      onClick={() => { setWh(w.id); setWhOpen(false) }}>{w.ar}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="ptag" ref={taxRef}>
-              <button className="ptag__b" aria-expanded={taxOpen} onClick={() => setTaxOpen((v) => !v)}>
-                {incl ? 'السعر شامل الضريبة' : 'السعر خالي من الضريبة'}
-                <Ico.chevron size={13} />
-              </button>
-              {taxOpen && (
-                <div className="ptag__p">
-                  <button className={!incl ? 'on' : ''}
-                    onClick={() => { setIncl(false); setTaxOpen(false) }}>السعر خالي من الضريبة</button>
-                  <button className={incl ? 'on' : ''}
-                    onClick={() => { setIncl(true); setTaxOpen(false) }}>السعر شامل الضريبة</button>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* ---- البنود ---- */}
+        <div className="ob-sec">
+          <h3>بنود الفاتورة {itemsN > 0 && <small>{nLabel}</small>}</h3>
+          <div className="ob-row" style={{ marginBottom: 8 }}>
+            <QuietSelect label="المستودع" value={wh} onChange={setWh}
+              options={DATA.warehouses.map((w) => ({ id: w.id, label: `${w.id} — ${w.ar}` }))} />
+            <QuietSelect label="طريقة التسعير" value={incl} onChange={setIncl}
+              options={[{ id: 'ex', label: 'السعر خالي من الضريبة' }, { id: 'in', label: 'السعر شامل الضريبة' }]} />
+            <span className="ob-sp" />
+            {!ro && <ColsMenu cols={cols} setCols={setCols} />}
           </div>
 
-          <div className="ltable" style={{ '--lc': lcols }}>
-            <div className="ltable__h">
-              <span>#</span>
-              {cols.img && <span />}
-              <span>بند الفاتورة</span>
-              <span>الوصف</span>
-              <span>الكمية</span>
-              <span>سعر الوحدة</span>
-              {cols.dpc && <span>نسبة الخصم %</span>}
-              {cols.acct && <span>الحساب</span>}
-              <span>الضريبة</span>
-              {cols.amt && <span className="is-n">المبلغ</span>}
-              <span />
-            </div>
+          {show && errs.lines && <div style={{ marginBottom: 10 }}><Alert tone="err">أضف بندًا واحدًا على الأقل، ولكل بند سعر وحدة.</Alert></div>}
 
-            {calc.per.map((l, i) => (
-              <div className="ltable__r" key={l.key}>
-                <span className="ltable__i">{i + 1}</span>
-                {cols.img && <span className="ltable__img" aria-hidden="true"><Ico.items size={15} /></span>}
+          <LinesTable {...{ calc, cols, ro, setLine, delLine, pickItem, move, moving, setMoving, drag, setDrag, dropOn, show, lineErr, vatexErr, stockWarn, incl }} />
 
-                <SelectField value={l.code} onChange={(v) => pick(l.key, v)}
-                  placeholder="اختر الصنف…" ariaLabel="بند الفاتورة"
-                  options={DATA.catalog.map((x) => ({ id: x.code, label: x.ar, sub: x.code }))} />
-
-                <input className="fld__i" placeholder="الوصف" value={l.desc}
-                  onChange={(e) => setLine(l.key, { desc: e.target.value })} />
-
-                {/* الكمية والوحدة في خانة واحدة — زي السيستم، الوحدة تحت الرقم */}
-                <span className="qcell">
-                  <input className="fld__i n" type="number" min="0" step="1" value={l.qty}
-                    onChange={(e) => setLine(l.key, { qty: e.target.value })} />
-                  {cols.unit && (
-                    <SelectField className="qcell__u" value={l.unit}
-                      ariaLabel="الوحدة" onChange={(v) => setLine(l.key, { unit: v })}
-                      options={DATA.units.map((u) => ({ id: u.ar, label: u.ar, sub: u.code }))} />
-                  )}
-                </span>
-
-                {/* سعر الوحدة + آخر بيع — السيستم بيحطهم تحت بعض في نفس الخانة،
-                    عشان المستخدم يسعّر وهو شايف آخر سعر من غير ما يفتح شاشة تانية */}
-                <span className="pcell">
-                  <input className="fld__i n" type="number" min="0" step="0.01" value={l.price}
-                    onChange={(e) => setLine(l.key, { price: e.target.value })} />
-                  {l.code && (
-                    <em className="pcell__h">
-                      آخر بيع لهذا العميل: <span className="num ltr">{fmtMoney(l.price)}</span>
-                    </em>
-                  )}
-                </span>
-
-                {cols.dpc && (
-                  <input className="fld__i n" type="number" min="0" max="100" step="1" value={l.dpc}
-                    onChange={(e) => setLine(l.key, { dpc: e.target.value })} />
-                )}
-                {cols.acct && (
-                  <SelectField value={l.acct} placeholder="—" ariaLabel="الحساب"
-                    onChange={(v) => setLine(l.key, { acct: v })}
-                    options={DATA.accountsOf('revenue').map((x) => ({ id: x.id, label: x.ar }))} />
-                )}
-
-                {/* ★ الفئة وكود الإعفاء في خانة واحدة. الهيئة بتطلب الاتنين
-                    مع بعض على البند الصفري أو المعفي — ومن غير الكود الفاتورة
-                    بتترفض. ده اللي بنزوّده على السيستم، لأنه مش شكل. */}
-                <span className="taxcell">
-                  <SelectField value={l.tax} ariaLabel="فئة الضريبة"
-                    onChange={(v) => setLine(l.key, { tax: v, vatex: '' })}
-                    options={DATA.taxRates.map((t) => ({ id: t.id, label: t.ar }))} />
-                  {DATA.needsVatex(l.tax) && (
-                    <SelectField className={'taxcell__x' + (!l.vatex ? ' is-bad' : '')}
-                      value={l.vatex || ''} placeholder="كود الإعفاء مطلوب…"
-                      ariaLabel="كود الإعفاء المطلوب من الهيئة"
-                      onChange={(v) => setLine(l.key, { vatex: v })}
-                      options={DATA.vatexFor(l.tax).map((x) => ({ id: x.id, label: x.id, sub: x.ar }))} />
-                  )}
-                </span>
-
-                {cols.amt && (
-                  <span className="ltable__t"><span className="num">{fmtMoney(l.total)}</span><Riyal /></span>
-                )}
-                <button className="ltable__x" aria-label="شيل السطر" onClick={() => delLine(l.key)}>
-                  <Ico.close size={15} />
-                </button>
-              </div>
-            ))}
-
-            {/* ★ زرار البند الجديد جوّه الجدول، تحت آخر سطر —
-                مش في شريط أدوات فوق. إضافة بند فعل بيحصل وانت
-                بتكتب في آخر صف، فمكانه الطبيعي تحت الصف ده
-                مباشرة مش على بُعد جدول كامل. */}
-            <button className="ltable__add" onClick={addLine} aria-label="إضافة بند">
-              <Ico.plus size={16} /><span>إضافة بند</span>
+          {!ro && (
+            <button type="button" className="btn" onClick={addLine}
+              style={{ width: '100%', marginTop: 10, borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 600 }}>
+              <Ico.plus size={20} />إضافة بند
             </button>
-          </div>
-          {show('lines') && <em className="fld__e fld__e--blk">{errs.lines}</em>}
+          )}
         </div>
 
-        {/* ---------- ٤) السطر السفلي: بنك · ملاحظات وختم · إجماليات ---------- */}
-        <div className="sheet__sec sheet__foot">
+        <hr className="ob-divider" />
 
-          {/* البنك والملاحظات تحت بعض في عمود واحد — والبنك الأول
-              لأنه بيانات العميل محتاجها عشان يدفع، والملاحظات
-              كلام إضافي بيتقرا بعده */}
-          <div className="sfoot__side">
-
-          <div className="sfoot__bank" ref={bankRef}>
-            <span className="sheet__lbl">بيانات البنك</span>
-            {/* الاسم و«تغيير» في صف واحد، والقايمة جوّه نفس
-                الحاوية عشان تتحسب من الزرار مش من الكارت */}
-            <div className="bankpick">
-              {/* الشعار على اليمين، والاسم والآيبان تحت بعض
-                  على شماله ومتمسّكين بنفس الخط من اليمين */}
-              <span className="bankav">
-                {bankObj?.logo
-                  ? <img src={bankObj.logo} alt="" />
-                  : <Ico.bank size={20} />}
-              </span>
-              <span className="bankpick__t">
-                <span className="bankpick__n">
-                  <b>{bankObj?.ar}</b>
-                  <button className={'smeta__p' + (bankOpen ? ' on' : '')}
-                    aria-expanded={bankOpen} onClick={() => setBankOpen((v) => !v)}>تغيير</button>
-                </span>
-                <span className="num ltr">{bankObj?.iban}</span>
-              </span>
-              {bankOpen && (
-                <div className="ptag__p ptag__p--up">
-                  {DATA.banks.map((b) => (
-                    <button key={b.id} className={b.id === bank ? 'on' : ''}
-                      onClick={() => { setBank(b.id); setBankOpen(false) }}>{b.ar}</button>
-                  ))}
+        {/* ---- المطبوع + الإجماليات ---- */}
+        <div className="ob-g2 ob-g2--wide">
+          <div className="ob-sec" style={{ display: 'grid', gap: 14, alignContent: 'start' }}>
+            <h3 style={{ margin: 0 }}>يظهر على الفاتورة المطبوعة</h3>
+            <label className="fld">
+              <span className="ob-lbl">ملاحظات</span>
+              <textarea className="fld__i fld__i--area" value={note} disabled={ro} placeholder="إضافة ملاحظات" onChange={(e) => setNote(e.target.value)} />
+            </label>
+            <div className="fld">
+              <span className="ob-lbl">الحساب البنكي</span>
+              <QuietSelectBox value={bank} disabled={ro} label="الحساب البنكي" onChange={setBank} up
+                options={[{ id: 'none', label: 'بدون حساب بنكي' }, ...DATA.banks.map((b) => ({ id: b.id, label: b.ar, sub: b.iban }))]} />
+              {bankObj && <span className="fld__h num" style={{ marginTop: 4 }}>{bankObj.iban}</span>}
+            </div>
+            <div className="fld">
+              <span className="ob-lbl">الختم</span>
+              {plan.locked ? <LockRow>الختم متاح في الباقة الأساسية</LockRow> : stamp ? (
+                <div className="ob-row" style={{ border: '1px solid var(--border-base)', borderRadius: 8, padding: '8px 12px', background: 'var(--surface-raised)', flexWrap: 'nowrap' }}>
+                  <span style={{ width: 52, height: 52, borderRadius: 99, border: '3px double #948B82', display: 'grid', placeItems: 'center', fontSize: 7, fontWeight: 700, color: '#6F675F', flex: 'none', textAlign: 'center', lineHeight: 1.2 }}>{DATA.org.nameEn.split(' ').slice(0, 2).join(' ')}</span>
+                  <span style={{ flex: 1, lineHeight: 1.4 }}><b style={{ display: 'block', color: 'var(--ink-strong)', fontSize: 14 }}>ختم المؤسسة</b><small className="ob-muted">يُطبع أسفل الفاتورة</small></span>
+                  {!ro && <button type="button" className="btn" onClick={() => setStamp(false)}>إزالة</button>}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* الملاحظات والختم جنب بعض — الختم على الشمال بنفس
-              مقاس مربّع الشعار، وارتفاع التكست إريا مساوي ليه
-              عشان الاتنين يقفوا على خط واحد فوق وتحت */}
-          <div className="sfoot__notes">
-            <div className="snote">
-              <span className="sheet__lbl">ملاحظات</span>
-              <textarea className="fld__i fld__i--area" value={note}
-                placeholder="مثلًا: التحويل على حساب المنشأة، والرجاء ذكر رقم الفاتورة في التحويل."
-                onChange={(e) => setNote(e.target.value)} />
-            </div>
-
-            <div className="sstamp">
-              <span className="sheet__lbl">الختم</span>
-              <button className={'updrop' + (stamp ? ' is-set' : '')}
-                onClick={() => setStamp((v) => !v)}>
-                {stamp ? <span className="stampmark">مُعتمد</span>
-                       : <><Ico.plus size={16} /><em>رفع الختم</em></>}
-              </button>
-            </div>
-          </div>
-
-          {/* المرفقات تحت الملاحظات في نفس العمود — كانت كارت
-              مستقل بره الورقة، والمستخدم لازم ينزل لآخر الصفحة
-              عشان يرفق ملف مالوش علاقة بالمجاميع اللي جنبه.
-              وجملة «لا توجد مرفقات» اتشالت: الكارت فاضي واضح
-              إنه فاضي، والجملة كانت بتاخد سطر تقول حاجة العين
-              شايفاها. */}
-          <div className="sfoot__att">
-            <div className="satt__h">
-              <span className="sheet__lbl">المرفقات</span>
-              <button className="sfoot__add"
-                onClick={() => setFiles((f) => [...f, { n: 'مرفق-' + (f.length + 1) + '.pdf', s: '٢٤٠ ك.ب' }])}>
-                + إرفاق ملف
-              </button>
-            </div>
-            {files.length > 0 && (
-              <ul className="flist">
-                {files.map((f, i) => (
-                  <li key={i}>
-                    <Ico.invoice size={16} /><b>{f.n}</b><span>{f.s}</span>
-                    <button aria-label="شيل المرفق" onClick={() => setFiles((x) => x.filter((_, j) => j !== i))}>
-                      <Ico.close size={14} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          </div>
-
-          {/* شمال — الإجماليات */}
-          {/* العمود الشمال: كرت المجاميع، وتحته كل إضافة اختيارية في
-              كرت بذاته — مش سطر مدفون جوّه المجاميع */}
-          <div className="sfoot__col">
-          <div className="sfoot__tot">
-            <div className="stot"><span>المجموع الفرعي</span>
-              <b><span className="num">{fmtMoney(calc.net)}</span><Riyal /></b></div>
-
-            {calc.lineDisc > 0 && (
-              <div className="stot stot--q"><span>خصم البنود</span>
-                <b className="is-minus">− <span className="num">{fmtMoney(calc.lineDisc)}</span><Riyal /></b></div>
-            )}
-
-            {/* «إضافة خصم» سطر بيتحوّل لحقل — مش حقل فاضي مستني */}
-            <div className="stot stot--disc">
-              {editDisc || disc ? (
-                <>
-                  <span>الخصم</span>
-                  <span className="sdisc">
-                    <input className="fld__i n" type="number" min="0" step="0.01" value={disc}
-                      autoFocus={editDisc} placeholder="0"
-                      onChange={(e) => setDisc(e.target.value)}
-                      onBlur={() => setEditDisc(false)} />
-                    <span className="segs segs--sm" role="group" aria-label="نوع الخصم">
-                      <button className={!discPc ? 'on' : ''} onClick={() => setDiscPc(false)}>﷼</button>
-                      <button className={discPc ? 'on' : ''} onClick={() => setDiscPc(true)}>٪</button>
-                    </span>
-                  </span>
-                </>
               ) : (
-                <>
-                  <button className="sfoot__add" onClick={() => setEditDisc(true)}>
-                    إضافة خصم<Ico.edit size={12} />
-                  </button>
-                  <b className="is-dash">—</b>
-                </>
+                <div className="ob-empty"><p>بدون ختم</p>{!ro && <button type="button" className="btn" onClick={() => setStamp(true)}><Ico.plus size={20} />إضافة الختم</button>}</div>
               )}
             </div>
+          </div>
 
-            <div className="stot"><span>الضريبة</span>
-              <b><span className="num">{fmtMoney(calc.tax)}</span><Riyal /></b></div>
-
-            {/* الإجمالي بنبرة السامري-ستريب: رقم كبير مونوسبيس واللِيبل فوقه */}
-            <div className="sgrand">
-              <span className="sgrand__l">الإجمالي</span>
-              <b className="sgrand__v"><Riyal /><span className="num">{fmtMoney(calc.total)}</span></b>
+          <div style={{ display: 'grid', gap: 8, alignContent: 'start' }}>
+            {/* صندوق الإجماليات — ما بيتغيّرش (handoff §7-6) */}
+            <div className="ob-box" style={{ display: 'grid', gap: 4 }} aria-label="الإجماليات">
+              <TotRow l="المجموع الفرعي" v={calc.sub} />
+              {disc == null ? (
+                !ro && <div><button type="button" className="ob-link" onClick={() => setDisc('')}><Ico.plus size={20} />إضافة خصم</button></div>
+              ) : (
+                <div className="ob-row" style={{ justifyContent: 'space-between', minHeight: 44, flexWrap: 'nowrap' }}>
+                  <span style={{ color: 'var(--ink-label)' }}>الخصم</span>
+                  <span className="ob-row" style={{ flexWrap: 'nowrap', gap: 4 }}>
+                    <span className="ob-in n" style={{ width: 140, height: 40, minHeight: 40 }}>
+                      <input inputMode="decimal" value={disc} disabled={ro} autoFocus placeholder="0.00" aria-label="مبلغ الخصم" onChange={(e) => setDisc(e.target.value)} /><Riyal />
+                    </span>
+                    {!ro && <button type="button" className="iconbtn" aria-label="إزالة الخصم" onClick={() => setDisc(null)}><Ico.close size={20} /></button>}
+                  </span>
+                </div>
+              )}
+              <TotRow l="ضريبة القيمة المضافة 15%" v={calc.vat} />
+              <div className="ob-row" style={{ justifyContent: 'space-between', borderTop: '1px solid var(--border-base)', paddingTop: 10, marginTop: 4, flexWrap: 'nowrap' }}>
+                <b style={{ fontSize: 16, color: 'var(--ink-strong)' }}>الإجمالي</b>
+                <Amt v={calc.total} className="ob-strong" />
+              </div>
             </div>
 
-          </div>
+            <Disc title="تسجيل دفعة عند الإصدار" icon={Ico.wallet} open={payOn}
+              summary={payOn ? { unpaid: 'غير مدفوعة', partial: 'مدفوعة جزئياً', full: 'مدفوعة بالكامل' }[payState] : ''}
+              onToggle={() => { if (ro) return; setPayOn((o) => { if (o) setPayState('unpaid'); return !o }) }}>
+              <div className="fld"><span className="ob-lbl">حالة الدفع</span>
+                <Seg fill value={payState} onChange={setPayState} label="حالة الدفع"
+                  options={[{ id: 'unpaid', label: 'غير مدفوعة' }, { id: 'partial', label: 'جزئياً' }, { id: 'full', label: 'بالكامل' }]} /></div>
+              {payState !== 'unpaid' && <>
+                {payState === 'partial' && <label className="fld"><span className="ob-lbl">مبلغ الدفعة</span>
+                  <span className="ob-in n"><input inputMode="decimal" value={pay.amt} placeholder="0.00" onChange={(e) => setPay({ ...pay, amt: e.target.value })} /><Riyal /></span></label>}
+                <div className="fld"><span className="ob-lbl">الحساب المالي</span>
+                  <QuietSelectBox value={pay.acc} label="الحساب المالي" onChange={(v) => setPay({ ...pay, acc: v })} options={DATA.cashAccounts.map((a) => ({ id: a.acc, label: a.ar }))} /></div>
+                <DateField label="تاريخ الدفع" value={pay.date} onChange={(v) => setPay({ ...pay, date: v })} />
+                <div className="fld"><span className="ob-lbl">طريقة الدفع</span>
+                  <Seg fill value={pay.way} onChange={(v) => setPay({ ...pay, way: v })} label="طريقة الدفع" options={[{ id: 'transfer', label: 'تحويل بنكي' }, { id: 'cash', label: 'نقدًا' }]} /></div>
+                <label className="fld"><span className="ob-lbl">المرجع</span>
+                  <input className="fld__i" value={pay.ref} placeholder="رقم التحويل" onChange={(e) => setPay({ ...pay, ref: e.target.value })} /></label>
+              </>}
+            </Disc>
 
-          <div className="sfoot__opt">
-            {/* ---------- حالة الدفع — زرار بيفتح قسم، زي السيستم ---------- */}
-            {!showPay ? (
-              <button className="sfoot__row" onClick={() => setShowPay(true)}>
-                <Ico.card size={15} />إظهار حالة الدفع في الفاتورة<i>+</i>
-              </button>
-            ) : (
-              <div className="sblock">
-                <div className="sblock__h">
-                  <b><Ico.card size={14} />حالة الدفع</b>
-                  <button className="rcard__x"
-                    onClick={() => { setShowPay(false); setPayState('none'); setPayAmt('') }}>
-                    <Ico.close size={13} />إزالة
-                  </button>
+            <Disc title="احتجاز حسن التنفيذ" icon={Ico.shield} open={retOn}
+              summary={retOn ? (ret.mode === 'pct' ? `${ret.pct || 0}%` : fmtMoney(num(ret.fixed))) : ''}
+              onToggle={() => { if (!ro) setRetOn((o) => !o) }}>
+              <div className="fld"><span className="ob-lbl">طريقة الاحتجاز</span>
+                <Seg value={ret.mode} onChange={(v) => setRet({ ...ret, mode: v })} label="طريقة الاحتجاز" options={[{ id: 'pct', label: 'نسبة' }, { id: 'fixed', label: 'مبلغ ثابت' }]} /></div>
+              {ret.mode === 'pct' ? (
+                <div className="fld"><span className="ob-lbl">نسبة الاحتجاز</span>
+                  <div className="ob-row">
+                    <Seg value={['5', '10'].includes(ret.pct) ? ret.pct : ''} onChange={(v) => setRet({ ...ret, pct: v })} label="نسبة جاهزة" options={[{ id: '5', label: '5%' }, { id: '10', label: '10%' }]} />
+                    <span className="ob-in n" style={{ width: 110 }}><input inputMode="decimal" value={ret.pct} aria-label="نسبة أخرى" onChange={(e) => setRet({ ...ret, pct: e.target.value })} />%</span>
+                  </div></div>
+              ) : (
+                <label className="fld"><span className="ob-lbl">مبلغ الاحتجاز</span>
+                  <span className="ob-in n"><input inputMode="decimal" value={ret.fixed} placeholder="0.00" onChange={(e) => setRet({ ...ret, fixed: e.target.value })} /><Riyal /></span></label>
+              )}
+              {ret.mode === 'pct' && <div className="fld"><span className="ob-lbl">أساس الاحتجاز</span>
+                <Seg value={ret.base} onChange={(v) => setRet({ ...ret, base: v })} label="أساس الاحتجاز" options={[{ id: 'pre', label: 'قبل الضريبة' }, { id: 'incl', label: 'شامل الضريبة' }]} /></div>}
+              <DateField label="تاريخ الإفراج المتوقع" value={ret.date} min={date} onChange={(v) => setRet({ ...ret, date: v })} />
+              <label className="fld"><span className="ob-lbl">شرط الإفراج</span>
+                <input className="fld__i" value={ret.cond} placeholder="مثال: بعد انتهاء فترة الضمان" onChange={(e) => setRet({ ...ret, cond: e.target.value })} /></label>
+            </Disc>
+
+            {(calc.paid > 0.009 || calc.retAmt > 0.009) && (
+              <div className="ob-box" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border-control)', display: 'grid', gap: 4 }} aria-label="المستحق بعد الدفعة والاحتجاز">
+                <b style={{ fontSize: 14, color: 'var(--ink-strong)', marginBottom: 4 }}>المستحق بعد الدفعة والاحتجاز</b>
+                <TotRow l="الإجمالي شامل الضريبة" v={calc.total} />
+                {calc.retAmt > 0.009 && <TotRow l="حسن التنفيذ" v={-calc.retAmt} />}
+                {calc.retAmt > 0.009 && <TotRow l="الصافي المستحق" v={calc.netDue} />}
+                {calc.paid > 0.009 && <TotRow l={`المبلغ المدفوع · ${payState === 'full' ? 'مدفوعة بالكامل' : 'مدفوعة جزئياً'}`} v={-calc.paid} />}
+                <div className="ob-row" style={{ justifyContent: 'space-between', borderTop: '1px solid var(--border-control)', paddingTop: 8, marginTop: 4, flexWrap: 'nowrap' }}>
+                  <b style={{ color: 'var(--ink-strong)' }}>المبلغ المتبقي</b><Amt v={calc.rem} className="ob-strong" />
                 </div>
-                <p className="sblock__s">سجّل الدفعة اللي اتحصّلت وقت إصدار الفاتورة.</p>
-                <SelectField value={payState} onChange={setPayState} ariaLabel="حالة الدفع"
-                  options={[
-                    { id: 'none', label: 'غير مدفوعة' },
-                    { id: 'part', label: 'مدفوعة جزئيًا' },
-                    { id: 'full', label: 'مدفوعة بالكامل' },
-                  ]} />
-                {payState === 'part' && (
-                  <input className="fld__i n" type="number" min="0" step="0.01" placeholder="المبلغ المحصّل"
-                    value={payAmt} onChange={(e) => setPayAmt(e.target.value)} />
-                )}
-                {payState !== 'none' && (
-                  <>
-                    <div className="stot stot--q"><span>المحصّل</span>
-                      <b className="is-minus">− <span className="num">{fmtMoney(calc.paid)}</span><Riyal /></b></div>
-                    <div className="stot stot--q"><span>الباقي على العميل</span>
-                      <b><span className="num">{fmtMoney(calc.rest)}</span><Riyal /></b></div>
-                  </>
-                )}
               </div>
             )}
-
-          </div>
-
-          <div className="sfoot__opt">
-            {/* ---------- حسن التنفيذ ---------- */}
-            {!ret ? (
-              <button className="sfoot__row" onClick={() => setRet(true)}>
-                <Ico.check size={15} />إضافة حسن تنفيذ<i>+</i>
-              </button>
-            ) : (
-              <div className="sblock">
-                <div className="sblock__h">
-                  <b><Ico.check size={14} />حسن التنفيذ</b>
-                  <button className="rcard__x" onClick={() => setRet(false)}>
-                    <Ico.close size={13} />إزالة
-                  </button>
-                </div>
-                <p className="sblock__s">المبلغ المحتجز حتى انتهاء فترة الضمان</p>
-
-                <div className="segs segs--sm segs--full" role="group" aria-label="طريقة الاحتجاز">
-                  <button className={retMode === 'pc' ? 'on' : ''} onClick={() => setRetMode('pc')}>نسبة</button>
-                  <button className={retMode === 'amt' ? 'on' : ''} onClick={() => setRetMode('amt')}>مبلغ ثابت</button>
-                </div>
-
-                {retMode === 'pc' ? (
-                  <div className="rcard__pc">
-                    {RET_PC.map((p) => (
-                      <button key={p} className={num(retVal) === p ? 'on' : ''}
-                        onClick={() => setRetVal(p)}>{p}٪</button>
-                    ))}
-                    <input className="fld__i n" type="number" min="0" max="100" placeholder="٪"
-                      value={RET_PC.includes(num(retVal)) ? '' : retVal}
-                      onChange={(e) => setRetVal(e.target.value)} />
-                  </div>
-                ) : (
-                  <input className="fld__i n" type="number" min="0" step="0.01" placeholder="0"
-                    value={retVal} onChange={(e) => setRetVal(e.target.value)} />
-                )}
-
-                <div className="segs segs--sm segs--full" role="group" aria-label="أساس الاحتجاز">
-                  <button className={retBase === 'net' ? 'on' : ''} onClick={() => setRetBase('net')}>قبل الضريبة</button>
-                  <button className={retBase === 'gross' ? 'on' : ''} onClick={() => setRetBase('gross')}>شامل الضريبة</button>
-                </div>
-
-                <DateField label="تاريخ الإفراج المتوقع" value={retDate} onChange={setRetDate} />
-                <input className="fld__i" placeholder="شرط الإفراج — مثال: بعد انتهاء فترة الضمان"
-                  value={retCond} onChange={(e) => setRetCond(e.target.value)} />
-
-                <div className="stot stot--q"><span>حسن التنفيذ</span>
-                  <b className="is-minus">− <span className="num">{fmtMoney(calc.ret)}</span><Riyal /></b></div>
-                <div className="stot stot--grand"><span>الصافي المستحق</span>
-                  <b><span className="num">{fmtMoney(calc.netDue)}</span><Riyal /></b></div>
-              </div>
-            )}
-          </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ★ سطر واحد تحت المستند بيقول الناقص — السيستم مالوش، بس
-          قاعدة البورد «الزرار ميتقفلش» محتاجة مكان تقول فيه إيه اللي
-          ناقص من غير ما تمنع الحفظ. */}
-      {tried && nErr > 0 && (
-        <p className="sheet__err">
-          <Ico.close size={15} />ناقص {countAr(nErr)} — موضّحة في المستند باللون الأحمر
-        </p>
+      {/* ================= ٣) المرفقات ================= */}
+      <section className="ob-card" style={{ marginTop: 12 }} aria-label="المرفقات">
+        <div className="ob-row" style={{ justifyContent: 'space-between' }}>
+          <h3 className="ob-sech" style={{ margin: 0 }}>المرفقات</h3>
+          {!ro && <button type="button" className="btn" onClick={() => fileRef.current?.click()}><Ico.clip size={20} />إرفاق ملف</button>}
+          <input ref={fileRef} type="file" multiple hidden onChange={(e) => { const f = [...e.target.files].map((x) => ({ n: x.name, s: Math.max(1, Math.round(x.size / 1024)) })); setFiles((a) => [...a, ...f]); e.target.value = '' }} />
+        </div>
+        {files.length === 0 ? <p className="ob-muted" style={{ margin: '8px 0 0', fontSize: 13 }}>لا توجد مرفقات</p> : (
+          <ul style={{ listStyle: 'none', margin: '12px 0 0', padding: 0, display: 'grid', gap: 6 }}>
+            {files.map((f, i) => (
+              <li key={i} className="ob-row" style={{ border: '1px solid var(--border-base)', borderRadius: 8, padding: '0 4px 0 12px', flexWrap: 'nowrap' }}>
+                <Ico.file size={20} /><span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.n}</span>
+                <span className="ob-muted num" style={{ fontSize: 12 }}>{f.s} KB</span>
+                {!ro && <button type="button" className="iconbtn" aria-label={'إزالة ' + f.n} onClick={() => setFiles((a) => a.filter((_, j) => j !== i))}><Ico.close size={20} /></button>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* ================= بار الموبايل ================= */}
+      {!issued && (
+        <div className="ob-stickybar">
+          <div className="ob-stickybar__tot"><span>الإجمالي</span><Amt v={calc.total} /></div>
+          <button type="button" className="btn" onClick={saveDraft}>حفظ كمسودة</button>
+          <button type="button" className="btn btn--primary" onClick={tryIssue}>{K.issue}</button>
+        </div>
       )}
 
-      {preview && (
-        <PrintPreview onClose={() => setPreview(false)} doc={{
-          no, date, due,
-          party: c,
-          lines: calc.per,
-          net: calc.net, disc: calc.disc, tax: calc.tax, total: calc.total,
-          retention: calc.ret, netDue: calc.netDue,
-          bank: bankObj, note, zatcaOk: false,
-        }} />
+      {confirm && (
+        <ObModal title="إصدار الفاتورة؟" onClose={() => setConfirm(false)}
+          actions={<>
+            <button type="button" className="btn" onClick={() => setConfirm(false)}>إلغاء</button>
+            <button type="button" className="btn btn--primary" onClick={doIssue}>إصدار</button>
+          </>}>
+          <p className="cfm__b">بعد الإصدار لا يمكن تعديل الفاتورة، ويتم ترقيمها وتسجيلها في الحسابات.</p>
+          <div className="ob-kvl">
+            <div><span>العميل</span><b>{cust?.ar}</b></div>
+            <div><span>البنود</span><b>{nLabel}</b></div>
+            <div><span>ضريبة القيمة المضافة</span><Amt v={calc.vat} /></div>
+            <div><span>الإجمالي</span><b><Amt v={calc.total} /></b></div>
+          </div>
+        </ObModal>
       )}
     </AppShell>
+  )
+}
+
+/* ---------- أجزاء صغيرة ---------- */
+function IssueSplit({ label, onIssue, onSchedule }) {
+  const p = usePop()
+  return (
+    <span className="ob-split" ref={p.ref}>
+      <button type="button" className="btn btn--primary" onClick={onIssue}><Ico.send size={20} className="ob-dir" />{label}</button>
+      <button type="button" className="btn btn--primary ob-split__more" aria-label="خيارات الإصدار" aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}>
+        <Ico.chevron size={20} />
+      </button>
+      {p.open && (
+        <div className="ob-menu" role="menu">
+          <button type="button" role="menuitem" className="ob-menu__i" onClick={() => { p.setOpen(false); onSchedule() }}><Ico.calendar size={20} />جدولة الفاتورة</button>
+        </div>
+      )}
+    </span>
+  )
+}
+
+
+function TotRow({ l, v }) {
+  return (
+    <div className="ob-row" style={{ justifyContent: 'space-between', minHeight: 34, fontSize: 14, flexWrap: 'nowrap' }}>
+      <span style={{ color: 'var(--ink-label)' }}>{l}</span><Amt v={v} className="ob-strong" />
+    </div>
+  )
+}
+
+/* تاريخ مضغوط ٣٨ في هيدر التفاصيل (INV-CREATE-01) */
+function CompactDate({ value, onChange, min, disabled }) {
+  return <span className="ob-cdate" style={{ flex: 1, maxWidth: 240 }}><DateField value={value} onChange={onChange} min={min} disabled={disabled} /></span>
+}
+
+function XtraMenu({ xtra, setXtra }) {
+  const p = usePop()
+  return (
+    <span className="ob-picker" ref={p.ref}>
+      <button type="button" className="ob-link ob-link--quiet" aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}><Ico.plus size={20} />حقول إضافية</button>
+      {p.open && (
+        <div className="ob-menu" role="menu" style={{ minWidth: 220 }}>
+          {XTRA.map((x) => (
+            <button key={x.id} type="button" role="menuitemcheckbox" aria-checked={!!xtra[x.id]} className="ob-menu__i"
+              onClick={() => setXtra((v) => ({ ...v, [x.id]: !v[x.id] }))}>
+              <span className={`ob-menu__cb${xtra[x.id] ? ' on' : ''}`}>{xtra[x.id] && <Ico.check size={14} />}</span>{x.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  )
+}
+
+function ColsMenu({ cols, setCols }) {
+  const p = usePop()
+  return (
+    <span className="ob-picker" ref={p.ref}>
+      <button type="button" className="ob-link ob-link--quiet" aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}><Ico.columns size={20} />تعديل الحقول</button>
+      {p.open && (
+        <div className="ob-menu is-end" role="menu" style={{ minWidth: 240 }}>
+          <div className="ob-menu__h">إظهار في الجدول</div>
+          {COLS.map((x) => (
+            <button key={x.id} type="button" role="menuitemcheckbox" aria-checked={!!cols[x.id]} className="ob-menu__i"
+              onClick={() => setCols((v) => ({ ...v, [x.id]: !v[x.id] }))}>
+              <span style={{ flex: 1 }}>{x.label}</span><Switch on={!!cols[x.id]} />
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  )
+}
+
+function CustPicker({ onPick, label, primaryIcon, nav }) {
+  const p = usePop()
+  const [q, setQ] = useState('')
+  const list = [CASH, ...DATA.customers].filter((c) => !q.trim() || c.ar.includes(q.trim()) || (c.vat || '').includes(q.trim()))
+  return (
+    <span className="ob-picker" ref={p.ref}>
+      <button type="button" className="btn" aria-haspopup="listbox" aria-expanded={p.open} onClick={p.toggle}>
+        {primaryIcon && <Ico.plus size={20} />}{label}
+      </button>
+      {p.open && (
+        <div className="ob-menu is-end" role="listbox" style={{ width: 320, maxWidth: 'calc(100vw - 32px)', maxHeight: 340, overflow: 'auto' }}>
+          <label className="search" style={{ marginBottom: 6 }}><Ico.search size={20} /><input autoFocus value={q} placeholder="ابحث بالاسم أو الرقم الضريبي" onChange={(e) => setQ(e.target.value)} /></label>
+          <button type="button" className="ob-menu__i ob-menu__new" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />عميل جديد</button>
+          {list.map((c) => (
+            <button key={c.id} type="button" role="option" className="ob-menu__i" onClick={() => { onPick(c.id); p.setOpen(false) }}>
+              <span style={{ flex: 1 }}>{c.ar}</span><small className="num">{c.cash ? 'فاتورة مبسطة' : c.vat}</small>
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  )
+}
+
+function ItemPicker({ l, onPick, onFree, disabled, bad }) {
+  const p = usePop()
+  const [q, setQ] = useState('')
+  const list = ITEMS.filter((i) => !q.trim() || i.ar.includes(q.trim()) || i.code.toLowerCase().includes(q.trim().toLowerCase()))
+  return (
+    <span className="ob-picker ob-picker--block" ref={p.ref} style={{ minWidth: 0 }}>
+      <button type="button" disabled={disabled} className={`ob-in ob-in--btn${l.ar ? '' : ' is-ph'}${bad ? ' is-bad' : ''}`}
+        aria-haspopup="listbox" aria-expanded={p.open} aria-label="بند الفاتورة" onClick={p.toggle}>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.ar || 'اختر الصنف'}</span><Ico.chevron size={16} />
+      </button>
+      {p.open && (
+        <div className="ob-menu" role="listbox" style={{ width: 340, maxWidth: 'calc(100vw - 32px)', maxHeight: 320, overflow: 'auto' }}>
+          <label className="search" style={{ marginBottom: 6 }}><Ico.search size={20} />
+            <input autoFocus value={q} placeholder="ابحث أو اكتب بندًا حرًا" onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && q.trim() && list.length === 0) { onFree(q.trim()); p.setOpen(false) } }} /></label>
+          <button type="button" className="ob-menu__i ob-menu__new" onClick={() => toast.info('صنف جديد', { sub: 'بيفتح فورم الصنف الجديد' })}><Ico.plus size={20} />صنف جديد</button>
+          {q.trim() && list.length === 0 && (
+            <button type="button" className="ob-menu__i" onClick={() => { onFree(q.trim()); p.setOpen(false) }}>استخدم «{q.trim()}» كبند حر</button>
+          )}
+          {list.map((i) => (
+            <button key={i.code} type="button" role="option" className="ob-menu__i" onClick={() => { onPick(i.code); p.setOpen(false); setQ('') }}>
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.ar}</span><small><Amt v={i.price} /></small>
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  )
+}
+
+function TaxCell({ l, setLine, disabled, bad }) {
+  const opts = DATA.taxRates.map((t) => ({ id: t.id, label: t.ar }))
+  const rate = DATA.rateOf(l.tax)
+  return (
+    <div style={{ display: 'grid', gap: 4 }}>
+      <QuietSelect value={l.tax} options={opts} onChange={(v) => setLine(l.key, { tax: v, vatex: '' })}
+        className="ob-taxq" label="" display={<span className="num">{rate}%</span>} disabled={disabled} />
+      {DATA.needsVatex(l.tax) && (
+        <QuietSelectBox value={l.vatex} disabled={disabled} bad={bad} placeholder="كود الإعفاء" label="كود الإعفاء المطلوب من الهيئة"
+          onChange={(v) => setLine(l.key, { vatex: v })} options={DATA.vatexFor(l.tax).map((x) => ({ id: x.id, label: x.id, sub: x.ar }))} />
+      )}
+    </div>
+  )
+}
+
+/* ============================================================
+   جدول البنود (handoff §5) — ويتحوّل كروت تحت ٩٠٠px
+   ============================================================ */
+function LinesTable({ calc, cols, ro, setLine, delLine, pickItem, move, moving, setMoving, setDrag, dropOn, show, lineErr, vatexErr, stockWarn, incl }) {
+  /* ★ البنود بالعرض (صف) دايمًا على الديسكتوب — حتى لو المنيو مفتوحة
+     أو المساحة ضيقة. بتنزل كروت تحت بعض على الموبايل والتابلت بالطول
+     بس (أقل من ٩٠٠px عرض شاشة) — طلب مهاب ١٩ سبتمبر. */
+  const mq = '(max-width: 899px)'
+  const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(mq).matches)
+  const box = useRef(null)
+  /* مساحة ضيقة على الديسكتوب (المنيو مفتوحة/شاشة ١٠٢٤): الصف بيفضل بالعرض
+     وكل خانة جنب التانية — بس الأعمدة الثابتة بتصغر شوية عشان الوصف ياخد مساحة. */
+  const [tight, setTight] = useState(false)
+  useEffect(() => {
+    const el = box.current
+    if (!el || narrow) return
+    const r = new ResizeObserver(([e]) => setTight(e.contentRect.width < 960))
+    r.observe(el)
+    return () => r.disconnect()
+  }, [narrow])
+  useEffect(() => {
+    const m = window.matchMedia?.(mq)
+    if (!m) return
+    const on = () => setNarrow(m.matches)
+    on(); m.addEventListener('change', on)
+    return () => m.removeEventListener('change', on)
+  }, [])
+  const touch = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+
+  const msgs = (l) => {
+    const out = []
+    if (show && lineErr(l)) out.push({ err: true, t: 'أدخل سعر الوحدة' })
+    if (show && vatexErr(l)) out.push({ err: true, t: 'البند المعفي أو الصفري محتاج كود إعفاء من الهيئة' })
+    if (stockWarn(l)) out.push({ err: false, t: 'الكمية أكبر من المتاح في المستودع' })
+    return out
+  }
+  const msgEl = (m, k) => (
+    <span key={k} className="ob-emsg" style={m.err ? undefined : { color: '#B45309' }}><Ico.alert size={16} />{m.t}</span>
+  )
+  const delBtn = (l) => !ro && <button type="button" className="ob-hbtn ob-hbtn--del" aria-label="إزالة" onClick={() => delLine(l.key)}><Ico.close size={16} /></button>
+  const handle = (l, i, n, withDel = true) => (
+    <div className="ob-row" style={{ gap: 2, flexWrap: 'nowrap' }}>
+      <span className="ob-muted num" style={{ fontSize: 12.5, minWidth: 16 }}>{i + 1}</span>
+      {!ro && <>
+        <button type="button" className="ob-hbtn" aria-label="تحريك البند" draggable={!touch}
+          onDragStart={() => setDrag(l.key)} onDragEnd={() => setDrag(null)}
+          onClick={() => setMoving(moving === l.key ? null : l.key)} style={{ cursor: 'grab' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.8" /><circle cx="15" cy="6" r="1.8" /><circle cx="9" cy="12" r="1.8" /><circle cx="15" cy="12" r="1.8" /><circle cx="9" cy="18" r="1.8" /><circle cx="15" cy="18" r="1.8" /></svg>
+        </button>
+        {withDel && delBtn(l)}
+      </>}
+      {moving === l.key && !ro && (
+        <span className="ob-row" style={{ gap: 2 }}>
+          <button type="button" className="ob-hbtn" aria-label="لأعلى" disabled={i === 0} onClick={() => move(l.key, -1)}><Ico.arrowUp size={16} /></button>
+          <button type="button" className="ob-hbtn" aria-label="لأسفل" disabled={i === n - 1} onClick={() => move(l.key, 1)}><Ico.arrowDown size={16} /></button>
+        </span>
+      )}
+    </div>
+  )
+  const price = (l) => (
+    <div>
+      <span className={`ob-in n${show && lineErr(l) ? ' is-bad' : ''}`} style={{ width: '100%' }}>
+        <input inputMode="decimal" value={l.price} disabled={ro} placeholder="0.00" aria-label="سعر الوحدة" onChange={(e) => setLine(l.key, { price: e.target.value })} />
+      </span>
+      {itemOf(l.code) && <div className="ob-sub ob-muted" style={{ fontSize: 11.5, marginTop: 2 }}>آخر بيع: <Amt v={itemOf(l.code).price} /></div>}
+    </div>
+  )
+  const qty = (l) => (
+    <span className="ob-in n" style={{ width: '100%' }}>
+      <input inputMode="decimal" value={l.qty} disabled={ro} aria-label="الكمية" onChange={(e) => setLine(l.key, { qty: e.target.value })} />
+    </span>
+  )
+
+  if (narrow) {
+    return (
+      <div ref={box} style={{ display: 'grid', gap: 10 }}>
+        {calc.per.map((l, i) => (
+          <div key={l.key} className="ob-card" style={{ padding: '12px 14px', display: 'grid', gap: 10 }}
+            onDragOver={(e) => e.preventDefault()} onDrop={() => dropOn(l.key)}>
+            <div className="ob-row" style={{ flexWrap: 'nowrap' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <ItemPicker l={l} disabled={ro} bad={show && lineErr(l)} onPick={(c) => pickItem(l.key, c)} onFree={(t) => setLine(l.key, { ar: t, code: '' })} />
+              </div>
+              {handle(l, i, calc.per.length)}
+            </div>
+            <input className="fld__i" value={l.desc} disabled={ro} placeholder="الوصف" onChange={(e) => setLine(l.key, { desc: e.target.value })} />
+            <div className="ob-row" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
+              <label className="fld" style={{ flex: '0 0 auto' }}><span className="ob-lbl">الكمية</span>{qty(l)}</label>
+              <label className="fld" style={{ flex: 1 }}><span className="ob-lbl">سعر الوحدة</span>{price(l)}</label>
+            </div>
+            <div className="ob-row" style={{ justifyContent: 'space-between' }}>
+              <span className="ob-row" style={{ gap: 4 }}><span className="ob-muted" style={{ fontSize: 13 }}>الضريبة</span><TaxCell l={l} setLine={setLine} disabled={ro} bad={show && vatexErr(l)} /></span>
+              <Amt v={l.amount} className="ob-strong" />
+            </div>
+            {msgs(l).map((m, k) => msgEl(m, k))}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div ref={box} className="ob-tblwrap">
+      <table className="ob-tbl ob-lines">
+        <thead>
+          <tr>
+            <th style={{ width: 72 }}>#</th>
+            {cols.img && <th style={{ width: 44 }}><span className="ob-sr">الصورة</span></th>}
+            <th style={{ width: tight ? '28%' : '32%' }}>بند الفاتورة</th>
+            <th>الوصف</th>
+            <th style={{ width: tight ? 80 : 96 }}>الكمية</th>
+            <th style={{ width: tight ? 118 : 140 }}>سعر الوحدة</th>
+            {cols.dpc && <th style={{ width: 80 }}>الخصم %</th>}
+            {cols.acct && <th style={{ width: 200 }}>الحساب</th>}
+            <th style={{ width: 72 }}>الضريبة</th>
+            {cols.amt && <th className="n" style={{ width: tight ? 112 : 140 }}>المبلغ{incl === 'in' ? ' شامل' : ''}</th>}
+            {!ro && <th style={{ width: 56 }}><span className="ob-sr">إزالة</span></th>}
+          </tr>
+        </thead>
+        <tbody>
+          {calc.per.map((l, i) => {
+            const m = msgs(l)
+            const span = 6 + (ro ? 0 : 1) + (cols.img ? 1 : 0) + (cols.dpc ? 1 : 0) + (cols.acct ? 1 : 0) + (cols.amt ? 1 : 0) - 1
+            return [
+              <tr key={l.key} className={moving === l.key ? 'is-sel' : ''} onDragOver={(e) => e.preventDefault()} onDrop={() => dropOn(l.key)}>
+                <td>{handle(l, i, calc.per.length, false)}</td>
+                {cols.img && <td><span style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--surface-sunken)', display: 'grid', placeItems: 'center', color: 'var(--ink-muted)' }}><Ico.box size={16} /></span></td>}
+                <td>
+                  <ItemPicker l={l} disabled={ro} bad={show && lineErr(l) && !l.ar} onPick={(c) => pickItem(l.key, c)} onFree={(t) => setLine(l.key, { ar: t, code: '' })} />
+                  {cols.unit && l.unit && <div className="ob-sub ob-muted" style={{ fontSize: 11.5 }}>الوحدة: {l.unit}</div>}
+                </td>
+                <td><input className="fld__i" style={{ width: '100%', minWidth: 110 }} value={l.desc} disabled={ro} placeholder="الوصف" aria-label="الوصف" onChange={(e) => setLine(l.key, { desc: e.target.value })} /></td>
+                <td>{qty(l)}</td>
+                <td>{price(l)}</td>
+                {cols.dpc && <td><span className="ob-in n" style={{ width: 72 }}><input inputMode="decimal" value={l.dpc} disabled={ro} aria-label="الخصم %" onChange={(e) => setLine(l.key, { dpc: e.target.value })} /></span></td>}
+                {cols.acct && <td><QuietSelectBox value={l.acct} disabled={ro} label="الحساب" placeholder="حساب الإيراد" onChange={(v) => setLine(l.key, { acct: v })} options={DATA.accountsOf('revenue').map((x) => ({ id: x.id, label: x.ar }))} /></td>}
+                <td><TaxCell l={l} setLine={setLine} disabled={ro} bad={show && vatexErr(l)} /></td>
+                {cols.amt && <td className="n"><Amt v={l.amount} /></td>}
+                {!ro && <td className="ob-lines__del">{delBtn(l)}</td>}
+              </tr>,
+              m.length > 0 && (
+                <tr key={l.key + 'm'} className="rowmsg"><td /><td colSpan={span} style={{ height: 'auto', paddingTop: 0, paddingBottom: 10 }}>
+                  {m.map((x, k) => msgEl(x, k))}
+                </td></tr>
+              ),
+            ]
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }

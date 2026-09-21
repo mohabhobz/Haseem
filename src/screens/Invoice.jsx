@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { AppShell, CurrencyNote } from '../components/layout.jsx'
+import { AppShell, PageHeader } from '../components/layout.jsx'
+import { InvChips, Chip, PaymentModal } from '../components/ob.jsx'
 import { Ico, Riyal } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
-import { STATUS, fmtMoney, fmtDate, daysFrom } from '../lib/format.js'
+import { STATUS, fmtMoney, fmtDate, daysFrom, dayAr } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { useDoc } from '../lib/store.js'
 import { getBrand } from '../lib/brand.js'
@@ -91,6 +92,7 @@ export default function Invoice() {
      هتخرج. أمر الشراء وفاتورة المورد والعرض كلهم ليهم معاينة.
      دلوقتي نفس المعاينة هنا كمان. */
   const [preview, setPreview] = useState(false)
+  const [payOpen, setPayOpen] = useState(false)
 
   /* كل أمر بيتنادى بمفتاحه. مكان الاستدعاء واحد، فالمطوّر بيربط
      من `lib/actions.js` مش من هنا. */
@@ -121,7 +123,7 @@ export default function Invoice() {
     if (v.zatca === 'bad')    return ACT.resubmitZatca('invoices', v)
     if (v.status === 'draft') return ACT.issueDoc('invoices', v)
     if (v.status === 'paid')  return ACT.sendEmail('invoices', v)
-    return ACT.recordPayment(v)
+    return setPayOpen(true)
   }
 
   if (!v) {
@@ -147,34 +149,25 @@ export default function Invoice() {
 
   let dueLine = null
   if (['issued', 'partial', 'overdue'].includes(v.status) && d !== null) {
-    if (d < 0) dueLine = { t: `متأخرة ${Math.abs(d)} يوم`, cls: ' is-late' }
+    if (d < 0) dueLine = { t: `متأخرة ${dayAr(Math.abs(d))}`, cls: ' is-late' }
     else if (d === 0) dueLine = { t: 'تستحق النهاردة', cls: ' is-soon' }
-    else dueLine = { t: `تستحق خلال ${d} يوم`, cls: d <= 7 ? ' is-soon' : '' }
+    else dueLine = { t: `تستحق خلال ${dayAr(d)}`, cls: d <= 7 ? ' is-soon' : '' }
   }
 
   return (
     <AppShell>
-      {/* ---------- رأس المستند ---------- */}
-      <div className="dochead">
-        <button className="dochead__back" onClick={() => nav('/sales/invoices')}>
-          <Ico.back size={16} />فواتير المبيعات
-        </button>
-        <CurrencyNote />
-        <div className="dochead__row">
-          <div className="dochead__id">
-            <h1 className="dochead__no">{v.no}</h1>
-            <StateTags v={v} />
-          </div>
-          <div className="dochead__act">
-            {prim && (
-              <button className={`btn btn--${prim.tone === 'crit' ? 'danger2' : 'primary'}`}
-                onClick={runPrimary}>
-                <prim.Ic size={16} />{prim.label}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* ---------- رأس المستند — PageHeader الموحّد (Option B) ---------- */}
+      <PageHeader back="/sales/invoices" title={<span className="num">{v.no}</span>}
+        chip={<><InvChips v={v} />{v.zatca === 'ok' && <Chip tone="zatca">الهيئة قبلتها</Chip>}</>}
+        sub={<>{v.c.ar}{dueLine && <> · <span style={dueLine.cls === ' is-late' ? { color: '#B91C1C' } : undefined}>{dueLine.t}</span></>}</>}
+        actions={<>
+          {v.zatca === 'ok' && <button type="button" className="btn" onClick={() => run('pdf')}><Ico.download size={20} />PDF</button>}
+          {prim && (
+            <button type="button" className={`btn ${prim.tone === 'crit' ? 'btn--danger2' : 'btn--primary'}`} onClick={runPrimary}>
+              <prim.Ic size={20} />{prim.label}
+            </button>
+          )}
+        </>} />
 
       <div className="docgrid">
         {/* ================= المستند ================= */}
@@ -397,6 +390,7 @@ export default function Invoice() {
         </aside>
       </div>
 
+      {payOpen && <PaymentModal v={v} onClose={() => setPayOpen(false)} />}
       {preview && (
         <PrintPreview onClose={() => setPreview(false)} doc={{
           no: v.no, date: v.date, due: v.due, party: v.c,

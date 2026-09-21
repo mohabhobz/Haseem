@@ -1,12 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { AppShell, CurrencyNote, Tabs } from '../components/layout.jsx'
+import { AppShell, CurrencyNote, Tabs , PageHeader } from '../components/layout.jsx'
+import { Chip, Amt } from '../components/ob.jsx'
 import { DataTable } from '../components/table.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR, Money, DocNo, StatusCell } from '../components/data.jsx'
 import { fmtDate, fmtMoney, daysFrom, TODAY } from '../lib/format.js'
 import { useDoc } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
+import { DateField } from '../components/datefield.jsx'
 import * as DATA from '../data/mock.js'
 
 /* ============================================================
@@ -107,31 +109,15 @@ export default function Customer() {
 
   return (
     <AppShell>
-      <div className="dochead">
-        <button className="dochead__back" onClick={() => nav('/sales/customers')}>
-          <Ico.back size={16} />العملاء
-        </button>
-        <CurrencyNote />
-        <div className="dochead__row">
-          <div className="dochead__id">
-            <h1 className="dochead__no dochead__no--ar">{c.ar}</h1>
-            <span className="doc__tags">
-              <span className={`kind kind--${b2b ? 'product' : 'service'}`}>
-                {b2b ? 'منشأة' : 'فرد'}
-              </span>
-              {!vatOk && b2b && <span className="st st--attention">رقم ضريبي غير صالح</span>}
-              {late > 0 && <span className="st st--critical">متأخر {fmtMoney(late)}</span>}
-              {bal <= 0.009 && <span className="st st--positive">الحساب مقفول</span>}
-            </span>
-            <span className="dochead__sub num">{c.id}{c.en ? ` · ${c.en}` : ''}</span>
-          </div>
-          <div className="dochead__act">
-            <button className="btn btn--primary" onClick={() => run('inv')}>
-              <Ico.plus size={16} />فاتورة جديدة
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader back="/sales/customers" title={c.ar}
+        chip={<span className="ob-chips">
+          <Chip tone="draft">{b2b ? 'منشأة' : 'فرد'}</Chip>
+          {!vatOk && b2b && <Chip tone="warn">رقم ضريبي غير صالح</Chip>}
+          {late > 0 && <Chip tone="err">متأخر <Amt v={late} /></Chip>}
+          {bal <= 0.009 && <Chip tone="ok">الحساب مقفول</Chip>}
+        </span>}
+        sub={<span className="num">{c.id}{c.en ? ` · ${c.en}` : ''}</span>}
+        actions={<button type="button" className="btn btn--primary" onClick={() => run('inv')}><Ico.plus size={20} />فاتورة جديدة</button>} />
 
       <div className="docgrid">
         <div className="form">
@@ -220,7 +206,7 @@ export default function Customer() {
                     )}
 
                     <p className="fnote fnote--quiet">
-                      المجموع <b>{fmtMoney(bal)}</b> ر.س — نفس الرقم اللي في حساب الذمم المدينة
+                      المجموع <b><Amt v={bal} /></b> — نفس الرقم اللي في حساب الذمم المدينة
                       في <button className="linkish" onClick={() => nav('/reports/trial-balance')}>ميزان المراجعة</button>.
                     </p>
                   </>
@@ -302,14 +288,8 @@ export default function Customer() {
               </div>
 
               <div className="frow frow--2">
-                <label className="fld">
-                  <span className="fld__l">من تاريخ</span>
-                  <input className="fld__i" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-                </label>
-                <label className="fld">
-                  <span className="fld__l">إلى تاريخ</span>
-                  <input className="fld__i" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-                </label>
+                <DateField label="من تاريخ" value={from} onChange={setFrom} />
+                <DateField label="إلى تاريخ" value={to} onChange={setTo} />
               </div>
 
               <div className="tablewrap" style={{ marginTop: 16 }}>
@@ -434,7 +414,7 @@ export default function Customer() {
             <div className="rail__v"><SAR v={bal} dec /></div>
             <span className={`rail__due${late > 0 ? ' is-late' : ''}`}>
               {bal <= 0.009 ? 'الحساب مقفول — مفيش مستحقات'
-                : late > 0 ? `منها ${fmtMoney(late)} ر.س متأخرة`
+                : late > 0 ? <>منها <Amt v={late} /> متأخرة</>
                 : 'كلها لسه في مواعيدها'}
             </span>
             {sold > 0 && (

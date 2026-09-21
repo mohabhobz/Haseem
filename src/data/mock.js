@@ -50,7 +50,7 @@ import { TODAY as FMT_TODAY } from '../lib/format.js'
     { no:'INV-027121', prj:'PRJ-014', c:cust(1),  date:'2026-07-18', due:'2026-07-28', total: 84300.00, paid:    0.00, status:'overdue', zatca:'ok',  overdueDays:20 },
     { no:'INV-027120', c:cust(2),  date:'2026-08-11', due:'2026-09-10', total:  5780.50, paid: 5780.50, status:'paid',    zatca:'bad', zatcaReason:'الرقم الضريبي للعميل غير صالح' },
     { no:'INV-027119', prj:'PRJ-012', c:cust(3),  date:'2026-08-09', due:'2026-09-23', total: 23900.00, paid:14340.00, status:'partial', zatca:'ok'  },
-    { no:'INV-027118', prj:'PRJ-013', c:cust(4),  date:'2026-08-06', due:'2026-09-05', total:  1240.00, paid:    0.00, status:'issued',  zatca:'ok'  },
+    { no:'INV-027118', prj:'PRJ-013', rec:'REC-702576', c:cust(4),  date:'2026-08-06', due:'2026-09-05', total:  1240.00, paid:    0.00, status:'issued',  zatca:'ok'  },
     { no:'INV-027117', c:cust(5),  date:'2026-08-04', due:null,         total: 46015.75, paid:    0.00, status:'draft',   zatca:null  },
     { no:'INV-027116', c:cust(8),  date:'2026-07-29', due:'2026-09-27', total:  9325.00, paid:    0.00, status:'cancelled', zatca:null },
     { no:'INV-027115', c:cust(6),  date:'2026-07-26', due:'2026-08-10', total: 43110.00, paid:    0.00, status:'overdue', zatca:'ok',  overdueDays:7 },
@@ -218,6 +218,14 @@ export function timelineOf(doc) {
   if (doc.status === 'cancelled') t.push({ k: 'void', ar: 'اتلغت', date: doc.due || doc.date, who: user.nameAr })
   return t
 }
+
+/* ★ الفواتير المجدولة — Option B (List §6-7): نفس الجدول بشارة «مجدولة»
+   و«التاريخ القادم» في عمود الاستحقاق. */
+export const scheduled = [
+  { no:'REC-702576', c:customers[4], every:'شهريًا', next:'2026-09-06', last:'2026-08-06', total: 1240.00, left: 9 },
+  { no:'REC-702571', c:customers[0], every:'كل ٣ شهور', next:'2026-10-01', last:'2026-07-01', total: 8625.00, left: 3 },
+  { no:'REC-702560', c:customers[7], every:'سنويًا', next:'2027-01-15', last:'2026-01-15', total: 23000.00, left: null },
+]
 
 export const findInvoice = (no) => invoices.find((v) => v.no === no)
 

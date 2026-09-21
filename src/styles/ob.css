@@ -1,0 +1,903 @@
+/* ============================================================
+   HASEEM — Option B · Elevate  (تسليم ١٧ سبتمبر ٢٠٢٦)
+   ------------------------------------------------------------
+   الطبقة دي بتتحمّل **بعد** app.css وهي المرجع للشكل:
+   لو قاعدة هنا بتعارض قاعدة قديمة في app.css، دي اللي بتكسب.
+
+   القواعد العامة (handoff §2):
+   • IBM Plex Sans Arabic بس · عربي 1.7 / لاتيني 1.5
+   • مفيش :hover — الرد بـ:active و:focus-visible
+   • التركيز: برواز #008267 + حلقة ليموني 3px
+   • الليموني في مكانين بس: حلقة التركيز وشريط التنقّل النشط
+   • تحكّم 44px · راديوس 6/8/10/12/16 · مسافات 4…48
+   • أسطح: كارت أبيض / بوكس رمادي / توجل أبيض / منقّط فاضي
+   ============================================================ */
+
+/* ---------- 1. الأساس ---------- */
+html, body { background: var(--surface-page); }
+body {
+  font-family: var(--font-ui);
+  color: var(--ink-base);
+  font-size: 14px;
+  line-height: 1.7;
+}
+:lang(en), .ltr, [dir="ltr"] { line-height: 1.5; }
+h1, h2, h3, h4 { font-family: var(--font-ui); }
+
+.num { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }
+
+/* حلقة تركيز واحدة للمنتج كله */
+:where(button, a, input, select, textarea, [tabindex], [role="button"], [role="option"], [role="menuitem"], [role="checkbox"], [role="switch"], [role="tab"]):focus-visible {
+  outline: none !important;
+  border-color: var(--g-600) !important;
+  box-shadow: 0 0 0 3px var(--lime) !important;
+}
+:where(input, textarea):focus { outline: none; }
+
+/* الحركة: ١٥٠ms للمفاتيح بس (handoff §2) */
+*, *::before, *::after { transition: none !important; animation: none !important; }
+.ob-sw, .ob-sw::after { transition: background-color .15s ease, transform .15s ease !important; }
+.ob-skel { animation: ob-sk 1.2s linear infinite !important; }
+@keyframes ob-sk { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .ob-sw, .ob-sw::after { transition: none !important; }
+  .ob-skel { animation: none !important; }
+}
+
+/* رمز الريال الرسمي: 0.85em · شفافية .55 · جنب الرقم */
+.rs { width: .85em !important; height: .85em !important; opacity: .55; fill: currentColor; flex: none; vertical-align: -0.05em; }
+.ob-ryl { display: inline-flex; align-items: center; gap: 4px; direction: ltr; unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* أيقونات: ١٦ سطري · ٢٠ في الأزرار والتنقّل */
+[dir="rtl"] .ob-dir { transform: scaleX(-1); }
+
+.ob-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- 2. الأزرار ---------- */
+.btn {
+  height: 44px; min-height: 44px; border-radius: 8px; padding: 0 16px;
+  font-size: 14px; font-weight: 500; line-height: 1;
+  border: 1px solid var(--border-control); background: var(--surface-raised); color: var(--ink-base);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap;
+  box-shadow: none; transform: none; cursor: pointer; text-decoration: none;
+}
+.btn svg { width: 20px; height: 20px; flex: none; }
+.btn:active { opacity: .75; transform: none; }
+.btn--primary, .btn--accent, .btn.pri {
+  background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+}
+.btn--outline, .btn--sec, .btn--danger { background: var(--surface-raised); border-color: var(--border-control); color: var(--ink-base); }
+.btn--ghost, .btn--quiet {
+  background: transparent; border-color: transparent; color: var(--accent); font-weight: 500;
+}
+.btn--quiet { color: var(--ink-muted); }
+.btn--danger, .btn--danger-out { color: var(--state-critical); border-color: #FECACA; background: var(--surface-raised); }
+.btn--danger2 { background: var(--state-critical); border-color: var(--state-critical); color: #fff; font-weight: 600; }
+/* الأكشن السياقي في الصف — soft (List §4) */
+.btn--soft { height: 36px; min-height: 36px; background: rgba(0,62,49,.08); border-color: transparent; color: var(--accent); font-weight: 600; padding: 0 12px; position: relative; }
+.btn--soft::before { content: ""; position: absolute; inset: -4px 0; }
+.btn--soft:active { background: rgba(0,62,49,.16); opacity: 1; }
+.btn--sm { height: 36px; min-height: 36px; font-size: 13px; padding: 0 12px; position: relative; }
+.btn--sm::before { content: ""; position: absolute; inset: -4px 0; }
+.btn--icon { width: 44px; padding: 0; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 1; background: var(--surface-sunken); border-color: var(--surface-sunken); color: var(--ink-muted); cursor: not-allowed; }
+.btn--ghost:disabled, .btn--quiet:disabled { background: transparent; border-color: transparent; }
+
+.iconbtn {
+  width: 44px; height: 44px; min-width: 44px; border-radius: 8px; border: 0; background: transparent;
+  color: var(--ink-muted); display: inline-grid; place-items: center; cursor: pointer;
+}
+.iconbtn:active { background: var(--surface-sunken); }
+.iconbtn--danger { color: var(--state-critical); }
+
+/* زرار الشقّين (split) — الراديوس على الأب عشان RTL (دوك ١٨ د) */
+.ob-split { display: inline-flex; position: relative; border-radius: 8px; }
+.ob-split > .btn:first-child { border-start-end-radius: 0; border-end-end-radius: 0; }
+.ob-split > .btn.ob-split__more { width: 44px; padding: 0; border-start-start-radius: 0; border-end-start-radius: 0;
+  border-inline-start: 1px solid rgba(255,255,255,.3); }
+.ob-split > .ob-menu { inset-inline-start: auto; inset-inline-end: 0; min-width: 200px; }
+
+/* رابط-زرار */
+.ob-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px;
+  border: 0; background: transparent; color: var(--accent); font-weight: 600; font-size: 14px; cursor: pointer; }
+.ob-link--quiet { color: var(--ink-muted); font-weight: 500; }
+.ob-link:active { opacity: .75; }
+
+/* ---------- 3. الحقول ---------- */
+.fld__l, .ob-lbl { font-size: 12px; font-weight: 600; color: var(--ink-label); }
+[data-theme="dark"] .fld__l, [data-theme="dark"] .ob-lbl { color: var(--ink-muted); }
+.ob-lbl { display: block; margin-bottom: 6px; }
+.ob-req { color: var(--state-critical); }
+.fld__i, .selx, .datef, .search, .ob-in {
+  height: 44px; min-height: 44px; border: 1px solid var(--border-control); border-radius: 8px;
+  background: var(--surface-field); color: var(--ink-base); font-size: 14px; padding: 0 12px; box-shadow: none;
+}
+.fld__i--area, textarea.fld__i, .ob-ta { height: auto; min-height: 72px; padding: 10px 12px; line-height: 1.7; }
+.fld__i::placeholder, .ob-in::placeholder, .search input::placeholder, textarea::placeholder { color: var(--ink-muted); opacity: 1; }
+.fld__i:focus, .fld__i:focus-visible, .ob-in:focus-within, .search:focus-within, .selx[aria-expanded="true"], .datef.is-open {
+  border-color: var(--g-600) !important; box-shadow: 0 0 0 3px var(--lime) !important; outline: none;
+}
+.fld__i.is-bad, .selx.is-bad, .datef.is-bad, .ob-in.is-bad, .ob-in.err { border-color: #EF4444 !important; }
+.fld__h { font-size: 12px; color: var(--ink-muted); }
+.fld__e, .ob-emsg { font-size: 12.5px; color: var(--state-critical); display: flex; gap: 6px; align-items: center; margin-top: 6px; font-style: normal; }
+.fld__e::before { content: none; }
+.ob-emsg svg { width: 16px; height: 16px; flex: none; }
+.fld__i.n, .ob-in.n input, input.ob-num { text-align: end; direction: ltr; font-variant-numeric: tabular-nums; }
+
+.ob-in { display: flex; align-items: center; gap: 8px; width: 100%; }
+.ob-in input, .ob-in select { border: 0; background: transparent; flex: 1; min-width: 0; width: 0; height: 100%;
+  color: inherit; padding: 0; outline: none; font: inherit; }
+.ob-in input:focus-visible { box-shadow: none !important; }
+.ob-in--btn { cursor: pointer; justify-content: space-between; text-align: start; }
+.ob-in--btn.is-ph { color: var(--ink-muted); }
+.ob-in--sm { height: 38px; min-height: 38px; font-size: 13.5px; }
+.ob-in > svg { color: var(--ink-muted); flex: none; }
+
+.selx { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.selx svg { color: var(--ink-muted); }
+.selx__v.is-ph { color: var(--ink-muted); }
+.datef { display: flex; align-items: center; gap: 8px; }
+.datef .hint { color: var(--ink-muted); }
+
+.search { display: flex; align-items: center; gap: 8px; }
+.search > svg { color: var(--ink-muted); flex: none; }
+.search input { font-size: 14px; }
+.search kbd { display: none; }
+.search__x { width: 32px; height: 32px; border: 0; background: transparent; color: var(--ink-muted); display: grid; place-items: center; position: relative; border-radius: 6px; }
+.search__x::before { content: ""; position: absolute; inset: -6px; }
+
+/* ---------- 4. القوايم المنبثقة ---------- */
+.ob-pop, .ob-menu, .selx__p, .rmenu__p, .datep {
+  background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px;
+  box-shadow: var(--shadow-pop); padding: 6px;
+}
+.ob-menu, .ob-pop { position: absolute; top: calc(100% + 6px); inset-inline-start: 0; min-width: 240px; z-index: 60; }
+.ob-menu.is-up, .ob-pop.is-up { top: auto; bottom: calc(100% + 6px); }
+.ob-menu.is-end, .ob-pop.is-end { inset-inline-start: auto; inset-inline-end: 0; }
+.ob-menu__i, .selx__o, .rmenu__i {
+  width: 100%; min-height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 10px;
+  border: 0; background: transparent; border-radius: 8px; color: var(--ink-base); font-size: 14px; text-align: start; cursor: pointer;
+}
+.ob-menu__i:active, .selx__o:active, .rmenu__i:active, .selx__o.is-hi { background: var(--surface-sunken); }
+.selx__o.is-on { color: var(--accent); font-weight: 600; }
+.ob-menu__i--danger, .rmenu__i--danger { color: var(--state-critical); }
+.ob-menu__i svg, .rmenu__i svg { width: 20px; height: 20px; flex: none; }
+.ob-menu__i small { color: var(--ink-muted); margin-inline-start: auto; }
+.ob-menu hr, .rmenu__sep { border: 0; border-top: 1px solid var(--border-base); margin: 6px 0; }
+.ob-menu__ic { width: 36px; height: 36px; border-radius: 8px; background: var(--surface-sunken); color: var(--accent); display: grid; place-items: center; flex: none; }
+.ob-menu__new { color: var(--accent); font-weight: 600; border-bottom: 1px solid var(--border-base); border-radius: 0; margin-bottom: 4px; }
+.ob-menu__cb { width: 20px; height: 20px; border: 1px solid #B9B1A9; border-radius: 5px; display: grid; place-items: center; color: #fff; flex: none; }
+.ob-menu__cb.on { background: var(--accent); border-color: var(--accent); }
+.ob-menu__h { padding: 8px 10px 10px; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+
+/* ---------- 5. الشارات — نظام واحد (List §5) ---------- */
+.ob-chip, .status__doc {
+  display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap; border: 0; line-height: 1;
+}
+.ob-chip::before, .status__doc::before { content: ""; width: 6px; height: 6px; border-radius: 99px; background: currentColor; opacity: .8; flex: none; }
+.ob-chip--draft,  .status--neutral  .status__doc { background: #E9E5E2; color: var(--ink-label); }
+.ob-chip--warn,   .status--attention .status__doc, .status--info .status__doc { background: #FEF3C7; color: #B45309; }
+.ob-chip--err,    .status--critical .status__doc { background: #FEE2E2; color: #B91C1C; }
+.ob-chip--ok,     .status--positive .status__doc { background: #DCFCE7; color: #15803D; }
+.ob-chip--info { background: #DBEAFE; color: #1D4ED8; }
+.ob-chip--zatca { background: #E6F5F0; color: #005746; }
+[data-theme="dark"] .ob-chip--draft, [data-theme="dark"] .status--neutral .status__doc { background: #2A2622; color: #C9C0B7; }
+[data-theme="dark"] .ob-chip--warn, [data-theme="dark"] .status--attention .status__doc, [data-theme="dark"] .status--info .status__doc { background: #2D2310; color: #F0B35A; }
+[data-theme="dark"] .ob-chip--err, [data-theme="dark"] .status--critical .status__doc { background: #301615; color: #F59A93; }
+[data-theme="dark"] .ob-chip--ok, [data-theme="dark"] .status--positive .status__doc { background: #12291B; color: #6FD49A; }
+[data-theme="dark"] .ob-chip--info { background: #162238; color: #8FB2FF; }
+.status__dot { display: none; }
+.status__label { font-size: inherit; font-weight: inherit; }
+.ob-chips { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+
+/* ---------- 6. التنبيهات والتوست ---------- */
+.ob-alert { border-radius: 8px; padding: 12px 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  font-size: 13.5px; border: 1px solid; }
+.ob-alert svg { width: 20px; height: 20px; flex: none; }
+.ob-alert--err  { background: #FEF2F2; border-color: #FEE2E2; color: #B91C1C; }
+.ob-alert--warn { background: #FFFBEB; border-color: #FEF3C7; color: #B45309; }
+.ob-alert--ok   { background: #F0FDF4; border-color: #DCFCE7; color: #15803D; }
+.ob-alert__t { flex: 1; min-width: 200px; }
+.ob-alert__t b { display: block; font-weight: 600; }
+.ob-alert__t small { display: block; font-size: 12.5px; opacity: .9; }
+.ob-alert__acts { margin-inline-start: auto; display: flex; gap: 6px; }
+[data-theme="dark"] .ob-alert--err { background: #301615; border-color: #4A201D; color: #F59A93; }
+[data-theme="dark"] .ob-alert--warn { background: #2D2310; border-color: #4A3A18; color: #F0B35A; }
+[data-theme="dark"] .ob-alert--ok { background: #12291B; border-color: #1C3D29; color: #6FD49A; }
+
+/* Toast — #23201D · فوق في النص · علامة ليموني (Create §6) */
+.toasts { position: fixed !important; top: 76px !important; bottom: auto !important; left: 50% !important; right: auto !important;
+  transform: translateX(-50%); z-index: 400; display: grid; gap: 8px; width: max-content; max-width: calc(100vw - 32px); }
+.toast { background: #23201D !important; color: #fff !important; border: 0 !important; border-radius: 8px !important;
+  padding: 12px 16px !important; font-size: 14px; display: flex; gap: 10px; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,.18) !important; }
+.toast__ic { color: var(--lime) !important; background: transparent !important; }
+.toast__ic svg { color: var(--lime); }
+.toast--error .toast__ic, .toast--err .toast__ic { color: #FCA5A5 !important; }
+.toast__b, .toast__b * { color: #fff; }
+.toast__b small, .toast__sub { color: #D9D3CE !important; }
+.toast__a { color: var(--lime) !important; background: transparent; border: 0; font-weight: 600; min-height: 44px; padding: 0 8px; }
+.toast__x { color: #D9D3CE !important; width: 44px; height: 44px; }
+
+/* ---------- 7. المودال والدراور ---------- */
+.cfm__scrim, .drawer__scrim, .ob-scrim { background: rgba(35,32,29,.45) !important; backdrop-filter: none !important; }
+.cfm__box { background: var(--surface-raised) !important; border-radius: 16px !important; width: min(480px, calc(100vw - 32px)) !important;
+  padding: 24px !important; box-shadow: 0 20px 60px rgba(0,0,0,.25) !important; border: 0 !important; }
+.cfm__box--form.cfm__box--wide, .cfm__box--wide { width: min(720px, calc(100vw - 32px)) !important; }
+.cfm__t { font-size: 18px !important; font-weight: 600 !important; color: var(--ink-strong) !important; margin: 0 0 6px !important; }
+.cfm__b { font-size: 13.5px !important; color: #524C46 !important; margin: 0 0 16px !important; }
+[data-theme="dark"] .cfm__b { color: var(--ink-muted) !important; }
+.cfm__acts { display: flex !important; gap: 8px !important; justify-content: flex-end !important; }
+@media (max-width: 599px) {
+  .cfm { align-items: end !important; padding: 0 !important; }
+  .cfm__box { width: 100% !important; max-width: none !important; border-radius: 16px 16px 0 0 !important;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+.drawer { background: var(--surface-raised) !important; border-inline-start: 1px solid var(--border-base); box-shadow: var(--shadow-app) !important; }
+.drawer__head { border-bottom: 1px solid var(--border-base); min-height: 64px; }
+.drawer__x { width: 44px; height: 44px; }
+.drawer__foot { border-top: 1px solid var(--border-base); }
+
+.ob-kvl { border: 1px solid var(--border-base); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; font-size: 13.5px; margin-bottom: 16px; }
+.ob-kvl > div { display: flex; justify-content: space-between; gap: 12px; }
+.ob-kvl span { color: var(--ink-muted); }
+.ob-kvl b { color: var(--ink-strong); font-weight: 600; }
+
+/* ---------- 8. الكروت والأسطح ---------- */
+.panel, .ob-card { background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; box-shadow: none; }
+.ob-card { padding: 20px; }
+.ob-card + .ob-card { margin-top: 12px; }
+.ob-divider { height: 1px; background: var(--border-base); margin: 20px 0; border: 0; }
+.ob-box { background: var(--surface-page); border: 1px solid var(--border-base); border-radius: 12px; padding: 12px 16px; }
+.ob-empty { border: 1px dashed var(--border-control); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center;
+  justify-content: space-between; gap: 12px; background: var(--surface-page); flex-wrap: wrap; }
+.ob-empty p { margin: 0; color: var(--ink-muted); font-size: 13px; display: flex; gap: 6px; align-items: center; }
+.ob-empty p svg { width: 16px; height: 16px; }
+.ob-empty.is-err { border-color: #EF4444; border-style: solid; background: #FEF2F2; }
+.ob-empty.is-err p { color: #B91C1C; }
+.ob-emptybig { border: 1px dashed var(--border-control); border-radius: 12px; padding: 40px 24px; text-align: center; background: var(--surface-page); }
+.ob-emptybig > svg { width: 32px; height: 32px; color: var(--ink-muted); }
+.ob-emptybig h3 { margin: 8px 0 4px; font-size: 16px; font-weight: 600; color: var(--ink-strong); }
+.ob-emptybig p { margin: 0 0 16px; color: var(--ink-muted); font-size: 13.5px; }
+.ob-skel { display: block; height: 14px; border-radius: 6px; background: linear-gradient(90deg, #F4F2F0, #E9E5E2, #F4F2F0); background-size: 200% 100%; }
+
+/* عنوان القسم: 15/600 + عدّاد 12.5 رمادي (INV-CREATE-13) */
+.ob-sec > h3, .ob-sech { font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--ink-strong); display: flex; align-items: baseline; gap: 10px; line-height: 1.4; }
+.ob-sec > h3 small, .ob-sech small { font-weight: 400; font-size: 12.5px; color: var(--ink-muted); }
+
+/* ---------- 9. هيدر الصفحة ---------- */
+.ob-ph { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+.ob-ph__l { min-width: 0; }
+.ob-ph__t { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ob-ph h1 { font-weight: 700; font-size: 22px; margin: 0; color: var(--ink-strong); line-height: 1.3; }
+.ob-ph__sub { color: var(--ink-muted); font-size: 13px; margin-top: 2px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.ob-ph__acts { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ob-usage { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-muted); }
+.ob-prog { height: 6px; background: var(--border-base); border-radius: 99px; overflow: hidden; width: 110px; display: block; }
+.ob-prog i { display: block; height: 100%; background: var(--accent); }
+.ob-prog i.is-hi { background: #F59E0B; }
+
+/* PageHeader القديم بياخد نفس المقاسات */
+.pagehead { margin-bottom: 16px; align-items: center; }
+.pagehead__title { font-size: 22px !important; font-weight: 700 !important; color: var(--ink-strong); letter-spacing: 0 !important; line-height: 1.3; }
+.pagehead__sub { font-size: 13px; color: var(--ink-muted); }
+.pagehead__back { width: 44px; height: 44px; border-radius: 8px; border: 1px solid var(--border-control); background: var(--surface-raised); display: grid; place-items: center; }
+
+/* ---------- 10. التابات ---------- */
+.tabs, .ob-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-base); margin-bottom: 16px; overflow-x: auto; }
+.tab, .ob-tabs > button { min-height: 44px; padding: 0 14px; border: 0; background: transparent; color: var(--ink-muted);
+  font-size: 14px; font-weight: 500; position: relative; white-space: nowrap; cursor: pointer; }
+.tab.active, .ob-tabs > button[aria-selected="true"] { color: var(--ink-strong); font-weight: 600; }
+.tab.active::after, .ob-tabs > button[aria-selected="true"]::after { content: ""; position: absolute; inset-inline: 8px; bottom: -1px; height: 2px;
+  background: var(--accent); border-radius: 0; left: auto; right: auto; }
+.tab .count, .ob-tabs small { margin-inline-start: 6px; background: var(--surface-sunken); border-radius: 99px; padding: 1px 8px; font-size: 11.5px;
+  color: var(--ink-label); font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
+.tab.active .count, .ob-tabs > button[aria-selected="true"] small { background: var(--accent); color: #fff; }
+
+/* ---------- 11. الجدول ---------- */
+.ob-tbl { width: 100%; border-collapse: collapse; font-size: 14px; color: var(--ink-base); }
+.ob-tbl th { padding: 10px; text-align: start; font-size: 12px; font-weight: 600; color: var(--ink-muted);
+  border-bottom: 1px solid var(--border-base); background: var(--surface-page); white-space: nowrap; }
+.ob-tbl th:first-child { border-start-start-radius: 8px; }
+.ob-tbl th:last-child { border-start-end-radius: 8px; }
+.ob-tbl td { padding: 8px 10px; border-bottom: 1px solid var(--border-faint); vertical-align: middle; height: 64px; }
+.ob-tbl th.n, .ob-tbl td.n { text-align: end; }
+.ob-tbl td.n { font-variant-numeric: tabular-nums; }
+.ob-tbl tr[data-row] { cursor: pointer; }
+.ob-tbl tr[data-row]:active td { background: var(--surface-page); }
+.ob-tbl tr.is-sel td { background: var(--surface-sunken); }
+.ob-tbl tr.is-late td { background: #FFFAF9; }
+[data-theme="dark"] .ob-tbl tr.is-late td { background: #241A18; }
+.ob-tbl tr.is-late td:first-child { position: relative; }
+/* (اتشال ٢٠ سبتمبر بطلب مهاب — مفيش خط أحمر جانبي في السيستم) */
+.ob-tbl tr.is-draft td { color: var(--ink-muted); }
+.ob-tbl .ob-sub { font-size: 12px; color: var(--ink-muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.ob-tbl .ob-strong { font-weight: 600; color: var(--ink-strong); }
+.ob-tbl .ob-acts { display: flex; gap: 4px; justify-content: flex-end; align-items: center; }
+.ob-tblwrap { overflow-x: auto; }
+
+/* الجدول القديم (.dt) بياخد نفس اللغة */
+.dt thead th { font-size: 12px !important; font-weight: 600 !important; color: var(--ink-muted) !important; background: var(--surface-page) !important;
+  border-bottom: 1px solid var(--border-base) !important; padding-block: 10px !important; }
+.dt tbody td { border-bottom: 1px solid var(--border-faint) !important; }
+.dt tbody tr.selected { background: var(--surface-sunken) !important; }
+.dt tbody tr.selected td:first-child { box-shadow: none !important; }
+
+/* Checkbox: زرار 44 · مربّع 20 */
+.cbwrap, .ob-cbw { width: 44px; height: 44px; display: grid; place-items: center; border: 0; background: transparent; padding: 0; margin: 0; cursor: pointer; }
+.cb, .ob-cb { width: 20px; height: 20px; border: 1px solid #B9B1A9; border-radius: 5px; display: grid; place-items: center; color: #fff; background: var(--surface-field); }
+.cb.on, .ob-cb.on { background: var(--accent); border-color: var(--accent); }
+.cb.on::after { content: none; }
+.ob-cb svg { width: 14px; height: 14px; }
+
+/* Pager */
+.ob-pager, .pager { display: flex; align-items: center; gap: 8px; padding: 12px 0 0; font-size: 13px; color: var(--ink-muted); flex-wrap: wrap; border: 0; }
+.ob-pager__sp { flex: 1; }
+
+/* Bulk bar */
+.ob-bulk { display: flex; gap: 8px; align-items: center; background: var(--accent); color: #fff; border-radius: 8px; padding: 6px 8px; padding-inline-start: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.ob-bulk b { margin-inline-end: auto; font-weight: 600; }
+.ob-bulk .btn { height: 36px; min-height: 36px; background: transparent; color: #fff; border-color: rgba(255,255,255,.4); position: relative; }
+.ob-bulk .btn::before { content: ""; position: absolute; inset: -4px 0; }
+.ob-bulk .btn:disabled { color: rgba(255,255,255,.55); background: transparent; border-color: rgba(255,255,255,.2); }
+.ob-bulk .iconbtn { color: #fff; }
+
+/* Filter row */
+.ob-fbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.ob-fbar .search { flex: 1; min-width: 220px; max-width: 360px; }
+.ob-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.ob-pills > button { height: 36px; border: 1px solid var(--border-control); border-radius: 99px; background: var(--surface-raised); padding: 0 12px;
+  font-size: 13px; color: var(--ink-label); display: inline-flex; align-items: center; gap: 6px; position: relative; cursor: pointer; }
+[data-theme="dark"] .ob-pills > button { color: var(--ink-base); }
+.ob-pills > button::before { content: ""; position: absolute; inset: -4px 0; }
+.ob-pills > button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
+.ob-pills > button i { width: 7px; height: 7px; border-radius: 99px; display: inline-block; }
+.ob-pills > button[aria-pressed="true"] i { background: var(--lime) !important; }
+.ob-pills > button small { opacity: .8; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+/* Quiet inline select — «التسمية: القيمة ▾» */
+.ob-qsel { min-height: 44px; border: 0; background: transparent; color: var(--ink-base); font-size: 13px; display: inline-flex; align-items: center;
+  gap: 4px; padding: 0 8px; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.ob-qsel > span { color: var(--ink-muted); }
+.ob-qsel > svg { color: var(--ink-muted); width: 16px; height: 16px; }
+.ob-qsel:active { background: var(--surface-sunken); }
+.ob-picker { position: relative; display: inline-flex; }
+.ob-picker--block { display: flex; flex-direction: column; }
+
+/* ---------- 12. مفتاح · مقسّم · توجل بوكس ---------- */
+.ob-sw { width: 40px; height: 24px; border-radius: 99px; background: var(--border-control); position: relative; flex: none; display: inline-block; }
+.ob-sw::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 18px; height: 18px; border-radius: 99px; background: #fff; }
+.ob-sw.on { background: var(--accent); }
+.ob-sw.on::after { transform: translateX(16px); }
+[dir="rtl"] .ob-sw.on::after { transform: translateX(-16px); }
+
+.ob-seg { display: inline-flex; align-self: flex-start; border: 1px solid var(--border-control); border-radius: 8px; overflow: hidden; height: 44px; max-width: 100%; }
+.ob-seg > button { border: 0; background: var(--surface-raised); padding: 0 14px; font-size: 13px; color: var(--ink-label); border-inline-start: 1px solid var(--border-control); cursor: pointer; white-space: nowrap; }
+[data-theme="dark"] .ob-seg > button { color: var(--ink-base); }
+.ob-seg > button:first-child { border-inline-start: 0; }
+.ob-seg > button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 600; }
+.ob-seg--fill { display: flex; }
+.ob-seg--fill > button { flex: 1; }
+
+.ob-disc { border: 1px solid var(--border-base); border-radius: 12px; background: var(--surface-raised); }
+.ob-disc + .ob-disc { margin-top: 8px; }
+.ob-disc > button { width: 100%; background: transparent; border: 0; padding: 0 14px; display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; font-size: 14px; font-weight: 600; color: var(--ink-strong); min-height: 48px; text-align: start; cursor: pointer; }
+.ob-disc > button > svg { width: 16px; height: 16px; color: var(--ink-muted); }
+.ob-disc > button small { font-weight: 400; color: var(--ink-muted); font-size: 12.5px; flex: 1; text-align: end; }
+.ob-disc__body { padding: 10px 14px 14px; border-top: 1px solid var(--border-faint); display: grid; gap: 10px; }
+
+/* Lock row (قفل الباقة) */
+.ob-lock { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; border: 1px solid var(--border-base); background: var(--surface-sunken);
+  border-radius: 8px; padding: 8px 12px; font-size: 13px; color: var(--ink-label); min-height: 44px; }
+[data-theme="dark"] .ob-lock { color: var(--ink-base); }
+.ob-lock svg { color: var(--ink-muted); width: 16px; height: 16px; }
+.ob-lock .ob-link { margin-inline-start: auto; min-height: 36px; }
+
+/* ---------- 13. الهيكل: التوب بار والسايدبار ---------- */
+.ob-shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--surface-page); }
+.ob-top { height: 64px; background: var(--surface-raised); border-bottom: 1px solid var(--border-base); display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; position: sticky; top: 0; z-index: 70; }
+.ob-top__logo { width: 40px; height: 40px; border-radius: 10px; display: block; flex: none; }
+.ob-top__sp { flex: 1; }
+.ob-top__menu { display: none; }
+.ob-ws { height: 44px; border: 1px solid var(--border-base); border-radius: 8px; padding-inline: 6px 12px; display: flex; align-items: center; gap: 10px;
+  background: var(--surface-raised); color: inherit; text-align: start; cursor: pointer; max-width: 280px; }
+.ob-ws__av { width: 30px; height: 30px; border-radius: 6px; background: #524C46; color: #fff; display: grid; place-items: center; font-size: 11px; font-weight: 700; overflow: hidden; flex: none; }
+.ob-ws__av img { width: 100%; height: 100%; object-fit: cover; }
+.ob-ws__t { display: flex; flex-direction: column; min-width: 0; }
+.ob-ws__n { font-weight: 600; font-size: 13px; line-height: 1.3; color: var(--ink-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-ws__st { font-size: 11px; color: var(--ink-muted); display: flex; align-items: center; gap: 5px; line-height: 1.3; white-space: nowrap; }
+.ob-ws__st i { width: 7px; height: 7px; border-radius: 99px; background: #F59E0B; flex: none; }
+.ob-ws__st i.is-ok { background: #15803D; }
+.ob-ws__u { width: 32px; height: 32px; border-radius: 99px; background: var(--accent); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 600; overflow: hidden; flex: none; }
+.ob-ws__u img { width: 100%; height: 100%; object-fit: cover; }
+.ob-qa { min-width: 340px; padding: 8px; }
+.ob-qa__h { padding: 8px 10px 12px; border-bottom: 1px solid var(--border-base); margin-bottom: 6px; }
+.ob-qa__h b { display: block; font-size: 16px; color: var(--ink-strong); font-weight: 600; }
+.ob-qa__h span { font-size: 12.5px; color: var(--ink-muted); }
+.ob-qa .ob-menu__i { min-height: 56px; gap: 14px; }
+.ob-qa .ob-menu__ic { width: 44px; height: 44px; border-radius: 10px; }
+.ob-qa .ob-menu__i > span:last-child { display: flex; flex-direction: column; line-height: 1.4; }
+.ob-qa .ob-menu__i small { font-size: 12px; color: var(--ink-muted); margin: 0; }
+
+.ob-body { display: flex; align-items: stretch; flex: 1; min-height: 0; }
+.ob-side { width: 260px; flex: none; background: var(--nav-bg); border-inline-end: 1px solid var(--border-base); padding: 12px 10px;
+  display: flex; flex-direction: column; gap: 2px; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+.ob-side__nv { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 8px; border: 0; background: transparent;
+  color: var(--ink-label); font-size: 14px; width: 100%; text-align: start; position: relative; text-decoration: none; cursor: pointer; flex: none; }
+[data-theme="dark"] .ob-side__nv { color: var(--nav-ink); }
+.ob-side__nv > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ob-side__nv > svg { width: 20px; height: 20px; flex: none; }
+.ob-side__nv .ob-side__chev { width: 16px; height: 16px; color: var(--ink-muted); }
+.ob-side__nv.is-grp { color: var(--ink-base); font-weight: 500; }
+.ob-side__nv.is-open { background: var(--surface-sunken); }
+.ob-side__nv:active { background: var(--surface-sunken); }
+.ob-side__nv.is-on, .ob-side__nv.is-on.is-open { background: var(--nav-active-bg); color: #fff; font-weight: 600; }
+.ob-side__nv.is-on .ob-side__chev { color: #fff; }
+.ob-side__nv.is-on::after { content: ""; position: absolute; inset-inline-start: 0; top: 12px; bottom: 12px; width: 4px; background: var(--lime);
+  border-start-end-radius: 2px; border-end-end-radius: 2px; }
+.ob-side__sub { display: flex; flex-direction: column; gap: 2px; padding-inline-start: 44px; margin: 2px 0 6px; }
+.ob-side__sub a { min-height: 40px; display: flex; align-items: center; padding: 0 12px; border-radius: 8px; color: var(--ink-label); font-size: 13.5px; text-decoration: none; position: relative; }
+[data-theme="dark"] .ob-side__sub a { color: var(--nav-ink); }
+.ob-side__sub a::before { content: ""; position: absolute; inset: -2px 0; }
+.ob-side__sub a.is-on { background: var(--surface-sunken); color: var(--accent); font-weight: 600; }
+[data-theme="dark"] .ob-side__sub a.is-on { color: #7FD6BE; }
+.ob-side__sub a:active { background: var(--surface-sunken); }
+.ob-side__foot { margin-top: auto; display: flex; gap: 6px; padding-top: 12px; border-top: 1px solid var(--border-base); }
+.ob-side__foot .btn { width: 44px; padding: 0; }
+
+/* الوضع المطوي: ٧٦px بلاطات ٤٨ */
+.ob-side.is-col { width: 76px; padding: 12px; gap: 6px; }
+.ob-side.is-col .ob-side__nv { height: 48px; min-height: 48px; border-radius: 10px; justify-content: center; padding: 0; }
+.ob-side.is-col .ob-side__nv > span, .ob-side.is-col .ob-side__chev, .ob-side.is-col .ob-side__sub { display: none; }
+.ob-side.is-col .ob-side__nv.is-on::after { top: 10px; bottom: 10px; }
+.ob-side.is-col .ob-side__foot { flex-direction: column; align-items: center; }
+/* فلاي-أوت الروابط الفرعية في الوضع المطوي (قرار ٠-٧) */
+.ob-fly { position: fixed; z-index: 90; min-width: 220px; }
+.ob-fly .ob-menu__h { color: var(--ink-strong); font-size: 13px; }
+.ob-fly .ob-menu__i.is-on { color: var(--accent); font-weight: 600; background: var(--surface-sunken); }
+
+.ob-main { flex: 1; min-width: 0; padding: 24px 24px 80px; }
+.ob-main.has-pv { display: flex; gap: 0; padding-inline-end: 0; }
+.ob-main.has-pv > .ob-main__c { flex: 1; min-width: 0; padding-inline-end: 24px; }
+
+/* درج التنقّل على الموبايل */
+.ob-navdrawer { position: fixed; inset: 0; z-index: 120; background: rgba(35,32,29,.45); }
+.ob-navdrawer .ob-side { position: absolute; inset-block: 0; inset-inline-start: 0; width: 280px; height: 100%; top: 0; }
+
+@media (max-width: 899px) {
+  .ob-body > .ob-side { display: none; }
+  .ob-top__menu { display: inline-grid; }
+  .ob-top__ref { display: none; }
+  .ob-main { padding: 16px 16px 120px; }
+}
+@media (max-width: 599px) {
+  .ob-top { padding: 0 8px; gap: 6px; }
+  .ob-top__qa .ob-top__qat { display: none; }
+  .ob-top__qa { width: 44px; padding: 0; }
+  .ob-ws { padding-inline: 4px; border: 0; }
+  .ob-ws__t { display: none; }
+  .ob-qa { min-width: min(340px, calc(100vw - 16px)); }
+}
+
+/* بار الأكشن التحتاني على الموبايل (Create §3 · List §3) */
+.ob-stickybar { position: fixed; inset-inline: 0; bottom: 0; background: var(--surface-raised); border-top: 1px solid var(--border-base);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); display: none; flex-wrap: wrap; gap: 8px; z-index: 80; }
+.ob-stickybar .btn { flex: 1; justify-content: center; min-width: 0; }
+.ob-stickybar__tot { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--ink-muted); width: 100%; }
+.ob-stickybar__tot .ob-ryl { font-size: 16px; font-weight: 700; color: var(--ink-strong); }
+@media (max-width: 599px) { .ob-stickybar { display: flex; } }
+
+/* ---------- 14. لوحة المعاينة ---------- */
+.ob-pv { position: sticky; top: 64px; height: calc(100vh - 64px); width: min(var(--pvw, 560px), 100%); flex: none; background: var(--surface-sunken);
+  border-inline-start: 1px solid var(--border-base); z-index: 25; display: flex; flex-direction: column; align-self: flex-start; }
+@media (max-width: 1199px) { .ob-pv { --pvw: 440px; } }
+@media (max-width: 599px) { .ob-pv { position: fixed; inset: 0; top: 0; height: 100%; width: 100%; z-index: 130; } }
+.ob-pv__hd { min-height: 64px; background: var(--surface-raised); border-bottom: 1px solid var(--border-base); display: flex; align-items: center; gap: 8px; padding: 8px 12px; flex-wrap: wrap; }
+.ob-pv__hd h2 { font-size: 15px; font-weight: 600; margin: 0; color: var(--ink-strong); flex: 1 0 auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ob-pv__acts { display: flex; gap: 8px; padding: 10px 12px; background: var(--surface-raised); border-bottom: 1px solid var(--border-base); flex-wrap: wrap; }
+.ob-pv__acts .btn { height: 40px; min-height: 40px; }
+.ob-pv__body { flex: 1; overflow: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.ob-pv__ft { background: var(--surface-raised); border-top: 1px solid var(--border-base); padding: 10px 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ob-pv__ft .ob-sp { flex: 1; }
+
+.ob-paper { background: #fff; box-shadow: 0 2px 12px rgba(35,32,29,.12); color: #1C1C1C; font-size: 11px; line-height: 1.5; }
+.ob-paper.a4 { width: 100%; max-width: 480px; padding: 28px; min-height: 560px; }
+.ob-paper.th { padding: 14px 12px; font-size: 10px; }
+.ob-paper.th.w80 { width: 302px; }
+.ob-paper.th.w58 { width: 219px; }
+.ob-paper h4 { font-size: 16px; margin: 0 0 10px; text-align: center; color: #1C1C1C; font-weight: 700; }
+.ob-paper.th h4 { font-size: 12px; }
+.ob-paper .p-row { display: flex; justify-content: space-between; gap: 8px; }
+.ob-paper .p-box { border: 1px solid #E9E5E2; border-radius: 6px; padding: 8px; flex: 1; font-size: 10px; }
+.ob-paper table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 10px; color: #1C1C1C; }
+.ob-paper th, .ob-paper td { border: 1px solid #E9E5E2; padding: 4px 5px; text-align: start; }
+.ob-paper th { background: #FBFAF9; font-weight: 600; }
+.ob-paper td.n, .ob-paper th.n { text-align: end; }
+.ob-paper.th table th, .ob-paper.th table td { border: 0; border-bottom: 1px dashed #D9D3CE; padding: 3px 2px; }
+.ob-paper .p-tot { margin-inline-start: auto; width: 200px; max-width: 100%; display: grid; gap: 3px; }
+.ob-paper .p-tot div { display: flex; justify-content: space-between; }
+.ob-paper .p-tot .g { font-weight: 700; border-top: 1px solid #38342F; padding-top: 4px; font-size: 12px; }
+.ob-paper .p-qr { width: 96px; height: 96px; margin: 12px auto 0; background: repeating-conic-gradient(#1C1C1C 0 25%, #fff 0 50%) 0 0/12px 12px; border: 4px solid #fff; outline: 1px solid #D9D3CE; }
+.ob-paper .p-sm { font-size: 9px; color: #6F675F; }
+.ob-paper .p-logo { width: 44px; height: 44px; object-fit: contain; }
+.ob-paper.tpl-compact h4 { color: #8A5A19; text-align: start; }
+.ob-paper.tpl-compact th { background: #FBF3D6; color: #8A5A19; border-color: #F3E6B8; }
+.ob-paper.tpl-compact td { border-color: #F3E6B8; }
+.ob-paper.tpl-gray h4 { text-align: start; border-bottom: 2px solid #38342F; padding-bottom: 6px; }
+.ob-paper.tpl-gray th { background: #38342F; color: #fff; border-color: #38342F; }
+.ob-paper.tpl-classic { font-family: Georgia, "Times New Roman", serif; }
+.ob-paper.tpl-classic h4 { font-family: inherit; border-top: 1px solid #38342F; border-bottom: 1px solid #38342F; padding: 6px 0; }
+.ob-paper.tpl-classic th { background: transparent; border: 0; border-bottom: 1px solid #38342F; }
+.ob-paper.tpl-classic td { border: 0; border-bottom: 1px solid #E9E5E2; }
+
+/* ---------- 15. شبكات عامة ---------- */
+.ob-g2 { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 24px; }
+.ob-g2--hdr { grid-template-columns: minmax(0,1.1fr) minmax(0,1fr); align-items: start; }
+.ob-g2--wide { gap: 48px; }
+@container obmain (max-width: 899px) {
+  .ob-g2, .ob-g2--hdr { grid-template-columns: minmax(0,1fr); gap: 24px; }
+}
+.ob-main__c, .ob-main { container: obmain / inline-size; }
+.ob-kv { display: grid; gap: 6px; font-size: 14px; }
+.ob-kv > div { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+.ob-kv__k { color: var(--ink-muted); min-width: 110px; font-size: 13px; }
+.ob-kv .ob-in, .ob-kv .datef, .ob-kv .selx { width: auto; flex: 1; max-width: 240px; }
+.ob-kv--compact > div { min-height: 38px; }
+.ob-kv--compact .ob-in, .ob-kv--compact .datef, .ob-kv--compact .selx { height: 38px; min-height: 38px; font-size: 13.5px; position: relative; }
+.ob-sp { flex: 1; }
+.ob-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ob-muted { color: var(--ink-muted); }
+.ob-strong { color: var(--ink-strong); font-weight: 600; }
+
+/* ---------- 16. تفاصيل شاشة الإنشاء ---------- */
+.ob-cdate .fld { gap: 0; }
+.ob-cdate .fld__l:empty { display: none; }
+.ob-cdate .datef { height: 38px; min-height: 38px; font-size: 13.5px; width: 100%; position: relative; }
+.ob-cdate .datef::before, .ob-kv--compact .ob-in--sm::before { content: ""; position: absolute; inset: -3px 0; }
+.ob-kv--compact .ob-in--sm { position: relative; }
+.fld .fld__l:empty { display: none; }
+/* مقبض السحب والحذف: ٣٢ شكلًا · ٤٤ لمسًا (INV-CREATE-12) */
+.ob-hbtn { width: 32px; height: 32px; border-radius: 6px; border: 0; background: transparent; color: var(--ink-muted);
+  display: inline-grid; place-items: center; position: relative; cursor: pointer; flex: none; touch-action: none; }
+.ob-hbtn::before { content: ""; position: absolute; inset: -6px; }
+.ob-hbtn:active { background: var(--surface-sunken); }
+.ob-hbtn--del { color: #B91C1C; background: #FEF2F2; }
+[data-theme="dark"] .ob-hbtn--del { background: #301615; color: #F59A93; }
+.ob-hbtn:disabled { opacity: .35; }
+.ob-lines td { height: auto; padding: 6px 8px; vertical-align: top; }
+.ob-lines th { padding: 6px 8px; background: transparent; }
+.ob-lines td:first-child { padding-top: 12px; }
+.ob-lines tr.rowmsg td { border-bottom: 1px solid var(--border-faint); }
+.ob-lines tr:has(+ tr.rowmsg) td { border-bottom: 0; }
+.ob-taxq .ob-qsel { padding: 0 4px; }
+.ob-emsg + .ob-emsg { margin-top: 2px; }
+.toast .toast__b, .toast .toast__b b, .toast .toast__b span, .toast .toast__t { color: #fff !important; }
+.toast .toast__b small, .toast .toast__b em, .toast .toast__s { color: #D9D3CE !important; }
+.ob-contents { display: contents; }
+@media (max-width: 599px) { .ob-hide-sm { display: none !important; } }
+
+/* ============================================================
+   17. جسر الأنماط القديمة → Option B
+   الشاشات اللي لسه ما اتكتبتش من جديد بتاخد نفس اللغة من هنا
+   (شارات · أزرار ثانوية · مقسّمات · كروت جانبية · رؤوس).
+   ============================================================ */
+/* شارات الحالة القديمة */
+.st, .zs { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 6px; border: 0 !important;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap; line-height: 1; }
+.st::before { content: ""; width: 6px; height: 6px; border-radius: 99px; background: currentColor; opacity: .8; }
+.st--positive, .zs--ok { background: #DCFCE7 !important; color: #15803D !important; }
+.st--attention { background: #FEF3C7 !important; color: #B45309 !important; }
+.st--critical, .zs--bad { background: #FEE2E2 !important; color: #B91C1C !important; }
+.st--info, .st--neutral { background: #E9E5E2 !important; color: #524C46 !important; }
+.st--issued { background: #DBEAFE !important; color: #1D4ED8 !important; }
+.zs { background: #E6F5F0; color: #005746; }
+.zs__box { display: none !important; }
+[data-theme="dark"] .st--positive, [data-theme="dark"] .zs--ok { background: #12291B !important; color: #6FD49A !important; }
+[data-theme="dark"] .st--attention { background: #2D2310 !important; color: #F0B35A !important; }
+[data-theme="dark"] .st--critical, [data-theme="dark"] .zs--bad { background: #301615 !important; color: #F59A93 !important; }
+[data-theme="dark"] .st--info, [data-theme="dark"] .st--neutral { background: #2A2622 !important; color: #C9C0B7 !important; }
+.doc__tags { display: inline-flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+
+/* رؤوس الصفحات القديمة */
+.dochead { margin-bottom: 12px; }
+.dochead__no { font-size: 22px !important; font-weight: 700 !important; color: var(--ink-strong); line-height: 1.3; letter-spacing: 0 !important; }
+.dochead__back { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 500; font-size: 14px; background: transparent; border: 0; padding: 0 4px; }
+.dochead__act { gap: 8px; flex-wrap: wrap; }
+.tophead { margin-bottom: 12px; flex-wrap: wrap; }
+.curnote { font-size: 12px; color: var(--ink-muted); }
+
+/* كروت جانبية / أقسام / ورقة */
+.rail__c, .sect, .sheet, .kcard, .card, .stat { background: var(--surface-raised); border: 1px solid var(--border-base) !important; border-radius: 12px !important; box-shadow: none !important; }
+.rail { gap: 12px; top: 76px; }
+.rail__lbl, .sheet__lbl { font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+.ract { min-height: 44px; border-radius: 8px; color: var(--ink-base); }
+.ract:active { background: var(--surface-sunken); }
+.ract--crit { color: #B91C1C; }
+.ract svg { color: var(--ink-muted); }
+.ract--crit svg { color: #B91C1C; }
+.sect__empty { border: 1px dashed var(--border-control); border-radius: 12px; background: var(--surface-page); padding: 40px 24px; text-align: center; }
+
+/* أزرار ثانوية قديمة */
+.gbtn2 { min-height: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border-control); background: var(--surface-raised); color: var(--ink-base);
+  font-weight: 500; font-size: 13px; position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; }
+.gbtn2::before { content: ""; position: absolute; inset: -4px 0; }
+.gbtn2--go { background: rgba(0,62,49,.08); border-color: transparent; color: var(--accent); font-weight: 600; }
+.gbtn2.on { border-color: var(--accent); color: var(--accent); background: var(--surface-sunken); }
+.gbtn2:disabled { opacity: 1; color: var(--ink-muted); background: var(--surface-sunken); }
+.lnk, .linkish { color: var(--accent); font-weight: 600; background: transparent; border: 0; min-height: 32px; cursor: pointer; }
+
+/* مقسّمات قديمة → segmented Option B */
+.segs, .segbtn { background: transparent !important; border: 1px solid var(--border-control); border-radius: 8px !important; padding: 0 !important; gap: 0 !important; overflow: hidden; height: 44px; }
+.segs button, .segbtn button { border: 0; border-inline-start: 1px solid var(--border-control) !important; background: var(--surface-raised) !important; color: var(--ink-label);
+  border-radius: 0 !important; box-shadow: none !important; padding: 0 14px !important; font-size: 13px !important; min-height: 42px; }
+.segs button:first-child, .segbtn button:first-child { border-inline-start: 0 !important; }
+.segs button.on, .segbtn button.on { background: var(--accent) !important; color: #fff !important; font-weight: 600; }
+.segs--sm { height: 36px; }
+.segs--sm button { min-height: 34px; }
+
+/* الفلاتر القديمة (Pick · DateRange) → quiet select */
+.pick1__b, .dr__btn { min-height: 44px; border: 0 !important; background: transparent !important; box-shadow: none !important; color: var(--ink-base); font-size: 13px; }
+.pick1__b .pick1__l, .dr__btn .dr__rg { color: var(--ink-muted); font-weight: 400; }
+.pick1__b b { font-weight: 500; }
+.pick1__b:active, .dr__btn:active { background: var(--surface-sunken) !important; }
+.pick1__p, .dr__pop { background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; box-shadow: var(--shadow-pop); padding: 6px; }
+.pick1__o, .dr__i { min-height: 44px; border-radius: 8px; }
+.pick1__o.is-on, .dr__i.on { color: var(--accent); font-weight: 600; }
+
+/* قوايم ⋮ القديمة */
+.dots { width: 44px; height: 44px; border-radius: 8px; border: 0; background: transparent; color: var(--ink-muted); display: inline-grid; place-items: center; }
+.dots:active, .dots.is-on { background: var(--surface-sunken); }
+
+/* تابات قديمة */
+.dtabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-base); margin-bottom: 16px; background: transparent !important; padding: 0 !important; border-radius: 0 !important; }
+.dtabs__t { min-height: 44px; padding: 0 14px; border: 0; background: transparent !important; color: var(--ink-muted); font-size: 14px; font-weight: 500; position: relative; border-radius: 0 !important; box-shadow: none !important; }
+.dtabs__t.is-on { color: var(--ink-strong); font-weight: 600; }
+.dtabs__t.is-on::after { content: ""; position: absolute; inset-inline: 8px; bottom: -1px; height: 2px; background: var(--accent); }
+
+/* الكارت/الصف بيرد بالضغط بدل الهوفر */
+.dt tbody tr:active td { background: var(--surface-page); }
+
+/* بنود الإشعارات → كروت على الموبايل والتابلت بالطول بس (طلب مهاب ١٩ سبتمبر) */
+@media (max-width: 899px) {
+  .lines__h.cnlines { display: none !important; }
+  .lines__r.cnlines { grid-template-columns: 24px minmax(0,1fr) minmax(0,1fr) 44px !important;
+    grid-template-areas: "i d d x" "q q p p" "t t s s"; gap: 8px !important; padding: 12px !important;
+    border: 1px solid var(--border-base); border-radius: 12px; background: var(--surface-raised); align-items: center; }
+  .lines__r.cnlines > :nth-child(1) { grid-area: i; }
+  .lines__r.cnlines > :nth-child(2) { grid-area: d; }
+  .lines__r.cnlines > :nth-child(3) { grid-area: q; }
+  .lines__r.cnlines > :nth-child(4) { grid-area: p; }
+  .lines__r.cnlines > :nth-child(5) { grid-area: t; }
+  .lines__r.cnlines > :nth-child(6) { grid-area: s; text-align: end; font-weight: 600; }
+  .lines__r.cnlines > :nth-child(7) { grid-area: x; }
+  .lines__r.cnlines .fld__i, .lines__r.cnlines .selx { min-height: 44px !important; height: 44px !important; }
+}
+.lines__x { width: 44px; height: 44px; border-radius: 8px; color: #B91C1C; }
+.lines__add { min-height: 44px; border: 1px solid var(--accent) !important; color: var(--accent) !important; border-radius: 8px !important; font-weight: 600; width: 100%; justify-content: center; background: var(--surface-raised) !important; }
+
+/* مساحة لمس ٤٤ للروابط النصّية جوه الجمل (Create §2 · INV-CREATE-12) */
+.lnk, .linkish, .cell-doc--link, .fld__add { position: relative; }
+.lnk::before, .linkish::before, .cell-doc--link::before, .fld__add::before { content: ""; position: absolute; inset: -12px -4px; }
+.fld__add::before { inset: -6px -4px; }
+.ob-cbw { flex: none; }
+[data-theme="dark"] .btn--soft { background: rgba(46,158,133,.18); color: #7FD6BE; }
+[data-theme="dark"] .btn--ghost, [data-theme="dark"] .ob-link { color: #7FD6BE; }
+[data-theme="dark"] .ob-link--quiet { color: var(--ink-muted); }
+[data-theme="dark"] .ob-paper { color: #1C1C1C; }
+
+/* السايدبار فوق محتوى الصفحة، والقايمة الجانبية (بورتال على الـbody) فوق الكل */
+.ob-body > .ob-side { z-index: 50; }
+.ob-fly { z-index: 200 !important; }
+
+/* بند مفرد في المنيو المطوية: اسم الموديول بس */
+.ob-fly.ob-fly--one { min-width: 0; }
+.ob-fly.ob-fly--one .ob-menu__i { padding-inline: 16px; font-weight: 600; }
+
+/* ============================================================
+   كروت الجداول القديمة (.sect) → نفس كارت القايمة Option B
+   (طلب مهاب ١٩ سبتمبر): العنوان كان لازق في حافة الكارت.
+   بادنج ٢٠ زي .ob-card، والجدول جوّا البادنج برأس مدوّر ٨.
+   ============================================================ */
+.sect { padding: 20px; }
+.sect__h { margin: 0 0 16px !important; padding: 0 !important; min-height: 32px; gap: 12px; }
+.sect__t { font-size: 16px !important; font-weight: 600 !important; line-height: 1.4; color: var(--ink-strong); gap: 8px !important; letter-spacing: 0 !important; }
+.sect__n { background: var(--surface-sunken) !important; color: var(--ink-muted); font-size: 12px; font-weight: 600;
+  min-width: 22px; height: 20px; padding: 0 7px; border-radius: 999px; }
+.sect__hint { font-size: 12px; color: var(--ink-muted); }
+.sect .tablewrap { border-radius: 0 !important; background: transparent !important; }
+.sect .dt thead th { padding: 10px !important; font-size: 12px; font-weight: 600; color: var(--ink-muted); background: var(--surface-page); vertical-align: middle; }
+.sect .dt thead th:first-child { border-start-start-radius: 8px !important; }
+.sect .dt thead th:last-child { border-start-end-radius: 8px !important; }
+.sect .dt tbody td { padding-inline: 10px !important; }
+.sect .pager { background: transparent !important; border-radius: 0 !important; margin-top: 4px; padding-inline: 0 !important; }
+.sect > .sect__empty:only-child, .sect__h + .sect__empty { margin: 0; }
+@container obmain (max-width: 600px) { .sect { padding: 16px; } }
+
+/* ★ ثبات مقاس المنيو والبودي (طلب مهاب ١٩ سبتمبر): شريط التمرير
+   كان بيظهر في الصفحات الطويلة ويختفي في القصيرة، فالعرض كله يتزحزح
+   ~١٠px مع تغيير التابات. بنحجز مكانه دايمًا. */
+/* (اتلغى — بقى فيه سكرول منفصل للبودي وللمنيو تحت) */
+
+/* ★ أكشنز الجداول مقاس واحد في كل السيستم (طلب مهاب ١٩ سبتمبر):
+   الزرار السياقي عرضه ثابت ١٥٢ وارتفاعه ٣٦ مهما كان طول الكلمة،
+   والجداول القديمة (.act) بقت نفس الزرار الناعم. */
+/* (تحديث ٢٠ سبتمبر) العرض مبقاش ثابت ١٥٢: الزرار على قد الكلمة + بادنج ١٦،
+   وفي الجدول اللي فيه أكتر من أكشن، كلهم بياخدوا عرض أطول واحد فيهم
+   (بيتحسب في AppShell → equalizeRowActions). */
+.ob-tbl .ob-acts > .btn--soft, .ob-actph,
+table td .act { width: auto; min-width: 0; height: 36px; min-height: 36px; justify-content: center; flex: none; padding-inline: 16px !important; white-space: nowrap; }
+.ob-actph { display: inline-block; width: var(--ob-actw, 0px); }
+table td .act { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; font-size: 14px; font-weight: 600; position: relative; }
+table td .act::before { content: ""; position: absolute; inset: -4px 0; }
+table td .act--go { background: rgba(0,62,49,.08); border: 1px solid transparent; color: var(--accent); }
+[data-theme="dark"] table td .act--go { background: rgba(46,158,133,.18); color: #7FD6BE; }
+
+/* ★ خط ولون بنود المنيو الرئيسية واحد — سواء تحتها قايمة فرعية أو لأ */
+.ob-side__nv, .ob-side__nv.is-grp { color: var(--ink-base); font-size: 14px; font-weight: 500; }
+[data-theme="dark"] .ob-side__nv, [data-theme="dark"] .ob-side__nv.is-grp { color: var(--nav-ink); }
+.ob-side__nv.is-on, .ob-side__nv.is-on.is-open, .ob-side__nv.is-grp.is-on { color: #fff; font-weight: 600; }
+
+/* ============================================================
+   ★ تركيز الحقول في السيستم كله (طلب مهاب ١٩ سبتمبر):
+   لون التحديد = الأخضر البرايماري، وحلقة واحدة من برّه بس.
+   الحقل اللي جوّه غلاف (بحث/أيقونة/تاريخ…) مالوش حلقة خاصة بيه —
+   الغلاف هو اللي بيتلوّن.
+   ============================================================ */
+:root { --field-focus: var(--accent); --field-ring: rgba(0, 62, 49, .18); }
+[data-theme="dark"] { --field-ring: rgba(46, 158, 133, .30); }
+
+/* ١) الحقل المستقل */
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), textarea, select):focus,
+:where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), textarea, select):focus-visible,
+.fld__i:focus, .fld__i:focus-visible, .field__input:focus {
+  outline: none !important; border-color: var(--field-focus) !important; box-shadow: 0 0 0 3px var(--field-ring) !important;
+}
+
+/* ٢) الغلاف: بيتلوّن هو لما أي حقل جوّاه ياخد تركيز */
+.ob-in:focus-within, .search:focus-within, .crate:focus-within, .selx[aria-expanded="true"], .datef.is-open, .datef:focus-within,
+.ob-field:focus-within, .qty:focus-within, .ob-srch:focus-within, .amtin:focus-within, .qtyin:focus-within {
+  outline: none !important; border-color: var(--field-focus) !important; box-shadow: 0 0 0 3px var(--field-ring) !important;
+}
+
+/* ٣) الحقل جوّه الغلاف: من غير حلقة ومن غير بوردر */
+:is(.ob-in, .search, .crate, .datef, .selx, .ob-field, .qty, .ob-srch, .amtin, .qtyin) :is(input, textarea, select):is(:focus, :focus-visible) {
+  box-shadow: none !important; border-color: transparent !important; outline: none !important;
+}
+
+
+/* ============================================================
+   ★ سكرول منفصل + من غير شريط (طلب مهاب ١٩ سبتمبر):
+   الشِل بقى بطول الشاشة بالظبط ومبيتحركش. البودي بيسكرول
+   لوحده، والمنيو بتسكرول لوحدها، والصفحة نفسها مبتسكرولش —
+   فمقاس المنيو والبودي ثابت مهما كان طول الجدول.
+   وشريط السكرول مخفي في السيستم كله (السكرول نفسه شغال
+   بالماوس والتراك باد واللمس والكيبورد).
+   ============================================================ */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+.ob-shell { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+.ob-top { position: relative; top: auto; flex: none; }
+.ob-body { flex: 1; min-height: 0; overflow: hidden; }
+.ob-body > .ob-side { position: relative; top: auto; height: auto; max-height: 100%; overflow-y: auto; overscroll-behavior: contain; }
+.ob-main { height: 100%; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; }
+/* مع لوحة المعاينة: المحتوى بيسكرول لوحده والمعاينة لوحدها */
+.ob-main.has-pv { overflow: hidden; padding-block: 0; }
+.ob-main.has-pv > .ob-main__c { height: 100%; overflow-y: auto; padding-block: 24px 80px; overscroll-behavior: contain; }
+@media (min-width: 600px) { .ob-main.has-pv > .ob-pv { position: relative; top: auto; height: 100%; overflow-y: auto; align-self: stretch; } }
+.rail { top: 0; }
+@media (max-width: 899px) {
+  .ob-main.has-pv > .ob-main__c { padding-block: 16px 120px; }
+}
+.ob-lines { min-width: 760px; } /* تحت كده الصف بيسكرول بالعرض بدل ما الأرقام تتقص */
+
+/* ============================================================
+   ★ كارت واحد للسيستم كله (طلب مهاب ٢٠ سبتمبر) — نفس كارت
+   الكلاينت: خلفية بيضا، بوردر ١px ‎#E9E5E2، ريديَس ١٢، من غير
+   ظل ولا شفافية ولا blur. الداكن بياخد نفس التوكنز.
+   الاستثناءات المقصودة: منطقة الرفع المنقّطة، صناديق المعلومات
+   الغامقة جوّه الكروت، ورقة الفاتورة، وكروت الحالة الملوّنة.
+   ============================================================ */
+.ob-card, .panel, .card, .sect, .sheet, .kcard, .rail__c,
+.fcard, .stat, .tchart, .barcard, .vathead, .acct, .prj, .hcat, .vch:not(.vch--print),
+.repbar, .setsave, .savebar {
+  background: var(--surface-raised) !important;
+  border: 1px solid var(--border-base) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.fcard, .stat, .tchart, .barcard, .vathead, .acct, .prj, .hcat, .vch:not(.vch--print) { padding: 20px !important; }
+@container obmain (max-width: 600px) {
+  .ob-card, .fcard, .stat, .tchart, .barcard, .vathead, .acct, .prj, .hcat, .vch:not(.vch--print) { padding: 16px !important; }
+}
+
+/* ★ إطار الشعار (طلب مهاب ٢٠ سبتمبر): الشعار كان لازق في حافة
+   الإطار وركنه المدوّر مش راكب على ركن الإطار، فكان باين مقصوص.
+   دلوقتي فيه مسافة ٨ جوّه الإطار والشعار في النص بمقاسه الطبيعي. */
+.ob-logo { width: 96px; height: 96px; flex: none; display: grid; place-items: center; padding: 8px; box-sizing: border-box;
+  background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; overflow: hidden; }
+.ob-logo img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 8px; }
+.updrop.is-set { padding: 8px !important; display: grid; place-items: center; overflow: hidden; box-sizing: border-box; border: 1px solid var(--border-base) !important; border-radius: 12px !important; background: var(--surface-raised) !important; }
+.fld--logo { gap: 6px; }
+.updrop.is-set img { width: 100% !important; height: 100% !important; max-width: none; max-height: none; object-fit: contain; border-radius: 8px; }
+
+/* ★ صف البند: كل الخانات في النص رأسيًا، وزرار الإزالة آخر عمود (طلب مهاب ٢٠ سبتمبر) */
+.ob-lines tbody td { vertical-align: middle !important; }
+.ob-lines tbody tr td:first-child { padding-top: 6px !important; }
+.ob-lines td.ob-lines__del { text-align: end; padding-inline: 4px 0 !important; }
+
+/* ============================================================
+   ★ كل الحقول والدروب داون في السيستم مقاس وشكل واحد
+   (طلب مهاب ٢٠ سبتمبر) — نفس حقل الكلاينت (.in):
+   ارتفاع ٤٤، بوردر ١px ‎--border-control، ريديَس ٨، خلفية الحقل،
+   خط ١٤، بادنج ١٢. مفيش زجاج/شفافية، ومفيش مقاس ٣٨ «مضغوط».
+   الاستثناء: فلاتر القايمة الهادية («الفترة: …») لأنها تصميم
+   الكلاينت كده، ومناطق رفع الملفات.
+   ============================================================ */
+.fld__i:not(textarea):not(.fld__i--area), .ob-in, .ob-in--sm, .search, .selx, .datef, .amtin, .qtyin, .crate, .asof,
+.select--pill, .ob-kv--compact .ob-in, .ob-kv--compact .datef, .ob-kv--compact .selx, .ob-cdate .datef {
+  height: 44px !important; min-height: 44px !important;
+  border: 1px solid var(--border-control) !important; border-radius: 8px !important;
+  background: var(--surface-field) !important; color: var(--ink-base);
+  font-size: 14px !important; box-shadow: none; box-sizing: border-box;
+  -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.fld__i--area, textarea.fld__i, .ob-ta {
+  border: 1px solid var(--border-control) !important; border-radius: 8px !important;
+  background: var(--surface-field) !important; font-size: 14px !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.select--pill { display: inline-flex; align-items: center; gap: 8px; padding: 0 12px !important; font-weight: 500; color: var(--ink-base) !important; }
+.fld__i, .fld__i.n { font-size: 14px !important; }
+
+/* أزرار الأيقونة جنب الحقول (الجرس…) = نفس الزرار الثانوي */
+.tophead__ctrl .bellbtn, .tophead__ctrl .iconbtn {
+  width: 44px; height: 44px; min-height: 44px; border: 1px solid var(--border-control) !important; border-radius: 8px !important;
+  background: var(--surface-raised) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important;
+}
+.tophead__ctrl .search, .tophead__ctrl .select--pill, .panel__head .select--pill { background: var(--surface-raised) !important; }
+/* إعادة تأكيد حالة التركيز بعد توحيد الحقول (عشان الأولوية) */
+.fld__i:not(textarea):focus, .fld__i:focus, textarea.fld__i:focus, .ob-ta:focus,
+.ob-in:focus-within, .search:focus-within, .selx[aria-expanded="true"], .datef.is-open, .datef:focus-within,
+.amtin:focus-within, .qtyin:focus-within, .crate:focus-within, .asof:focus-within, .select--pill:focus-visible {
+  border-color: var(--field-focus) !important; box-shadow: 0 0 0 3px var(--field-ring) !important; outline: none !important;
+}
+
+/* ============================================================
+   ★ محاذاة الجداول في السيستم كله (طلب مهاب ٢٠ سبتمبر):
+   ١) كل خانة في النص رأسيًا.
+   ٢) السطر الرقمي (.num) لما يبقى بلوك كان بيتحاذى شمال لأنه
+      اتجاهه ltr، فالرقم ميبقاش على نفس خط السطر اللي تحته.
+      دلوقتي بيمشي مع محاذاة الخانة: يمين في الخانات العادية،
+      وشمال في خانات المبالغ (.n).
+   ============================================================ */
+table tbody td, table tfoot td { vertical-align: middle !important; }
+td :is(div, p, b, strong, span[style*="block"]).num { text-align: end; }
+td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
+/* أزرار الأكشن جوّه صفوف الجداول: نص بس من غير أيقونة (طلب مهاب ٢٠ سبتمبر) */
+.ob-tbl .ob-acts > .btn--soft > svg, table td .act > svg { display: none; }
+
+/* ============================================================
+   ★ كبسولة الترقية في التوب بار (حالة عامة) + مودال المزايا
+   ثانوية عن قصد: خلفية خضرا فاتحة زي الزرار الناعم، عشان
+   متنافسش «إضافة سريعة» الأساسي. من غير ليموني ولا حركة.
+   ============================================================ */
+.ob-up { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px;
+  border: 1px solid rgba(0,62,49,.14); background: rgba(0,62,49,.06); color: var(--accent);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; position: relative; }
+.ob-up::before { content: ""; position: absolute; inset: -2px 0; }
+.ob-up svg { flex: none; }
+.ob-up:active { background: rgba(0,62,49,.12); }
+[data-theme="dark"] .ob-up { background: rgba(46,158,133,.14); border-color: rgba(46,158,133,.30); color: #7FD6BE; }
+@media (max-width: 899px) { .ob-up { width: 44px; height: 44px; padding: 0; justify-content: center; } .ob-up__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
+
+.ob-perks { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 14px; }
+.ob-perks li { display: flex; gap: 12px; align-items: flex-start; }
+.ob-perks__ic { width: 28px; height: 28px; border-radius: 999px; flex: none; display: grid; place-items: center;
+  background: rgba(0,62,49,.08); color: var(--accent); }
+[data-theme="dark"] .ob-perks__ic { background: rgba(46,158,133,.18); color: #7FD6BE; }
+.ob-perks b { display: block; font-size: 14px; font-weight: 600; color: var(--ink-strong); line-height: 1.5; }
+.ob-perks small { display: block; font-size: 13px; color: var(--ink-muted); line-height: 1.6; }

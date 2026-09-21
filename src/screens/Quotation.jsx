@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { AppShell, CurrencyNote } from '../components/layout.jsx'
+import { AppShell, CurrencyNote, PageHeader } from '../components/layout.jsx'
+import { Chip } from '../components/ob.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
 import { PrintPreview } from '../components/printpreview.jsx'
-import { fmtDate, fmtMoney, daysFrom, STATUS, TODAY } from '../lib/format.js'
+import { fmtDate, fmtMoney, daysFrom, dayAr, STATUS, TODAY } from '../lib/format.js'
 import { useDoc } from '../lib/store.js'
 import * as ACT from '../lib/actions.js'
 import * as DATA from '../data/mock.js'
@@ -95,44 +96,28 @@ export default function Quotation() {
 
   return (
     <AppShell>
-      <div className="dochead">
-        <button className="dochead__back" onClick={() => nav('/sales/quotations')}>
-          <Ico.back size={16} />عروض الأسعار والفواتير المبدئية
-        </button>
-        <CurrencyNote />
-        <div className="dochead__row">
-          <div className="dochead__id">
-            <h1 className="dochead__no num">{q.no}</h1>
-            <span className="doc__tags">
-              <span className="ldg__k">{DATA.qKindAr(q)}</span>
-              <span className={`st st--${st?.tone || 'neutral'}`}>{st?.label}</span>
-              {expired && q.status !== 'expired' && (
-                <span className="st st--attention">عدّى تاريخ الصلاحية</span>
-              )}
-              {q.linked && <span className="st st--positive">اتحوّل لـ{q.linked}</span>}
-            </span>
-            <span className="dochead__sub">{q.c?.ar}</span>
-          </div>
-          <div className="dochead__act">
-            <button className="btn btn--primary" onClick={() => run(primary.id)}>
-              <primary.Ic size={16} />{primary.label}
-            </button>
-          </div>
-        </div>
-      </div>
+      <PageHeader back="/sales/quotations" title={<span className="num">{q.no}</span>}
+        chip={<span className="ob-chips">
+          <Chip tone="draft">{DATA.qKindAr(q)}</Chip>
+          <span className={`st st--${st?.tone || 'neutral'}`}>{st?.label}</span>
+          {expired && q.status !== 'expired' && <Chip tone="warn">عدّى تاريخ الصلاحية</Chip>}
+          {q.linked && <Chip tone="ok">اتحوّل لـ{q.linked}</Chip>}
+        </span>}
+        sub={q.c?.ar}
+        actions={<button type="button" className="btn btn--primary" onClick={() => run(primary.id)}><primary.Ic size={20} />{primary.label}</button>} />
 
       {/* ★ الرسالة الوحيدة اللي تستاهل بانر: العرض قرب يخلص أو خلص */}
       {live && left !== null && left >= 0 && left <= 7 && (
         <p className="fnote fnote--warn" style={{ marginBottom: 14 }}>
           <Ico.check size={14} />
-          فاضل <b>{left === 0 ? 'النهاردة' : `${left} يوم`}</b> وتنتهي صلاحية {N}.
+          فاضل <b>{left === 0 ? 'النهاردة' : dayAr(left)}</b> وتنتهي صلاحية {N}.
           بعد كده الأسعار مش ملزمة ومحتاجة تجديد.
         </p>
       )}
       {expired && q.status !== 'converted' && (
         <p className="fnote fnote--warn" style={{ marginBottom: 14 }}>
           <Ico.ban size={14} />
-          {N} انتهت صلاحيتها من <b>{Math.abs(left)} يوم</b>. التحويل لفاتورة
+          {N} انتهت صلاحيتها من <b>{dayAr(Math.abs(left))}</b>. التحويل لفاتورة
           بالأسعار دي محتاج تجديد الأول.
         </p>
       )}
