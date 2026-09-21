@@ -388,13 +388,39 @@ function TopBar({ onMenu }) {
    وفي كل جدول، كل الأزرار السياقية (المختلفة) بتاخد عرض أطول واحد فيهم —
    أقل مقاس يناسبهم كلهم. بيتحسب تاني لما محتوى الجدول يتغير. */
 const ACT_SEL = '.ob-acts > .btn--soft, td .act'
+/* ★ الجداول على الموبايل = كروت (طلب مهاب ٢١ سبتمبر): كل خانة بتاخد
+   اسم عمودها (data-label) عشان الكارت يعرض «العمود: القيمة»، وبنعلّم
+   خانة العنوان وخانة الأكشنز والتشيك بوكس عشان الـCSS يرتّبهم. */
+function labelTableCells(t) {
+  if (!t.classList.contains('dt')) return
+  const heads = [...(t.tHead?.rows[0]?.cells || [])].map((c) => (c.innerText || '').replace(/[▼▲↑↓⇅↕︎]/g, '').trim())
+  ;[...t.tBodies].forEach((tb) => [...tb.rows].forEach((tr) => {
+    let col = 0, titled = false
+    ;[...tr.cells].forEach((td) => {
+      const span = td.colSpan || 1
+      const lbl = span > 1 ? '' : (heads[col] || '')
+      if (td.getAttribute('data-label') !== lbl) td.setAttribute('data-label', lbl)
+      const hasCtl = td.querySelector('button, .act, .dots, a.btn, [role="button"]')
+      const isChk = td.querySelector('input[type="checkbox"], .cb, .cbwrap') && !(td.innerText || '').trim()
+      td.classList.toggle('dt-m-chk', !!isChk)
+      td.classList.toggle('dt-m-act', !isChk && (!!hasCtl && !(td.innerText || '').trim().replace(/[⋮…·\s]/g, '').length || !!td.querySelector('.act, .dots')))
+      const txt = (td.innerText || '').trim()
+      const isTitle = !titled && !isChk && txt && span === 1
+      td.classList.toggle('dt-m-title', !!isTitle)
+      if (isTitle) titled = true
+      col += span
+    })
+  }))
+}
 function equalizeRowActions(root) {
   if (!root) return
   root.querySelectorAll('table').forEach((t) => {
+    labelTableCells(t)
     const btns = [...t.querySelectorAll(ACT_SEL)]
     const phs = [...t.querySelectorAll('.ob-actph')]
     if (!btns.length) { phs.forEach((p) => { p.style.display = 'none' }); return }
     btns.forEach((b) => { b.style.width = '' })
+    if (window.innerWidth < 600) return /* على الموبايل الأكشن بياخد عرض الكارت */
     const w = Math.ceil(Math.max(...btns.map((b) => b.getBoundingClientRect().width)))
     btns.forEach((b) => { b.style.width = w + 'px' })
     t.style.setProperty('--ob-actw', w + 'px')
@@ -409,11 +435,12 @@ function useEqualActions(ref) {
     const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => equalizeRowActions(el)) }
     run()
     const mo = new MutationObserver((muts) => {
-      if (muts.every((m) => m.type === 'attributes' && m.attributeName === 'style')) return
+      if (muts.every((m) => m.type === 'attributes')) return
       run()
     })
     mo.observe(el, { childList: true, subtree: true, characterData: true })
-    return () => { mo.disconnect(); cancelAnimationFrame(raf) }
+    window.addEventListener('resize', run)
+    return () => { mo.disconnect(); cancelAnimationFrame(raf); window.removeEventListener('resize', run) }
   }, [ref])
 }
 

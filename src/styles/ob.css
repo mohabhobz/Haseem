@@ -901,3 +901,50 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 [data-theme="dark"] .ob-perks__ic { background: rgba(46,158,133,.18); color: #7FD6BE; }
 .ob-perks b { display: block; font-size: 14px; font-weight: 600; color: var(--ink-strong); line-height: 1.5; }
 .ob-perks small { display: block; font-size: 13px; color: var(--ink-muted); line-height: 1.6; }
+
+/* ============================================================
+   ★ الجداول على الموبايل = كروت منظمة (طلب مهاب ٢١ سبتمبر)
+   كل جداول السيستم القديمة (.dt): كل صف كارت، أول خانة عنوان،
+   وباقي الخانات «اسم العمود ← القيمة»، والأكشنز تحت بعرض الكارت.
+   (جداول المبيعات ليها كروت خاصة بيها من ObList.)
+   ============================================================ */
+@media (max-width: 599px) {
+  .ob-main .tablewrap:has(> table.dt), .ob-main .sect .tablewrap { overflow: visible !important; border: 0 !important; background: transparent !important; }
+  .ob-main table.dt { display: block !important; width: 100% !important; min-width: 0 !important; border: 0 !important; background: transparent !important; }
+  .ob-main table.dt thead { display: none !important; }
+  .ob-main table.dt tbody, .ob-main table.dt tfoot { display: grid !important; gap: 10px; }
+  .ob-main table.dt tfoot { margin-top: 10px; }
+  .ob-main table.dt tr { display: block !important; box-sizing: border-box; width: 100% !important; min-width: 0 !important; background: var(--surface-raised) !important; border: 1px solid var(--border-base) !important;
+    border-radius: 12px !important; padding: 12px 14px !important; }
+  .ob-main table.dt tr td { display: flex !important; align-items: center; justify-content: space-between; gap: 12px;
+    width: auto !important; min-height: 32px; height: auto !important; padding: 4px 0 !important; border: 0 !important; background: transparent !important;
+    text-align: end !important; font-size: 14px; white-space: normal !important; }
+  .ob-main table.dt tr td::before { content: attr(data-label); flex: none; max-width: 45%; text-align: start; font-size: 12.5px; font-weight: 500; color: var(--ink-muted); }
+  .ob-main table.dt tr td[data-label=""]::before { content: none; }
+  .ob-main table.dt tr td[data-label=""] { justify-content: flex-start; text-align: start !important; }
+  .ob-main table.dt tr td:empty { display: none !important; }
+  /* العنوان: أول خانة فيها نص */
+  .ob-main table.dt tr td.dt-m-title { display: block !important; text-align: start !important; font-weight: 600; color: var(--ink-strong); font-size: 15px;
+    padding: 0 0 8px !important; margin-bottom: 4px; border-bottom: 1px solid var(--border-faint) !important; }
+  .ob-main table.dt tr td.dt-m-title::before { content: none; }
+  /* التشيك بوكس جنب العنوان */
+  .ob-main table.dt tr { position: relative; }
+  .ob-main table.dt tr td.dt-m-chk { position: absolute !important; top: 10px; inset-inline-end: 10px; padding: 0 !important; min-height: 0; margin: 0; border: 0 !important; }
+  .ob-main table.dt tr:has(> td.dt-m-chk) td.dt-m-title { padding-inline-end: 44px !important; }
+  .ob-main table.dt tr td.dt-m-chk::before { content: none; }
+  /* الأكشنز تحت */
+  .ob-main table.dt tr td.dt-m-act { justify-content: flex-start; gap: 8px; padding-top: 10px !important; margin-top: 6px; border-top: 1px solid var(--border-faint) !important; }
+  .ob-main table.dt tr td.dt-m-act::before { content: none; }
+  .ob-main table.dt tr td.dt-m-act .act { flex: 1; }
+  /* صفوف المجموعة/الإجمالي اللي بتاخد عرض الجدول كله */
+  .ob-main table.dt tr td[colspan]:not([colspan="1"]) { display: block !important; text-align: start !important; font-weight: 600; }
+  .ob-main table.dt tr:has(> td[colspan]:not([colspan="1"]):only-child) { background: var(--surface-sunken) !important; border-color: transparent !important; padding: 10px 14px !important; }
+  .ob-main .sect .pager { flex-wrap: wrap; gap: 8px; }
+}
+@media (max-width: 899px) { .repcols { grid-template-columns: minmax(0,1fr) !important; } .repcols > * { min-width: 0; } }
+/* قايمة الأعمدة في التقارير على الموبايل: الاسم والمبلغ فوق، والشريط والنسبة تحت */
+@media (max-width: 599px) {
+  .barlist li { grid-template-columns: minmax(0,1fr) auto !important; grid-template-areas: "n v" "b p"; row-gap: 6px !important; }
+  .barlist li > .barlist__n { grid-area: n; } .barlist li > .barlist__v { grid-area: v; }
+  .barlist li > .barlist__b { grid-area: b; align-self: center; } .barlist li > .barlist__p { grid-area: p; }
+}

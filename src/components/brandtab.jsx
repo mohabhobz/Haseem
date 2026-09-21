@@ -3,7 +3,7 @@ import { Ico, Riyal } from '../components/icons.jsx'
 import { toast } from '../components/feedback.jsx'
 import { SilkBackdrop } from './auth.jsx'
 import {
-  FONTS_AR, FONTS_EN, SWATCHES, DEFAULT_BRAND,
+  FONTS_AR, FONTS_EN, SWATCHES, DEFAULT_BRAND, BRAND_LOCKED,
   getBrand, saveBrand, resetBrand, applyBrand,
   hexToHsl, hslToHex, contrast,
 } from '../lib/brand.js'
@@ -120,6 +120,15 @@ export function BrandTab() {
           {/* ---------- خلفية صفحة الدخول ---------- */}
           <AuthBgCard value={b.authBg} onChange={(v) => setB((x) => ({ ...x, authBg: v }))} />
 
+          {BRAND_LOCKED ? (
+            <section className="fcard">
+              <h2 className="fcard__t">الألوان والخطوط</h2>
+              <p className="fnote fnote--quiet" style={{ margin: 0 }}>
+                السيستم والفواتير المطبوعة ثابتين حاليًا على هوية حسيم: اللون الأخضر ‎#003E31 وخط IBM Plex Sans Arabic.
+                تخصيص اللون والخط هيرجع في تحديث قادم.
+              </p>
+            </section>
+          ) : (<>
           {/* ---------- اللون الأساسي ---------- */}
           <section className="fcard">
             <div className="fcard__h">
@@ -222,6 +231,7 @@ export function BrandTab() {
               اختياره بيأثر على شكل الفواتير أكتر ما تتخيّل.
             </p>
           </section>
+          </>)}
         </div>
 
         {/* ---------- الرَّيل: المعاينة ---------- */}

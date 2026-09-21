@@ -231,14 +231,23 @@ export function ramp(hex, dark = false) {
 /* ============================================================
    التخزين والتطبيق
    ============================================================ */
+/* ★ (٢١ سبتمبر · طلب مهاب) تغيير اللون والخطوط من الإعدادات متوقف
+   مؤقتًا: السيستم والطباعة ثابتين على هوية حسيم (#003E31 + IBM Plex).
+   أي قيمة قديمة متخزنة بتتجاهل. رجّعها true→false لما نفتحها تاني. */
+export const BRAND_LOCKED = true
+const lockBrand = (b) => (BRAND_LOCKED
+  ? { ...b, color: DEFAULT_BRAND.color, fontAr: DEFAULT_BRAND.fontAr, fontEn: DEFAULT_BRAND.fontEn }
+  : b)
+
 export function getBrand() {
   try {
     const raw = localStorage.getItem(KEY)
-    return raw ? { ...DEFAULT_BRAND, ...JSON.parse(raw) } : { ...DEFAULT_BRAND }
+    return lockBrand(raw ? { ...DEFAULT_BRAND, ...JSON.parse(raw) } : { ...DEFAULT_BRAND })
   } catch (e) { return { ...DEFAULT_BRAND } }
 }
 
 export function saveBrand(b) {
+  b = lockBrand(b)
   try { localStorage.setItem(KEY, JSON.stringify(b)) } catch (e) { /* تجاهل */ }
   applyBrand(b)
   window.dispatchEvent(new CustomEvent('haseem:brand', { detail: b }))
