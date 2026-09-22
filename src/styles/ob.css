@@ -1378,3 +1378,23 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 .cfm__hd { display: flex; align-items: flex-start; gap: 8px; margin: -10px -10px 0 0; }
 .cfm__ht { flex: 1 1 auto; min-width: 0; padding-top: 10px; }
 .cfm__hd .cfm__t { margin-top: 0; }
+
+/* ★ الأدراج المنسدلة على الموبايل لازم تعلو فوق شريط الأوامر الثابت
+   تحت. الشريط (ob-stickybar/ob-mbar/زرار التوب-هيد) كان بيفضل ظاهر
+   فوق الدرج، لأن الدرج جوّا هيدر بـ z-index أقل — فبقى في سياق
+   تكديس محبوس. الحل: نرفع الهيدر وقت فتح الدرج، ونخفي الشريط
+   الثابت طول ما فيه درج أو شيت مفتوح. */
+@media (max-width: 599px) {
+  .ob-top:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep),
+  .sect:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep),
+  .tophead:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep) { z-index: 150 !important; }
+
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .ob-stickybar,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .ob-mbar,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) > #root .tophead__ctrl > .btn--primary,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .tophead__ctrl:has(> .btn--primary)::after { display: none !important; }
+
+  /* جوّه الدرج نفسه الشريط لازم يفضل ظاهر */
+  .ob-sheet .ob-stickybar, .ob-sheet .ob-mbar,
+  .ob-pv .ob-stickybar, .ob-pv .ob-mbar { display: flex !important; }
+}
