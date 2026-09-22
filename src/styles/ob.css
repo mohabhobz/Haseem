@@ -1356,3 +1356,25 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 @media (max-width: 599px) { .ob-pv__acts .btn svg { display: none; } .ob-pv__acts .btn { padding-inline: 8px; font-size: 14px; } }
 /* ★ إجماليات ورقة الفاتورة بعرض الورقة كلها */
 .ob-paper .p-tot { width: 100% !important; margin-inline-start: 0 !important; }
+
+/* ★ زرار الإغلاق الموحّد — نفس المكان ونفس الشكل في كل الأدراج
+   والمعاينات والنوافذ: أول عنصر في الرأس (يمين في RTL) قبل العنوان،
+   ٤٤×٤٤ بدون إطار، زوايا ٨، أيقونة ٢٠. */
+.ob-x, .ob-sheet__x, .ob-pv__x, .pp__x {
+  width: 44px !important; height: 44px !important; min-width: 44px; flex: none !important; order: -1;
+  display: grid !important; place-items: center; padding: 0 !important; margin: 0 !important;
+  border: 0 !important; border-radius: 8px !important; background: transparent !important;
+  color: var(--ink-muted) !important; cursor: pointer; box-shadow: none !important;
+  transition: background-color .15s ease, color .15s ease;
+}
+.ob-x:hover, .ob-sheet__x:hover, .ob-pv__x:hover, .pp__x:hover { background: var(--surface-sunken) !important; color: var(--ink-strong) !important; }
+.ob-x:focus-visible { outline: 2px solid var(--focus-ring, var(--brand-500)); outline-offset: 2px; }
+.ob-x svg { width: 20px; height: 20px; }
+.ob-more__hd { justify-content: flex-start !important; gap: 8px; padding: 8px 12px 4px !important; }
+.ob-more__hd h2 { flex: 1 1 auto; }
+.ob-pv__hd .ob-x { margin: -4px 0 !important; }
+.pp__hr { justify-content: flex-start !important; }
+.pp__hr .pp__t { flex: 1 1 auto; }
+.cfm__hd { display: flex; align-items: flex-start; gap: 8px; margin: -10px -10px 0 0; }
+.cfm__ht { flex: 1 1 auto; min-width: 0; padding-top: 10px; }
+.cfm__hd .cfm__t { margin-top: 0; }

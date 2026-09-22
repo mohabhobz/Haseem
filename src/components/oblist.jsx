@@ -92,8 +92,8 @@ export function ObList({
     pk.open(k, (
       <aside className="ob-pv ob-pv--row" aria-label={String(k)} data-component="RowPeek">
         <div className="ob-pv__hd">
+          <button type="button" className="ob-x" onClick={pk.close} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
           <h2><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cardTitle ? cardTitle(r) : k}</span></h2>
-          <button type="button" className="iconbtn" onClick={pk.close} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
         </div>
         <div className="ob-pv__acts">
           <button type="button" className="btn btn--primary" onClick={() => { pk.close(); onRow(r) }}>عرض التفاصيل</button>

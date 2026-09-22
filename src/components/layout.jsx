@@ -447,8 +447,8 @@ function MoreSheet({ onClose }) {
       <motion.div className="ob-more__panel" initial={{ y: '100%' }} animate={{ y: 0 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
         <span className="ob-more__grab" aria-hidden="true" />
         <div className="ob-more__hd">
+          <button type="button" className="ob-x" onClick={onClose} aria-label="إغلاق" title="إغلاق"><Ico.close size={20} /></button>
           <h2>المزيد</h2>
-          <button type="button" className="iconbtn" onClick={onClose} aria-label="إغلاق"><Ico.close size={20} /></button>
         </div>
         <div className="ob-more__body">
           <div className="ob-more__sec">إضافة سريعة</div>

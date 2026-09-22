@@ -123,13 +123,13 @@ export function PrintPreview({ doc, onClose }) {
               بعرض الدراور — رقم المستند بيملا الفراغ بحاجة
               المستخدم محتاجها أصلًا وهو بيعاين. */}
           <div className="pp__hr">
+            <button type="button" className="ob-x pp__x" aria-label="إغلاق" title="إغلاق" onClick={onClose}>
+              <Ico.close size={20} />
+            </button>
             <span className="pp__t">
               معاينة الطباعة
               <em className="pp__tn num ltr">{no}</em>
             </span>
-            <button className="pp__x" aria-label="إغلاق" title="إغلاق" onClick={onClose}>
-              <Ico.close size={16} />
-            </button>
           </div>
 
           <div className="pp__ctrl">

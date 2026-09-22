@@ -51,7 +51,7 @@ export function Sheet({ title, sub, meta, onClose, actions, mbar, size, children
         transition={{ duration: out ? 0.22 : 0.34, ease: out ? EASE_OUT : EASE_IN }}
         onAnimationComplete={() => { if (leaving && !done.current) { done.current = true; onClose?.() } }}>
         <header className="ob-sheet__head">
-          <button type="button" className="ob-sheet__x" onClick={requestClose} aria-label="إغلاق"><CloseIc /></button>
+          <button type="button" className="ob-x ob-sheet__x" title="إغلاق" onClick={requestClose} aria-label="إغلاق"><CloseIc /></button>
           <div className="ob-sheet__ht">
             <h2 className="ob-sheet__t">{title}</h2>
             {(sub || meta) && <p className="ob-sheet__s">{sub || meta}</p>}
@@ -96,8 +96,13 @@ function DialogBox({ title, sub, onClose, footer, wide = false, size, children }
         size === 'xl' ? ' cfm__box--xl' : wide ? ' cfm__box--wide' : ''}`}
         initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.24, ease: EASE_IN }}>
-        <h2 className="cfm__t">{title}</h2>
-        {sub && <p className="cfm__b">{sub}</p>}
+        <div className="cfm__hd">
+          <button type="button" className="ob-x" onClick={onClose} aria-label="إغلاق" title="إغلاق"><CloseIc /></button>
+          <div className="cfm__ht">
+            <h2 className="cfm__t">{title}</h2>
+            {sub && <p className="cfm__b">{sub}</p>}
+          </div>
+        </div>
         <div className="cfm__form">{children}</div>
         {footer && <div className="cfm__acts" style={{ marginTop: 22 }}>{footer}</div>}
       </motion.div>

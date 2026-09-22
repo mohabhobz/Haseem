@@ -182,7 +182,10 @@ export function ObModal({ title, children, actions, onClose, wide, dialog = fals
     <div className="cfm" role="dialog" aria-modal="true" aria-label={title}>
       <div className="cfm__scrim" onClick={onClose} />
       <div className={`cfm__box${wide ? ' cfm__box--wide' : ''}`}>
-        <h2 className="cfm__t">{title}</h2>
+        <div className="cfm__hd">
+          <button type="button" className="ob-x" onClick={onClose} aria-label="إغلاق" title="إغلاق"><Ico.close size={20} /></button>
+          <div className="cfm__ht"><h2 className="cfm__t">{title}</h2></div>
+        </div>
         {children}
         {actions && <div className="cfm__acts">{actions}</div>}
       </div>
@@ -286,7 +289,7 @@ export function PreviewPanel({ title, chip, doc, onClose, actions }) {
     <aside className="ob-pv" aria-label={title} data-component="PreviewPanel">
       {/* ★ الرأس: الإغلاق في البداية (زي الأدراج) · الرقم وتحته الحالات */}
       <div className="ob-pv__hd">
-        <button type="button" className="iconbtn ob-pv__x" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
+        <button type="button" className="ob-x ob-pv__x" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
         <div className="ob-pv__ttl">
           <h2><span>{title}</span></h2>
           {chip && <div className="ob-pv__chips">{chip}</div>}
@@ -429,8 +432,8 @@ export function FilterSheet({ onClose, onReset, count, children }) {
       <motion.div className="ob-more__panel" initial={{ y: '100%' }} animate={{ y: 0 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
         <span className="ob-more__grab" aria-hidden="true" />
         <div className="ob-more__hd">
+          <button type="button" className="ob-x" onClick={onClose} aria-label="إغلاق" title="إغلاق"><Ico.close size={20} /></button>
           <h2>الفلاتر</h2>
-          <button type="button" className="iconbtn" onClick={onClose} aria-label="إغلاق"><Ico.close size={20} /></button>
         </div>
         <div className="ob-more__body ob-fsheet__body">{children}</div>
         <div className="ob-fsheet__ft">

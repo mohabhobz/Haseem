@@ -15,8 +15,8 @@ function RowPeek({ r, columns, onClose }) {
   return (
     <aside className="ob-pv ob-pv--row" aria-label={title || 'معاينة'} data-component="RowPeek">
       <div className="ob-pv__hd">
+        <button type="button" className="ob-x" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
         <h2><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span></h2>
-        <button type="button" className="iconbtn" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
       </div>
       {(r.onOpen || r.action || r.actions?.length > 0 || r.menu?.length > 0) && (
         <div className="ob-pv__acts">
