@@ -1323,3 +1323,7 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 @media (max-width: 899px), (pointer: coarse) {
   :root textarea, :root textarea.fld__i, :root .fld__i--area, :root input.fld__i, :root select.fld__i { font-size: 16px !important; }
 }
+
+/* ★ شارات الحالة من غير النقطة اللي قبل الكلمة — في الجداول والكروت والسيستم كله */
+.ob-chip::before, .status__doc::before, .st::before { content: none !important; display: none !important; }
+.status__dot, .status__doc > .dot { display: none !important; }
