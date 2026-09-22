@@ -1466,3 +1466,8 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 }
 :root .panel__foot:hover, :root[data-flip="1"]:not([data-theme="dark"]) .panel__foot:hover,
 :root .panel .btn--outline:hover { background: var(--surface-sunken); border-color: var(--border-strong, var(--border-control)); }
+
+/* ★ شرايح الحالات تحت خانة البحث في كل المقاسات (كانت جنبها على
+   الديسكتوب وتحتها على الموبايل بس). */
+.ob-fbar > .ob-pills { flex: 1 1 100% !important; order: 3; min-width: 0; }
+.ob-fbar > .search { max-width: 360px; }
