@@ -1455,3 +1455,14 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .recent__row { gap: 10px; }
   .recent__st { padding: 2px 7px; }
 }
+
+/* ★ أزرار تذييل كروت الرئيسية (كل المستندات / عرض الكل / متابعة
+   التحصيل / مراجعة الإقرار) ترجع أوت-لاين بإطار زي باقي السيستم —
+   ستايل الرئيسية كان بيشيل الإطار فبتبان نص سادة. */
+:root .panel__foot, :root[data-flip="1"]:not([data-theme="dark"]) .panel__foot,
+:root .panel .btn--outline, :root[data-flip="1"]:not([data-theme="dark"]) .panel .btn--outline {
+  background: transparent; border: 1px solid var(--border-control); color: var(--ink-strong);
+  font-weight: var(--fw-semi); border-radius: var(--r-ctrl);
+}
+:root .panel__foot:hover, :root[data-flip="1"]:not([data-theme="dark"]) .panel__foot:hover,
+:root .panel .btn--outline:hover { background: var(--surface-sunken); border-color: var(--border-strong, var(--border-control)); }
