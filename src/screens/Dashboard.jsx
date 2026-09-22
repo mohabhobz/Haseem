@@ -198,7 +198,7 @@ export default function Dashboard() {
           <AreaChart key={gran} data={gran === 'y' ? YEARS : MONTHS} highlightIndex={gran === 'y' ? 2 : 5} />
         </Panel>
 
-        <Panel title="محتاج تصرّف منك" action={<Ico.more size={18} className="dots" />}>
+        <Panel title="محتاج تصرّف منك" action={<span className="ob-dots" aria-hidden="true"><Ico.dotsV size={18} /></span>}>
           <div className="needs">
             {NEEDS.map((n) => (
               <button key={n.t} className="needs__row" onClick={() => nav(n.to)}>
@@ -236,7 +236,7 @@ export default function Dashboard() {
             onClick={() => nav('/sales/invoices?due=late')} />
         </Panel>
 
-        <Panel title="آخر المستندات" action={<Ico.more size={18} className="dots" />}>
+        <Panel title="آخر المستندات" action={<span className="ob-dots" aria-hidden="true"><Ico.dotsV size={18} /></span>}>
           <div className="recent">
             {RECENT.map((r) => (
               <button key={r.no} className="recent__row"

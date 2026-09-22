@@ -27,9 +27,9 @@ export function RowMenu({ items, label = 'خيارات' }) {
 
   return (
     <span className="rmenu" ref={ref} onClick={(e) => e.stopPropagation()}>
-      <button className={`dots${open ? ' is-on' : ''}`} aria-label={label}
+      <button className={`ob-dots${open ? ' is-on' : ''}`} aria-label={label}
         aria-expanded={open} onClick={() => setOpen((v) => !v)}>
-        <Ico.more size={16} />
+        <Ico.dotsV size={18} />
       </button>
 
       {open && (

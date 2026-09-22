@@ -35,8 +35,8 @@ export function RowMenuOb({ items, label, up }) {
   const list = items.filter(Boolean)
   return (
     <span className="ob-picker" ref={p.ref} onClick={(e) => e.stopPropagation()}>
-      <button type="button" className="iconbtn" aria-label={label} aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}>
-        <Ico.dotsV size={20} />
+      <button type="button" className="ob-dots" aria-label={label} aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}>
+        <Ico.dotsV size={18} />
       </button>
       {p.open && (
         <div className={`ob-menu is-end${up ? ' is-up' : ''}`} role="menu" style={{ minWidth: 220 }}>

@@ -1398,3 +1398,28 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .ob-sheet .ob-stickybar, .ob-sheet .ob-mbar,
   .ob-pv .ob-stickybar, .ob-pv .ob-mbar { display: flex !important; }
 }
+
+/* ★ أيقونة «المزيد» موحّدة في السيستم كله: ٣ نقط رأسية ١٨ جوّه
+   زرار ٣٦×٣٦. كانت أفقية في مكان ورأسية في مكان، وفي كروت الرئيسية
+   كانت واقعة في مربع ٤٤ فبانت كبيرة. */
+.ob-dots {
+  width: 36px; height: 36px; flex: none; padding: 0; border: 0; border-radius: 8px;
+  background: transparent; color: var(--ink-muted); display: inline-grid; place-items: center;
+  cursor: pointer; transition: background-color .15s ease, color .15s ease;
+}
+.ob-dots:hover { background: var(--surface-sunken); color: var(--ink-strong); }
+.ob-dots.is-on, .ob-dots[aria-expanded="true"] { background: var(--surface-sunken); color: var(--ink-strong); }
+.ob-dots:focus-visible { outline: 2px solid var(--focus-ring, var(--brand-500)); outline-offset: 2px; }
+.ob-dots svg { width: 18px; height: 18px; }
+.panel__head .ob-dots { margin: -6px -6px -6px 0; }
+@media (max-width: 599px) { .ob-dots { width: 40px; height: 40px; } }
+
+/* ★ البحث وسنة الفترة جنب بعض في رأس الرئيسية على الموبايل
+   (كانوا فوق بعض، والسنة تحت لوحدها). */
+@media (max-width: 599px) {
+  .tophead__ctrl:has(> .select--pill) > .search { flex: 1 1 auto !important; order: 1; min-width: 0; }
+  .tophead__ctrl > .select--pill { order: 2; flex: 0 0 auto; height: 44px; }
+}
+/* توافق مع القواعد القديمة اللي كانت بتستهدف .dots */
+.rowacts .ob-dots { flex: none; margin-inline-start: 2px; }
+.row__act .ob-dots { grid-column: 2; }

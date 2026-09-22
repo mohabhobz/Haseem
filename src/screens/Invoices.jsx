@@ -369,8 +369,8 @@ function RowMenu({ v, run, up }) {
   const go = (id) => (e) => { e.stopPropagation(); p.setOpen(false); run(id, v) }
   return (
     <span className="ob-picker" ref={p.ref} onClick={(e) => e.stopPropagation()}>
-      <button type="button" className="iconbtn" aria-label={'أوامر ' + v.no} aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}>
-        <Ico.dotsV size={20} />
+      <button type="button" className="ob-dots" aria-label={'أوامر ' + v.no} aria-haspopup="menu" aria-expanded={p.open} onClick={p.toggle}>
+        <Ico.dotsV size={18} />
       </button>
       {p.open && (
         <div className={`ob-menu is-end${up ? ' is-up' : ''}`} role="menu" style={{ minWidth: 220 }}>
@@ -396,7 +396,7 @@ function BulkMore({ bulk }) {
   const p = usePop()
   return (
     <span className="ob-picker" ref={p.ref}>
-      <button type="button" className="iconbtn" aria-label="أوامر جماعية أخرى" aria-expanded={p.open} onClick={p.toggle}><Ico.dotsV size={20} /></button>
+      <button type="button" className="ob-dots" aria-label="أوامر جماعية أخرى" aria-expanded={p.open} onClick={p.toggle}><Ico.dotsV size={18} /></button>
       {p.open && (
         <div className="ob-menu is-end" role="menu" style={{ minWidth: 200 }}>
           <button type="button" role="menuitem" className="ob-menu__i" onClick={() => { p.setOpen(false); bulk('تصدير CSV') }}><Ico.download size={20} />تصدير CSV</button>
