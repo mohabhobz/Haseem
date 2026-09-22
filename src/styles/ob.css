@@ -1423,3 +1423,9 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 /* توافق مع القواعد القديمة اللي كانت بتستهدف .dots */
 .rowacts .ob-dots { flex: none; margin-inline-start: 2px; }
 .row__act .ob-dots { grid-column: 2; }
+
+/* ★ زرار الإغلاق على الشمال (آخر الرأس في RTL) في كل حتة — طلب مهاب. */
+.ob-x, .ob-sheet__x, .ob-pv__x, .pp__x, .ob-pv__hd .iconbtn { order: 9 !important; margin-inline-start: auto; }
+.ob-sheet__ht, .ob-more__hd h2, .pp__hr .pp__t, .cfm__ht, .ob-pv__ttl, .ob-pv__hd h2 { flex: 1 1 auto; min-width: 0; }
+.ob-sheet__acts { order: 8; }
+.cfm__hd { margin: -10px 0 0 -10px; }
