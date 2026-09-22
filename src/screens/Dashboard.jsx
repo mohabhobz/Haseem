@@ -127,11 +127,11 @@ const SOON     = DATA.quotations.filter((q) => {
 
 const NEEDS = [
   { t: 'مرفوضة من هيئة الزكاة', c: REJECTED.length, unit: 'فاتورة', v: sum(REJECTED),
-    Ic: Ico.rejected, crit: true, to: '/sales/invoices?zatca=bad' },
+    Ic: Ico.rejected, tone: 'crit', to: '/sales/invoices?zatca=bad' },
   { t: 'تجاوزت تاريخ الاستحقاق', c: OVERDUE.length, unit: 'فاتورة', v: sum(OVERDUE),
-    Ic: Ico.overdue, to: '/sales/invoices?due=late' },
+    Ic: Ico.overdue, tone: 'warn', to: '/sales/invoices?due=late' },
   { t: 'عروض أسعار تنتهي قريبًا', c: SOON.length, unit: 'عرض', v: sum(SOON),
-    Ic: Ico.expiring, to: '/sales/quotations' },
+    Ic: Ico.expiring, tone: 'warn', to: '/sales/quotations' },
   { t: 'مسودات لم تُصدَر', c: DRAFTS.length, unit: 'مسودة', v: sum(DRAFTS),
     Ic: Ico.invoice, to: '/sales/invoices?state=draft' },
 ].filter((n) => n.c > 0)
@@ -202,7 +202,7 @@ export default function Dashboard() {
           <div className="needs">
             {NEEDS.map((n) => (
               <button key={n.t} className="needs__row" onClick={() => nav(n.to)}>
-                <span className={`needs__ic${n.crit ? ' needs__ic--crit' : ''}`}><n.Ic size={17} /></span>
+                <span className={`needs__ic${n.tone ? ' needs__ic--' + n.tone : ''}`}><n.Ic size={17} /></span>
                 <span className="needs__body">
                   <span className="needs__t">{n.t}</span>
                   <span className="needs__c"><b className="num">{n.c}</b> {n.unit}</span>

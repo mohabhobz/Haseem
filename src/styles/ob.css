@@ -1429,3 +1429,29 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 .ob-sheet__ht, .ob-more__hd h2, .pp__hr .pp__t, .cfm__ht, .ob-pv__ttl, .ob-pv__hd h2 { flex: 1 1 auto; min-width: 0; }
 .ob-sheet__acts { order: 8; }
 .cfm__hd { margin: -10px 0 0 -10px; }
+
+/* ★ أيقونات كروت الرئيسية: خلفياتها كانت بتتشال على الرئيسية
+   (ستايل الخلفية الزجاجية كان بيخليها أبيض ٧٢٪ فوق كارت أبيض =
+   مش بايِنة). رجّعناها خلفية ملوّنة حسب نوع التنبيه. */
+:root .needs__ic, :root[data-flip="1"]:not([data-theme="dark"]) .needs__ic,
+:root .recent__ic, :root[data-flip="1"]:not([data-theme="dark"]) .recent__ic {
+  background: var(--tint-bg); color: var(--tint-ink); border-radius: 10px; align-self: center;
+}
+:root .needs__ic--crit, :root[data-flip="1"]:not([data-theme="dark"]) .needs__ic--crit {
+  background: var(--state-critical-bg, var(--tint-crit-bg)); color: var(--state-critical, var(--tint-crit-ink));
+}
+:root .needs__ic--warn, :root[data-flip="1"]:not([data-theme="dark"]) .needs__ic--warn {
+  background: var(--state-attention-bg); color: var(--state-attention);
+}
+
+/* ★ صفوف «آخر المستندات»: الأيقونة والنص والحالة على خط واحد،
+   والاسم والرقم من غير لفّ. */
+.recent__row, .needs__row { align-items: center; }
+.recent__body { flex: 1 1 auto; min-width: 0; }
+.recent__no { white-space: nowrap; }
+.recent__st { flex: none; white-space: nowrap; }
+.recent__v { flex: none; white-space: nowrap; }
+@media (max-width: 599px) {
+  .recent__row { gap: 10px; }
+  .recent__st { padding: 2px 7px; }
+}
