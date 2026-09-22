@@ -56,6 +56,7 @@ export default function SetCurrencies() {
   return (
     <SettingsShell
       title="العملات"
+      actions={<button className="btn" onClick={addCurr} disabled={used.size >= CURRENCIES.length}><Ico.plus size={20} />إضافة عملة</button>}
       sub="أسعار التحويل مقابل الريال — للتعامل مع عملاء خارج المملكة"
       onSave={save}
       status={{ text: 'السعر بيتخزّن جوّه المستند وقت إصداره' }}>
@@ -63,9 +64,6 @@ export default function SetCurrencies() {
       <section className="fcard" id="curr">
         <div className="fcard__h">
           <h2 className="fcard__t">العملات <em>للتعامل مع عملاء خارج المملكة</em></h2>
-          <button className="gbtn2" onClick={addCurr} disabled={used.size >= CURRENCIES.length}>
-            <Ico.plus size={14} />إضافة عملة
-          </button>
         </div>
 
         {currs.length === 0 ? (

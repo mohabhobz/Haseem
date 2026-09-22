@@ -51,7 +51,7 @@ export default function HelpArticle() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/help')}>
-          <Ico.back size={16} />المساعدة
+          رجوع
         </button>
         <div className="dochead__row">
           <div className="dochead__id">

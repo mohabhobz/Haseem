@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { SheetRoute } from './components/layout.jsx'
 import Login from './screens/Login.jsx'
 import Otp from './screens/Otp.jsx'
 import Dashboard from './screens/Dashboard.jsx'
@@ -63,6 +64,19 @@ import RepBalanceSheet from './screens/RepBalanceSheet.jsx'
 import RepVat from './screens/RepVat.jsx'
 import RepStatement from './screens/RepStatement.jsx'
 
+/* ★ قاعدة الإنشاء (قرار p7-207): فاتورة المبيعات بس صفحة — عرض السعر
+   بيستخدم نفس المحرّر بس بيفتح في درج فوق قايمة العروض. */
+function InvoiceNewRoute() {
+  const [sp] = useSearchParams()
+  if (sp.get('kind') === 'quote') return <SheetRoute behind={<Quotations />} form={<InvoiceNew />} back="/sales/quotations" title="عرض سعر جديد" />
+  return <InvoiceNew />
+}
+
+function SheetEdit({ base, param = 'id', ...rest }) {
+  const p = useParams()
+  return <SheetRoute {...rest} back={`${base}/${p[param]}`} />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -71,23 +85,23 @@ export default function App() {
       <Route path="/otp" element={<Otp />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/sales/invoices" element={<Invoices />} />
-      <Route path="/sales/invoices/new" element={<InvoiceNew />} />
+      <Route path="/sales/invoices/new" element={<InvoiceNewRoute />} />
       <Route path="/sales/invoices/:no" element={<Invoice />} />
       <Route path="/sales/quotations" element={<Quotations />} />
       <Route path="/sales/quotations/:no" element={<Quotation />} />
       <Route path="/sales/credit-notes" element={<CreditNotes />} />
-      <Route path="/sales/credit-notes/new" element={<CreditNoteNew />} />
+      <Route path="/sales/credit-notes/new" element={<SheetRoute behind={<CreditNotes />} form={<CreditNoteNew />} back="/sales/credit-notes" title="إشعار دائن جديد" />} />
       <Route path="/sales/debit-notes" element={<DebitNotes />} />
-      <Route path="/sales/debit-notes/new" element={<DebitNoteNew />} />
+      <Route path="/sales/debit-notes/new" element={<SheetRoute behind={<DebitNotes />} form={<DebitNoteNew />} back="/sales/debit-notes" title="إشعار مدين جديد" />} />
       <Route path="/sales/customers" element={<Customers />} />
-      <Route path="/sales/customers/new" element={<CustomerNew />} />
+      <Route path="/sales/customers/new" element={<SheetRoute behind={<Customers />} form={<CustomerNew />} back="/sales/customers" title="عميل جديد" />} />
       <Route path="/sales/customers/:id" element={<Customer />} />
-      <Route path="/sales/customers/:id/edit" element={<CustomerNew />} />
+      <Route path="/sales/customers/:id/edit" element={<SheetEdit behind={<Customer />} form={<CustomerNew />} base="/sales/customers" title="تعديل العميل" />} />
       {/* المنتجات والخدمات */}
       <Route path="/inventory/items" element={<Items />} />
-      <Route path="/inventory/items/new" element={<ItemNew />} />
+      <Route path="/inventory/items/new" element={<SheetRoute behind={<Items />} form={<ItemNew />} back="/inventory/items" size="wide" title="صنف جديد" />} />
       <Route path="/inventory/items/:sku" element={<Item />} />
-      <Route path="/inventory/items/:sku/edit" element={<ItemNew />} />
+      <Route path="/inventory/items/:sku/edit" element={<SheetEdit behind={<Item />} form={<ItemNew />} base="/inventory/items" param="sku" size="wide" title="تعديل الصنف" />} />
       <Route path="/inventory/warehouses" element={<Warehouses />} />
       <Route path="/inventory/adjustments" element={<Adjustments />} />
       <Route path="/inventory/transfers" element={<Transfers />} />
@@ -95,13 +109,13 @@ export default function App() {
 
       {/* المشتريات والمصروفات */}
       <Route path="/purchases/bills" element={<Bills />} />
-      <Route path="/purchases/bills/new" element={<BillNew mode="bill" />} />
+      <Route path="/purchases/bills/new" element={<SheetRoute behind={<Bills />} form={<BillNew mode="bill" />} back="/purchases/bills" title="فاتورة مشتريات جديدة" />} />
       <Route path="/purchases/bills/:no" element={<Bill />} />
-      <Route path="/purchases/bills/:no/edit" element={<BillNew mode="bill" />} />
+      <Route path="/purchases/bills/:no/edit" element={<SheetEdit behind={<Bill />} form={<BillNew mode="bill" />} base="/purchases/bills" param="no" title="تعديل الفاتورة" />} />
       <Route path="/purchases/orders" element={<PurchaseOrders />} />
-      <Route path="/purchases/orders/new" element={<BillNew mode="po" />} />
+      <Route path="/purchases/orders/new" element={<SheetRoute behind={<PurchaseOrders />} form={<BillNew mode="po" />} back="/purchases/orders" title="أمر شراء جديد" />} />
       <Route path="/purchases/orders/:no" element={<PurchaseOrder />} />
-      <Route path="/purchases/orders/:no/edit" element={<BillNew mode="po" />} />
+      <Route path="/purchases/orders/:no/edit" element={<SheetEdit behind={<PurchaseOrder />} form={<BillNew mode="po" />} base="/purchases/orders" param="no" title="تعديل أمر الشراء" />} />
       <Route path="/purchases/suppliers" element={<Suppliers />} />
       <Route path="/purchases/suppliers/:id" element={<Supplier />} />
       <Route path="/purchases/expenses" element={<Expenses />} />

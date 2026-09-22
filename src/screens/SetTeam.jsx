@@ -103,6 +103,7 @@ export default function SetTeam() {
   return (
     <SettingsShell
       title="الفريق والصلاحيات"
+      actions={<button className="btn btn--primary" onClick={() => setInvite(true)}><Ico.plus size={20} />دعوة عضو</button>}
       sub="مين يدخل، وكل واحد بيشوف إيه"
       footer={null}>
 
@@ -110,9 +111,6 @@ export default function SetTeam() {
       <section className="fcard">
         <div className="fcard__h">
           <h2 className="fcard__t">الأعضاء <em>{members.length} أعضاء</em></h2>
-          <button className="gbtn2" onClick={() => setInvite(true)}>
-            <Ico.plus size={14} />دعوة عضو
-          </button>
         </div>
 
         <ul className="tmlist">

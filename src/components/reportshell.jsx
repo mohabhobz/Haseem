@@ -43,7 +43,7 @@ export function ReportShell({
           )}
           <span className="fresh"><i />محسوب من بياناتك الآن</span>
           {csv !== false && (
-            <Button label="تنزيل CSV" variant="ghost"
+            <Button label="تصدير CSV" variant="ghost"
               onClick={() => ACT.exportReport(title, 'csv')} />
           )}
           {pdf && (

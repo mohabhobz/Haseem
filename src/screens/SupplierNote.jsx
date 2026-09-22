@@ -51,8 +51,8 @@ export default function SupplierNote() {
   const acts = [
     draft && { id: 'post', label: 'ترحيل الإشعار', Ic: Ico.check },
     draft && { id: 'del',  label: 'حذف المسودة', Ic: Ico.trash, tone: 'crit' },
-    { id: 'pdf',   label: 'تحميل PDF', Ic: Ico.download },
-    { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print },
+    { id: 'pdf',   label: 'تنزيل PDF', Ic: Ico.download },
+    { id: 'print', label: 'طباعة', Ic: Ico.print },
     !draft && { id: 'rev', label: 'عكس الإشعار', Ic: Ico.retry, tone: 'crit' },
   ].filter(Boolean)
 
@@ -71,7 +71,7 @@ export default function SupplierNote() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav(`/purchases/bills/${n.src}`)}>
-          <Ico.back size={16} />{n.src}
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">
@@ -92,7 +92,7 @@ export default function SupplierNote() {
               </button>
             ) : (
               <button className="btn btn--outline" onClick={() => run('pdf')}>
-                <Ico.download size={16} />تحميل PDF
+                <Ico.download size={16} />تنزيل PDF
               </button>
             )}
           </div>

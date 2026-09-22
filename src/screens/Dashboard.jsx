@@ -6,6 +6,7 @@ import { Button, SearchField } from '../components/primitives.jsx'
 import { AreaChart } from '../components/charts.jsx'
 import { Ico } from '../components/icons.jsx'
 import { SAR } from '../components/data.jsx'
+import { QuietSelect } from '../components/ob.jsx'
 import { toast } from '../components/feedback.jsx'
 import { daysFrom, fmtMoney, STATUS } from '../lib/format.js'
 import * as R from '../lib/reports.js'
@@ -52,8 +53,28 @@ const STATS = [
 ]
 
 /* الرسم من نفس سلسلة تقرير المبيعات — مش أرقام متخيّلة */
-const MONTHS = R.salesTrend(`${TODAY.slice(0, 4)}-01-01`, TODAY)
-  .map((m) => ({ l: m.label.split(' ')[0], v: m.net }))
+/* ★ الشهر الحالي (أو السنة الحالية) في نص الرسم: ٥ قبله و٥ بعده.
+   الشهور الجاية لسه مفيهاش مبيعات، فبتظهر على المحور من غير خط. */
+const MONTH_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر']
+const CUR_Y = +TODAY.slice(0, 4), CUR_M = +TODAY.slice(5, 7) - 1
+const ym = (y, m) => { const d = new Date(Date.UTC(y, m, 1)); return [d.getUTCFullYear(), d.getUTCMonth()] }
+const MONTHS = (() => {
+  const [fy, fm] = ym(CUR_Y, CUR_M - 5)
+  const real = Object.fromEntries(R.salesTrend(`${fy}-${String(fm + 1).padStart(2, '0')}-01`, TODAY).map((m) => [m.key, m.net]))
+  return Array.from({ length: 11 }, (_, i) => {
+    const [y, m] = ym(CUR_Y, CUR_M - 5 + i)
+    const k = `${y}-${String(m + 1).padStart(2, '0')}`
+    return { l: MONTH_AR[m] + (y !== CUR_Y ? ` ${String(y).slice(2)}` : ''), v: i <= 5 ? (real[k] ?? 0) : null }
+  })
+})()
+/* السنوي: السنة الحالية من البيانات الحقيقية لحد النهارده.
+   البيانات التجريبية بتبدأ ٢٠٢٦، فالسنتين اللي قبلها أرقام توضيحية
+   (نسبة ثابتة من السنة الحالية) لحد ما يتربط بالباك إند. */
+const YEARS = (() => {
+  const cur = R.salesTrend(`${CUR_Y}-01-01`, TODAY).reduce((a, m) => a + m.net, 0)
+  const past = { [-2]: 0.58, [-1]: 0.79 }
+  return [-2, -1, 0, 1, 2].map((d) => ({ l: String(CUR_Y + d), v: d === 0 ? cur : d < 0 ? Math.round(cur * past[d]) : null }))
+})()
 
 /* أكبر المستحقات — من أرصدة العملاء الحقيقية */
 /* ★ كان بيقرا `c.balance` المخزّن. الرصيد المشتق هو المصدر
@@ -119,6 +140,7 @@ const NEEDS = [
 export default function Dashboard() {
   const nav = useNavigate()
   const [attn, setAttn] = useState(false)
+  const [gran, setGran] = useState('m')
   const total = NOTIF_COUNT
 
   /* ★★ تجربة مؤقتة: قلب الأبيض والكريمي في الرئيسية بس.
@@ -156,9 +178,8 @@ export default function Dashboard() {
             onClick={s.to ? () => nav(s.to) : undefined}
             onKeyDown={s.to ? (e) => { if (e.key === 'Enter') nav(s.to) } : undefined}
             className={`stat${s.alert ? ' stat--alert' : ''}${s.to ? ' stat--go' : ''}`}>
-            {s.art
-              ? <img className="stat__art" src={s.art} alt="" aria-hidden="true" />
-              : <div className="stat__icon"><s.Ic size={19} /></div>}
+            {/* ★ أيقونات عادية بدل الرسومات الـ3D (طلب مهاب) — ملفات /stats لسه موجودة لو رجعنا لها */}
+            <div className="stat__icon"><s.Ic size={19} /></div>
             <div className="stat__t">
               <div className="stat__l">{s.l}</div>
               <div className="stat__v"><SAR v={s.v} dec /></div>
@@ -170,14 +191,11 @@ export default function Dashboard() {
 
       {/* ---------- صف ٢ ---------- */}
       <div className="row2">
-        <Panel title="المبيعات الشهرية"
-          action={<button className="select select--pill"
-            onClick={() => toast.info('العرض الشهري هو المتاح دلوقتي',
-              { sub: 'الأسبوعي والربعي جايين مع موديول التقارير' })}>
-            <span>شهري</span><Ico.chevron size={15} className="chev" /></button>}>
-          {/* آخر شهر فيه بيانات — كان رقم ثابت (٧) بيقع بره المصفوفة
-              لما الشهور تقل، فالنقطة والرقم مكانوش بيظهروا خالص */}
-          <AreaChart data={MONTHS} highlightIndex={MONTHS.length - 1} />
+        <Panel title={gran === 'y' ? 'المبيعات السنوية' : 'المبيعات الشهرية'}
+          action={<QuietSelect className="is-pill" value={gran} onChange={setGran} end
+            options={[{ id: 'm', label: 'شهري' }, { id: 'y', label: 'سنوي' }]} />}>
+          {/* الحالي دايمًا في النص ومتعلّم افتراضيًا */}
+          <AreaChart key={gran} data={gran === 'y' ? YEARS : MONTHS} highlightIndex={gran === 'y' ? 2 : 5} />
         </Panel>
 
         <Panel title="محتاج تصرّف منك" action={<Ico.more size={18} className="dots" />}>

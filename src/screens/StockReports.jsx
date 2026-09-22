@@ -136,7 +136,7 @@ export default function StockReports() {
             </span>
           </div>
         ) : tab === 'val' ? (
-          <DataTable selectable={false} rows={Sv.apply(valRows).map((r) => ({
+          <DataTable selectable={false} peek={false} rows={Sv.apply(valRows).map((r) => ({
             key: r.sku,
             onOpen: () => nav(`/inventory/items/${r.sku}`),
             cells: [
@@ -159,7 +159,7 @@ export default function StockReports() {
             ]}
           />
         ) : (
-          <DataTable selectable={false} rows={Sl.apply(liveRows).map((r) => ({
+          <DataTable selectable={false} peek={false} rows={Sl.apply(liveRows).map((r) => ({
             key: `${r.sku}-${r.storeId}`,
             onOpen: () => nav(`/inventory/items/${r.sku}`),
             cells: [

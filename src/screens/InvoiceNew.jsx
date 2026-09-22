@@ -194,11 +194,11 @@ export default function InvoiceNew() {
   )
 
   const actions = issued ? <>
-    <button type="button" className="btn btn--ghost" onClick={() => nav('/sales/invoices')}>رجوع</button>
-    <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: no + '.pdf' })}><Ico.download size={20} />PDF</button>
+    <button type="button" className="btn btn--ghost ob-back" onClick={() => nav('/sales/invoices')}>رجوع</button>
+    <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: no + '.pdf' })}><Ico.download size={20} />تنزيل PDF</button>
     <button type="button" className="btn btn--primary" onClick={() => toast.ok('اتبعتت للعميل', { sub: cust?.ar })}><Ico.send size={20} className="ob-dir" />إرسال للعميل</button>
   </> : <>
-    <button type="button" className="btn btn--ghost" onClick={() => nav('/sales/invoices')}>رجوع</button>
+    <button type="button" className="btn btn--ghost ob-back" onClick={() => nav('/sales/invoices')}>رجوع</button>
     <button type="button" className="btn" aria-pressed={pv} onClick={() => setPv((v) => !v)}><Ico.eye size={20} />{pv ? 'غلق المعاينة' : 'معاينة'}</button>
     <span className="ob-contents ob-hide-sm">{oldOrder ? <>
       <button type="button" className="btn" onClick={tryIssue}>{K.issue}</button>
@@ -462,7 +462,7 @@ export default function InvoiceNew() {
       )}
 
       {confirm && (
-        <ObModal title="إصدار الفاتورة؟" onClose={() => setConfirm(false)}
+        <ObModal dialog title="إصدار الفاتورة؟" onClose={() => setConfirm(false)}
           actions={<>
             <button type="button" className="btn" onClick={() => setConfirm(false)}>إلغاء</button>
             <button type="button" className="btn btn--primary" onClick={doIssue}>إصدار</button>

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { useState, useEffect, useRef } from 'react'
 import { Ico, Riyal } from '../components/icons.jsx'
 import { toast } from '../components/feedback.jsx'
@@ -62,6 +63,8 @@ function Preview() {
 }
 
 export function BrandTab() {
+  const [slot, setSlot] = useState(null)
+  useEffect(() => { setSlot(document.querySelector('[data-slot="set-acts"]')) }, [])
   const saved = getBrand()
   const [b, setB] = useState(saved)
   const [custom, setCustom] = useState(!SWATCHES.some((s) => s.hex.toLowerCase() === saved.color.toLowerCase()))
@@ -89,6 +92,10 @@ export function BrandTab() {
   const cw = contrast(b.color, '#FFFFFF')
   const okWhite = cw >= 4.5
 
+  const btns = <>
+    <button className="btn btn--ghost" onClick={reset}>إعادة الضبط</button>
+    <button className="btn btn--primary" onClick={save}>حفظ الهوية</button>
+  </>
   return (
     <>
       <div className="docgrid">
@@ -258,19 +265,12 @@ export function BrandTab() {
         </aside>
       </div>
 
-      <div className="savebar" data-component="SaveBar">
-        <span className={`savebar__s${done ? ' is-ok' : ''}`}>
-          {done
-            ? <><Ico.check size={15} />الهوية اتحفظت — سارية على المنشأة كلها</>
-            : 'الهوية بتسري على كل مستخدمي المنشأة، مش على جهازك بس'}
-        </span>
-        <div className="savebar__b">
-          <button className="btn btn--ghost" onClick={reset}>إعادة الضبط</button>
-          <button className="btn btn--primary" onClick={save}>
-            <Ico.check size={16} />حفظ الهوية
-          </button>
-        </div>
-      </div>
+      {/* ★ الحفظ فوق على الشمال في رأس الصفحة (قاعدة p7-210)، وعلى الموبايل شريط ثابت تحت */}
+      <p className={`fnote${done ? '' : ' fnote--quiet'}`}>
+        {done ? <><Ico.check size={14} />الهوية اتحفظت — سارية على المنشأة كلها</> : 'الهوية بتسري على كل مستخدمي المنشأة، مش على جهازك بس'}
+      </p>
+      {slot && createPortal(<span className="ob-savegrp">{btns}</span>, slot)}
+      <div className="ob-mbar">{btns}</div>
     </>
   )
 }

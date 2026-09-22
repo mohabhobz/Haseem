@@ -44,7 +44,7 @@ export default function JournalEntry() {
   const acts = [
     draft && { id: 'post', label: 'ترحيل القيد', Ic: Ico.check },
     draft && { id: 'del', label: 'حذف المسودة', Ic: Ico.trash, tone: 'crit' },
-    { id: 'print', label: 'طباعة القيد', Ic: Ico.print },
+    { id: 'print', label: 'طباعة', Ic: Ico.print },
     !draft && { id: 'rev', label: 'عكس بقيد مضاد', Ic: Ico.retry, tone: 'crit' },
   ].filter(Boolean)
 
@@ -62,7 +62,7 @@ export default function JournalEntry() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/accounting/journal')}>
-          <Ico.back size={16} />قيود اليومية
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">
@@ -85,7 +85,7 @@ export default function JournalEntry() {
               </button>
             ) : (
               <button className="btn btn--outline" onClick={() => run('print')}>
-                <Ico.print size={16} />طباعة القيد
+                <Ico.print size={16} />طباعة
               </button>
             )}
           </div>

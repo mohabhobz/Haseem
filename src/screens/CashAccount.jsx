@@ -79,7 +79,7 @@ export default function CashAccount() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/cash/accounts')}>
-          <Ico.back size={16} />الحسابات النقدية والبنكية
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">

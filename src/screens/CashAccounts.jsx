@@ -70,9 +70,10 @@ export default function CashAccounts() {
         <PageHeader title="الحسابات النقدية والبنكية"
           sub={<>كل حساب بيتحرّك فيه فلوس المنشأة<CurrencyNote /></>} />
         <div className="tophead__ctrl">
+          <Button label="سند قبض" variant="ghost" onClick={() => setForm('rv')} />
           <Button label="سند صرف" variant="ghost" onClick={() => setForm('pv')} />
-          <Button label="تحويل بين الحسابات" variant="outline" onClick={() => setForm('trf')} />
-          <Button label="حساب جديد" variant="primary" icon="＋" onClick={() => setForm('acc')} />
+          <Button label="تحويل بين الحسابات" variant="ghost" onClick={() => setForm('trf')} />
+          <Button label="إنشاء حساب" variant="primary" icon="＋" onClick={() => setForm('acc')} />
         </div>
       </div>
 
@@ -89,11 +90,6 @@ export default function CashAccounts() {
       <section className="sect" data-component="CashAccounts">
         <header className="sect__h">
           <h2 className="sect__t">الحسابات<span className="sect__n">{rows.length}</span></h2>
-          <div className="sect__ctrl">
-            <button className="gbtn2" onClick={() => setForm('rv')}>
-              <Ico.plus size={14} />سند قبض
-            </button>
-          </div>
         </header>
 
         <div className="acctgrid">

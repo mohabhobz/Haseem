@@ -137,7 +137,7 @@ export default function CashTransfers() {
           sub={<>نقل فلوس بين حسابات المنشأة — مش مصروف ومش إيراد<CurrencyNote /></>} />
         <div className="tophead__ctrl">
           <DateRange value={period} onChange={setPeriod} today={TODAY} />
-          <Button label="تحويل جديد" variant="primary" icon="＋" onClick={() => setForm(true)} />
+          <Button label="إنشاء تحويل" variant="primary" icon="＋" onClick={() => setForm(true)} />
         </div>
       </div>
 
@@ -172,7 +172,6 @@ export default function CashTransfers() {
           </div>
         ) : (
           <DataTable
-            selectable={false}
             columns={[
               col('الرقم', 'no', { width: '124px' }),
               { label: 'الحركة', width: '280px' },

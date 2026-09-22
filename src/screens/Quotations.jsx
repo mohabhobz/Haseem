@@ -101,7 +101,7 @@ export default function Quotations() {
       <PageHeader title="عروض الأسعار والفواتير المبدئية" sub="عروض للعملاء وفواتير مبدئية قبل الإصدار"
         actions={<>
           <button type="button" className="btn ob-hide-sm" onClick={() => nav('/sales/invoices/new?kind=prf')}>فاتورة مبدئية</button>
-          <button type="button" className="btn btn--primary ob-hide-sm" onClick={() => nav('/sales/invoices/new?kind=quote')}><Ico.plus size={20} />عرض سعر جديد</button>
+          <button type="button" className="btn btn--primary ob-hide-sm" onClick={() => nav('/sales/invoices/new?kind=quote')}><Ico.plus size={20} />إنشاء عرض سعر</button>
         </>} />
 
       <ObList
@@ -152,13 +152,13 @@ export default function Quotations() {
         cardAmount={(q) => <Amt v={q.total} />}
         cardAmountLabel={(q) => <>صالح حتى <span className="num">{fmtDate(q.valid)}</span></>}
         empty={{ t: 'لا توجد عروض أسعار بعد', p: 'أنشئ أول عرض سعر وسيظهر هنا مع حالته وصلاحيته.' }}
-        emptyAction={<button type="button" className="btn btn--primary" onClick={() => nav('/sales/invoices/new?kind=quote')}><Ico.plus size={20} />عرض سعر جديد</button>}
+        emptyAction={<button type="button" className="btn btn--primary" onClick={() => nav('/sales/invoices/new?kind=quote')}><Ico.plus size={20} />إنشاء عرض سعر</button>}
         preview={pq ? { key: pq.no } : null}
       />
 
       <div className="ob-stickybar">
         <button type="button" className="btn" onClick={() => nav('/sales/invoices/new?kind=prf')}>فاتورة مبدئية</button>
-        <button type="button" className="btn btn--primary" onClick={() => nav('/sales/invoices/new?kind=quote')}><Ico.plus size={20} />عرض سعر جديد</button>
+        <button type="button" className="btn btn--primary" onClick={() => nav('/sales/invoices/new?kind=quote')}><Ico.plus size={20} />إنشاء عرض سعر</button>
       </div>
     </AppShell>
   )

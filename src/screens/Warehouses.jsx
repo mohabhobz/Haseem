@@ -1,3 +1,4 @@
+import { Modal } from '../components/modal.jsx'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell, PageHeader, CurrencyNote } from '../components/layout.jsx'
@@ -43,11 +44,13 @@ function Form({ init, onClose }) {
   }
 
   return (
-    <div className="cfm" role="dialog" aria-modal="true">
-      <div className="cfm__scrim" onClick={onClose} />
-      <div className="cfm__box cfm__box--form">
-        <h2 className="cfm__t">{editing ? 'تعديل مستودع' : 'مستودع جديد'}</h2>
-        <p className="cfm__b">المستودع هو المكان اللي الرصيد بيتحسب فيه.</p>
+    <Modal title={editing ? 'تعديل مستودع' : 'مستودع جديد'} sub="المستودع هو المكان اللي الرصيد بيتحسب فيه." onClose={onClose}
+      footer={<>
+          <button className="btn btn--ghost" onClick={onClose}>إلغاء</button>
+          <button className="btn btn--primary" onClick={save}>
+            <Ico.check size={16} />حفظ
+          </button>
+      </>}>
 
         <label className="fld">
           <span className="fld__l">اسم المستودع</span>
@@ -90,14 +93,7 @@ function Form({ init, onClose }) {
           </span>
         </label>
 
-        <div className="cfm__acts" style={{ marginTop: 22 }}>
-          <button className="btn btn--ghost" onClick={onClose}>إلغاء</button>
-          <button className="btn btn--primary" onClick={save}>
-            <Ico.check size={16} />حفظ
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -138,7 +134,7 @@ export default function Warehouses() {
         <PageHeader title="المستودعات"
           sub={<>مواقع التخزين اللي الرصيد بيتحسب فيها<CurrencyNote /></>} />
         <div className="tophead__ctrl">
-          <Button label="مستودع جديد" variant="primary" icon="＋" onClick={() => setForm({})} />
+          <Button label="إنشاء مستودع" variant="primary" icon="＋" onClick={() => setForm({})} />
         </div>
       </div>
 

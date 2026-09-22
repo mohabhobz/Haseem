@@ -103,7 +103,7 @@ export default function Expenses() {
 
   const tableRows = shown.map((e) => ({
     key: e.no,
-    onOpen: () => setForm(e),
+    openLabel: 'تعديل', onOpen: () => setForm(e),
     action: e.status === 'draft'
       ? { label: 'ترحيل', tone: 'go', onClick: () => ACT.postExpense(e, fmtMoney(DATA.expNet(e)), DATA.expVat(e)) }
       : null,
@@ -156,7 +156,7 @@ export default function Expenses() {
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
           <Button label="تصدير CSV" variant="ghost"
             onClick={() => ACT.bulkAction('تصدير CSV', 'expenses', rows.map((e) => e.no))} />
-          <Button label="مصروف جديد" variant="primary" icon="＋" onClick={() => setForm('new')} />
+          <Button label="إنشاء مصروف" variant="primary" icon="＋" onClick={() => setForm('new')} />
         </div>
       </div>
 

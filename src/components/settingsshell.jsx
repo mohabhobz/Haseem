@@ -34,34 +34,24 @@ export const SET_NAV = [
 
 export function SettingsShell({ title, sub, actions, children, footer, onSave, onCancel, status }) {
   const nav = useNavigate()
+  /* ★ قاعدة الحفظ (قرار p7-210): الحفظ فوق على الشمال في رأس الصفحة،
+     وعلى الموبايل شريط ثابت تحت — نفس مكانه في الدرج. */
+  const saveBtns = footer !== null && (onSave || footer) ? (footer || (
+    <>
+      <button className="btn btn--quiet" onClick={onCancel || (() => nav('/dashboard'))}>إلغاء</button>
+      <button className="btn btn--primary" onClick={onSave}>حفظ</button>
+    </>
+  )) : null
   return (
     <AppShell>
       <div className="tophead">
-        <PageHeader title={title} sub={sub} />
-        {actions && <div className="tophead__ctrl">{actions}</div>}
+        <PageHeader title={title} sub={<>{sub}{status?.text && <span className={`setsave__s${status?.bad ? ' is-bad' : ''}`} style={{ display: 'block' }}>{status.text}</span>}</>} />
+        <div className="tophead__ctrl" data-slot="set-acts">{actions}{saveBtns && <span className="ob-savegrp">{saveBtns}</span>}</div>
       </div>
 
       <div className="setmain">
         {children}
-
-        {footer !== null && (onSave || footer) && (
-          <div className="setsave">
-            <span className={`setsave__s${status?.bad ? ' is-bad' : ''}`}>
-              {status?.text}
-            </span>
-            <div className="setsave__b">
-              {footer || (
-                <>
-                  <button className="btn btn--quiet"
-                    onClick={onCancel || (() => nav('/dashboard'))}>إلغاء</button>
-                  <button className="btn btn--primary" onClick={onSave}>
-                    <Ico.check size={16} />حفظ
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
+        {saveBtns && <div className="ob-mbar">{saveBtns}</div>}
       </div>
     </AppShell>
   )

@@ -76,7 +76,7 @@ export function VoucherForm({ kind = 'receipts', onClose }) {
       return
     }
     /* API: POST /cash/vouchers  → { kind, party, acc, to, amount, way, date, ref, memo, post } */
-    toast.ok(post ? 'السند اتحفظ واترحّل' : 'السند اتحفظ مسودة', {
+    toast.ok(post ? 'السند اتحفظ واترحّل' : 'السند اتحفظ كمسودة', {
       sub: `${fmtMoney(n)} ر.س · ${pk === 'other' ? pname : DATA.partyAr({ k: pk, id: pid })}`,
     })
     onClose()
@@ -92,7 +92,7 @@ export function VoucherForm({ kind = 'receipts', onClose }) {
       footer={
         <>
           <button className="btn btn--quiet" onClick={onClose}>إلغاء</button>
-          <button className="btn btn--sec" onClick={() => save(false)}>حفظ مسودة</button>
+          <button className="btn btn--sec" onClick={() => save(false)}>حفظ كمسودة</button>
           <button className="btn btn--primary" onClick={() => save(true)}>حفظ وترحيل</button>
         </>
       }>
@@ -191,7 +191,7 @@ export function VoucherForm({ kind = 'receipts', onClose }) {
       </div>
 
       <p className="fnote fnote--quiet">
-        <b>حفظ مسودة</b> بيسجّل السند من غير ما يقيّد حاجة.
+        <b>حفظ كمسودة</b> بيسجّل السند من غير ما يقيّد حاجة.
         {' '}<b>حفظ وترحيل</b> بيكتب القيد في الدفتر على طول، وبعدها التعديل
         بيبقى بسند عكسي بس.
       </p>

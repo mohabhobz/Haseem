@@ -56,8 +56,8 @@ export default function PurchaseOrder() {
     live && p.status !== 'draft' && { id: 'send', label: 'إرسال للمورد', Ic: Ico.send },
     live && got < qty && { id: 'recv', label: 'تسجيل استلام', Ic: Ico.items },
     live && got > billed && { id: 'bill', label: 'تحويل لفاتورة', Ic: Ico.invoice },
-    { id: 'pdf',   label: 'تحميل PDF', Ic: Ico.download },
-    { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print },
+    { id: 'pdf',   label: 'تنزيل PDF', Ic: Ico.download },
+    { id: 'print', label: 'طباعة', Ic: Ico.print },
     live && { id: 'close', label: 'إقفال الأمر', Ic: Ico.ban },
     live && { id: 'cancel', label: 'إلغاء الأمر', Ic: Ico.trash, tone: 'crit' },
   ].filter(Boolean)
@@ -81,13 +81,13 @@ export default function PurchaseOrder() {
     p.status === 'draft'        ? { id: 'approve', label: 'اعتماد الأمر', Ic: Ico.check }
     : live && got < qty         ? { id: 'recv',    label: 'تسجيل استلام', Ic: Ico.items }
     : live && got > billed      ? { id: 'bill',    label: 'تحويل لفاتورة', Ic: Ico.invoice }
-    :                             { id: 'pdf',     label: 'تحميل PDF',    Ic: Ico.download }
+    :                             { id: 'pdf',     label: 'تنزيل PDF',    Ic: Ico.download }
 
   return (
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/purchases/orders')}>
-          <Ico.back size={16} />أوامر الشراء
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">

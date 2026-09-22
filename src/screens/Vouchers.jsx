@@ -197,7 +197,7 @@ export default function Vouchers({ kind = 'receipts' }) {
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
           <Button label="تصدير CSV" variant="ghost"
             onClick={() => ACT.bulkAction('تصدير CSV', kind, rows.map((v) => v.no))} />
-          <Button label={`${C.one} جديد`} variant="primary" icon="＋"
+          <Button label={`إنشاء ${C.one}`} variant="primary" icon="＋"
             onClick={() => setForm(true)} />
         </div>
       </div>
@@ -238,7 +238,6 @@ export default function Vouchers({ kind = 'receipts' }) {
         ) : (
           <>
             <DataTable
-              selectable={false}
               columns={[
                 col('الرقم', 'no', { width: '124px' }),
                 col(C.partyAr, 'party'),

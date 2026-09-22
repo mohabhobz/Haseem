@@ -1,10 +1,52 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useContext } from 'react'
+import { PeekCtx } from './layout.jsx'
+import { bulkAction } from '../lib/actions.js'
 import { Ico } from './icons.jsx'
 import { Checkbox, IconButton, Button } from './primitives.jsx'
 import { RowMenu } from './rowmenu.jsx'
 
 /* جدول حقيقي برؤوس أعمدة ومحاذاة رقمية — الإصلاح الأساسي لملاحظة A1 */
-export function DataTable({ columns, rows, selectable = true, selected, onSelect, onSelectAll }) {
+/* ★ معاينة الصف — نفس لوحة المعاينة (ob-pv) اللي في المبيعات:
+   العنوان · الأكشنز · تفاصيل الصف كأزواج «العمود ← القيمة». */
+function RowPeek({ r, columns, onClose }) {
+  const title = r.peekTitle ?? (typeof r.key === 'string' ? r.key : '')
+  return (
+    <aside className="ob-pv ob-pv--row" aria-label={title || 'معاينة'} data-component="RowPeek">
+      <div className="ob-pv__hd">
+        <h2><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span></h2>
+        <button type="button" className="iconbtn" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
+      </div>
+      {(r.onOpen || r.action || r.actions?.length > 0 || r.menu?.length > 0) && (
+        <div className="ob-pv__acts">
+          {r.onOpen && <button type="button" className="btn btn--primary" onClick={() => { onClose(); r.onOpen() }}>{r.openLabel || 'عرض التفاصيل'}</button>}
+          {r.action && <button type="button" className="btn" onClick={() => r.action.onClick?.()}>{r.action.label}</button>}
+          {r.actions?.map((a) => <button key={a.label} type="button" className="btn" disabled={a.off} onClick={(e) => a.onClick?.(e)}>{a.label}</button>)}
+          {r.menu?.length > 0 && <RowMenu label="المزيد" items={r.menu} />}
+        </div>
+      )}
+      <div className="ob-pv__body">
+        <dl className="ob-kv">
+          {r.cells.map((cell, i) => columns[i]?.label ? (
+            <div key={i} className="ob-kv__r"><dt>{columns[i].label}</dt><dd className={columns[i].num ? 'num' : ''}>{cell}</dd></div>
+          ) : null)}
+        </dl>
+      </div>
+    </aside>
+  )
+}
+
+export function DataTable({ columns, rows, selectable = true, selected: selIn, onSelect: onSelIn, onSelectAll: onAllIn, bulk, peek = true }) {
+  /* ★ التحديد المتعدد في كل القوايم (قرار p7-209): لو الشاشة مبتديرش
+     التحديد بنفسها، الجدول بيديره وبيطلّع شريط الأوامر الجماعية لوحده. */
+  const own = useSelection()
+  const selected = selIn ?? own.selected
+  const onSelect = onSelIn ?? own.toggle
+  const onSelectAll = onAllIn ?? ((on) => own.selectAll(on, rows.map((r, i) => r.key ?? i)))
+  const pk = useContext(PeekCtx)
+  const openRow = (r) => {
+    if (peek && pk) pk.open(r.key, <RowPeek r={r} columns={columns} onClose={pk.close} />)
+    else r.onOpen?.()
+  }
   const allOn = selectable && rows.length > 0 && selected.size === rows.length
   return (
     <div data-component="DataTable" className="tablewrap">
@@ -40,8 +82,8 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
         <tbody>
           {rows.map((r, ri) => (
             <tr key={r.key ?? ri} data-component="DataRow"
-              className={`${selected?.has(r.key ?? ri) ? 'selected' : ''}${r.onOpen ? ' is-open' : ''}`}
-              onClick={r.onOpen ? (e) => { if (!e.target.closest('button,input,label')) r.onOpen() } : undefined}>
+              className={`${selected?.has(r.key ?? ri) ? 'selected' : ''}${(r.onOpen || (peek && pk)) ? ' is-open' : ''}${pk && pk.key != null && pk.key === r.key ? ' is-peek' : ''}`}
+              onClick={(r.onOpen || (peek && pk)) ? (e) => { if (!e.target.closest('button,input,label,a,select')) openRow(r) } : undefined}>
               {selectable && (
                 <td className="checkcell">
                   <Checkbox checked={selected.has(r.key ?? ri)} onChange={() => onSelect(r.key ?? ri)} />
@@ -79,6 +121,11 @@ export function DataTable({ columns, rows, selectable = true, selected, onSelect
           ))}
         </tbody>
       </table>
+      {selectable && !selIn && (
+        <BulkActionBar count={own.selected.size} onClear={own.clear}
+          actions={bulk?.actions || ['طباعة', 'تنزيل PDF', 'تصدير CSV']}
+          onAction={(label) => bulkAction(label, bulk?.kind || 'rows', [...own.selected]).then(() => own.clear())} />
+      )}
     </div>
   )
 }

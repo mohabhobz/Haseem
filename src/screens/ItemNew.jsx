@@ -106,7 +106,7 @@ export default function ItemNew() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/inventory/items')}>
-          <Ico.back size={16} />الأصناف
+          رجوع
         </button>
         <div className="dochead__row">
           <div className="dochead__id">

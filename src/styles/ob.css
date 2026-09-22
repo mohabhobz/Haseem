@@ -948,3 +948,225 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .barlist li > .barlist__n { grid-area: n; } .barlist li > .barlist__v { grid-area: v; }
   .barlist li > .barlist__b { grid-area: b; align-self: center; } .barlist li > .barlist__p { grid-area: p; }
 }
+
+/* ============================================================
+   ★ الدرج الموحّد .ob-sheet (قرار مهاب ٢٢ سبتمبر)
+   بيفتح من ناحية لوحة المعاينة (الشمال في RTL)، الخلفية بلور،
+   والأكشنز في الرأس فوق على الشمال — الأساسي آخر واحد (أقصى
+   الشمال). على الموبايل: عرض الشاشة كله والأكشنز شريط تحت.
+   ============================================================ */
+.ob-sheet { position: fixed; inset: 0; z-index: 130; }
+.ob-sheet__scrim { position: absolute; inset: 0; background: rgba(28, 24, 20, .28);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.ob-sheet__panel { position: absolute; inset-block: 0; inset-inline-end: 0; width: min(560px, 100vw);
+  background: var(--surface-page); border-inline-start: 1px solid var(--border-base);
+  display: flex; flex-direction: column; box-shadow: 0 0 0 1px rgba(0,0,0,.02), -12px 0 32px rgba(0,0,0,.08); }
+.ob-sheet--wide .ob-sheet__panel { width: min(720px, 100vw); }
+.ob-sheet--xl .ob-sheet__panel { width: min(960px, 100vw); }
+.ob-sheet__head { flex: none; display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 14px 20px;
+  background: var(--surface-raised); border-bottom: 1px solid var(--border-base); }
+.ob-sheet__x { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border: 0; border-radius: 8px;
+  background: transparent; color: var(--ink-muted); cursor: pointer; }
+.ob-sheet__x:active { background: var(--surface-sunken); }
+.ob-sheet__ht { flex: 1; min-width: 0; }
+.ob-sheet__t { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink-strong); line-height: 1.4; }
+.ob-sheet__s { margin: 2px 0 0; font-size: 13px; color: var(--ink-muted); line-height: 1.6; }
+.ob-sheet__acts, .ob-sheet__mbar { display: flex; align-items: center; gap: 8px; flex: none; }
+.ob-sheet__acts > *, .ob-sheet__mbar > * { flex: none; }
+.ob-sheet__acts .btn--primary, .ob-sheet__mbar .btn--primary { order: 9; }
+.ob-sheet__acts .btn, .ob-sheet__mbar .btn { min-width: 0 !important; margin: 0 !important; height: 44px; }
+.ob-sheet__acts > .ob-row { width: auto !important; }
+.ob-sheet__body { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; overscroll-behavior: contain; }
+.ob-sheet__body > .cfm__form { display: block; }
+.ob-sheet__mbar { display: none; }
+@media (max-width: 599px) {
+  .ob-sheet__panel { width: 100vw; border: 0; }
+  .ob-sheet__head { min-height: 64px; padding: 10px 12px; }
+  .ob-sheet__acts { display: none; }
+  .ob-sheet__mbar { display: flex; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background: var(--surface-raised); border-top: 1px solid var(--border-base); }
+  .ob-sheet__mbar > * { flex: 1; justify-content: center; }
+  .ob-sheet__body { padding: 16px; }
+}
+[data-theme="dark"] .ob-sheet__scrim { background: rgba(0,0,0,.45); }
+.ob-sheet__slot { display: contents; }
+.ob-sheet__chip { display: inline-flex; vertical-align: middle; margin-inline-start: 8px; }
+.ob-sheet__s:empty, .ob-sheet__s:has(> .ob-sheet__slot:empty:only-child) { display: none; }
+/* الشاشات القديمة جوّه الدرج: رأسها بيستخبى، وشريط الحفظ بيطلع فوق على الشمال */
+.ob-sheet__route .dochead__back, .ob-sheet__route .dochead__id { display: none !important; }
+.ob-sheet__route .dochead { margin: 0 0 12px !important; }
+.ob-sheet__route .dochead__row:not(:has(.dochead__act > *)) { display: none; }
+.ob-sheet__route .savebar { position: absolute !important; top: 14px; inset-inline-end: 20px; inset-inline-start: auto !important; bottom: auto !important;
+  width: auto !important; max-width: 60%; margin: 0 !important; padding: 0 !important; background: transparent !important; border: 0 !important; box-shadow: none !important; z-index: 2; }
+.ob-sheet__route .savebar__s { display: none !important; }
+.ob-sheet__route .savebar__b { display: flex; gap: 8px; }
+.ob-sheet__route .savebar__b .btn--primary { order: 9; }
+.ob-sheet__route .ob-main, .ob-sheet__route .ob-shell { all: unset; }
+@media (max-width: 599px) {
+  .ob-sheet__route .savebar { top: auto; bottom: 0 !important; inset-inline: 0 !important; max-width: none; padding: 10px 16px calc(10px + env(safe-area-inset-bottom,0px)) !important;
+    background: var(--surface-raised) !important; border-top: 1px solid var(--border-base) !important; }
+  .ob-sheet__route .savebar__b { width: 100%; } .ob-sheet__route .savebar__b > * { flex: 1; justify-content: center; }
+  .ob-sheet__route { padding-bottom: 72px; }
+  .ob-sheet__route .ob-stickybar { position: absolute; }
+}
+.ob-sheet__route .savebar__b .btn { height: 44px !important; min-height: 44px !important; }
+
+/* ★ أوديت p7 — الكارت الرئيسي في التقارير: أخضر الهوية بدل الأسود، وثابت في الوضعين */
+.kpic--lead { background: #003E31 !important; border-color: #003E31 !important; --ink-inverse: #FFFFFF; color: #FFFFFF; }
+
+/* ★ قاعدة الحفظ في الصفحات (الإعدادات): فوق على الشمال، وعلى الموبايل شريط ثابت تحت */
+.ob-savegrp { display: contents; }
+.ob-mbar { display: none; }
+@media (max-width: 599px) {
+  .ob-savegrp { display: none; }
+  .ob-mbar { display: flex; gap: 8px; position: fixed; bottom: 0; inset-inline: 0; z-index: 40; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    background: var(--surface-raised); border-top: 1px solid var(--border-base); }
+  .setmain:has(> .ob-mbar) { padding-bottom: 88px; }
+  .ob-mbar .btn { flex: 1; height: 44px; }
+  .ob-mbar .btn--primary { order: 9; }
+}
+
+/* ★ معاينة الصف المشتركة (RowPeek) — نفس لوحة المبيعات، بمحتوى «العمود ← القيمة» */
+.ob-kv { display: grid; gap: 0; margin: 0; background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; padding: 4px 16px; }
+.ob-kv__r { display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 48px; padding: 10px 0; border-bottom: 1px solid var(--border-faint); }
+.ob-kv__r:last-child { border-bottom: 0; }
+.ob-kv dt { font-size: 13px; color: var(--ink-muted); flex: none; }
+.ob-kv dd { margin: 0; font-size: 14px; color: var(--ink-base); text-align: end; min-width: 0; }
+.ob-kv dd .rowacts, .ob-kv dd .sort { display: none; }
+.dt tbody tr.is-peek > td { background: var(--surface-selected) !important; }
+.dt tbody tr.is-open { cursor: pointer; }
+
+/* ★ جوّه الدرج: مفيش «رجوع» (الـX بيقفل)، والمعاينة بتغطي الدرج نفسه */
+.ob-sheet .ob-back { display: none !important; }
+.ob-sheet__panel > .ob-sheet__body .ob-pv, .ob-sheet .ob-pv { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; top: 0 !important; z-index: 6; }
+/* ★ الأزرار الثانوية في رأس الدرج وشريط الحفظ القديم: شكل واحد (outline) */
+.ob-sheet__head .btn:not(.btn--primary):not(.ob-sheet__x),
+.ob-sheet .savebar .btn:not(.btn--primary) {
+  background: var(--surface-raised) !important; border: 1px solid var(--border-control) !important; color: var(--ink-base) !important;
+  height: 44px; padding-inline: 16px; font-size: 14px; font-weight: 500; box-shadow: none !important;
+}
+/* ★ معاينة الصف: الكارت بعرض اللوحة */
+.ob-pv--row .ob-pv__body { display: block; }
+.ob-pv--row .ob-kv { width: 100%; }
+.rail__acts .ract[data-dup="1"] { display: none !important; }
+.chart__xaxis span.is-future { opacity: .45; }
+/* الرقم تحت النقطة لو النقطة لازقة في سقف الرسم — عشان مايتقصّش */
+@keyframes tipInBelow { from { opacity: 0; transform: translate(-50%, 0) scale(.92); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+.area__tip.is-below { transform: translate(-50%, 0); margin-top: 16px; animation-name: tipInBelow; }
+
+/* ★ لوحة المعاينة وقايمة الموبايل: دخول ناعم (transform/opacity بس) */
+@keyframes obPvIn { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: none; } }
+@keyframes obNavIn { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes obFade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .ob-main > .ob-pv { animation: obPvIn .28s cubic-bezier(.22,1,.36,1) both; }
+  .ob-navdrawer { animation: obFade .2s ease both; }
+  .ob-navdrawer > * { animation: obNavIn .3s cubic-bezier(.22,1,.36,1) both; }
+}
+/* القايمة المنسدلة في رأس الكارت — بإطار زي باقي الحقول */
+.ob-picker.is-pill .ob-qsel { height: 44px; padding-inline: 14px 12px; border: 1px solid var(--border-control); border-radius: 8px; background: var(--surface-raised); gap: 8px; font-size: 14px; color: var(--ink-base); }
+
+/* ============================================================
+   ★ الموبايل: هيدر فيه اللوجو والإشعارات والحساب بس + تنقّل تحت
+   ============================================================ */
+.ob-bnav { display: none; }
+@media (max-width: 599px) {
+  :root { --bnav-h: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .ob-top { height: 56px; padding: 0 12px; }
+  .ob-top__menu, .ob-top > .ob-picker:first-of-type, .ob-up { display: none !important; }
+  .ob-top .iconbtn, .ob-ws { width: 44px; height: 44px; }
+  .ob-ws { justify-content: center; }
+  .ob-ws__av { display: none; }
+  .ob-top__logo { width: 36px; height: 36px; }
+  .ob-body > .ob-side, .ob-navdrawer { display: none !important; }
+  .ob-main { padding: 16px 16px 24px; }
+  .ob-bnav { display: flex; flex: none; height: var(--bnav-h); padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--surface-raised); border-top: 1px solid var(--border-base); z-index: 60; }
+  .ob-bnav__i { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    border: 0; background: transparent; color: var(--ink-muted); font: inherit; font-size: 11px; font-weight: 500; position: relative; }
+  .ob-bnav__i.is-on { color: var(--accent, #003E31); font-weight: 700; }
+  .ob-bnav__i.is-on::before { content: ''; position: absolute; top: 0; inset-inline: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--lime, #E7FF25); }
+  [data-theme="dark"] .ob-bnav__i.is-on { color: var(--ink-strong); }
+  /* الشرايط الثابتة تحت بتقعد فوق التنقّل */
+  .ob-stickybar, .ob-mbar { bottom: var(--bnav-h) !important; }
+  .ob-main:has(.ob-stickybar) { padding-bottom: 96px; }
+  .setmain:has(> .ob-mbar) { padding-bottom: 88px; }
+}
+
+/* «المزيد» — شيت من تحت */
+.ob-more { position: fixed; inset: 0; z-index: 125; }
+.ob-more__scrim { position: absolute; inset: 0; background: rgba(28,24,20,.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.ob-more__panel { position: absolute; inset-inline: 0; bottom: 0; max-height: 88dvh; display: flex; flex-direction: column;
+  background: var(--surface-page); border-radius: 16px 16px 0 0; box-shadow: 0 -12px 32px rgba(0,0,0,.12); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ob-more__grab { width: 40px; height: 4px; border-radius: 4px; background: var(--border-strong, #D9D3CE); margin: 8px auto 0; }
+.ob-more__hd { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px 4px; }
+.ob-more__hd h2 { margin: 0; font-size: 18px; font-weight: 700; color: var(--ink-strong); }
+.ob-more__body { overflow-y: auto; padding: 4px 16px 20px; overscroll-behavior: contain; }
+.ob-more__sec { font-size: 12px; font-weight: 600; color: var(--ink-muted); margin: 14px 2px 8px; }
+.ob-more__quick { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ob-more__q { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 12px; text-align: start;
+  background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; font: inherit; font-size: 13px; font-weight: 600; color: var(--ink-strong); }
+.ob-more__qi { width: 36px; height: 36px; flex: none; display: grid; place-items: center; border-radius: 8px; background: var(--surface-sunken); color: var(--accent, #003E31); }
+[data-theme="dark"] .ob-more__qi { color: var(--ink-strong); }
+.ob-more__up { width: 100%; margin-top: 12px; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px; text-align: start;
+  background: #003E31; color: #fff; border: 0; border-radius: 12px; font: inherit; }
+.ob-more__up svg:first-child { color: #E7FF25; flex: none; }
+.ob-more__up span { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.ob-more__up b { font-size: 14px; }
+.ob-more__up small { font-size: 12px; opacity: .75; }
+.ob-more__up .ob-more__chev { transform: rotate(90deg); }
+.ob-more__list { background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; overflow: hidden; }
+.ob-more__row { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: 0; background: transparent;
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-base); text-align: start; border-bottom: 1px solid var(--border-faint); }
+.ob-more__list > :last-child, .ob-more__list > :last-child > .ob-more__row { border-bottom: 0; }
+.ob-more__row > span { flex: 1; }
+.ob-more__row.is-on { color: var(--accent, #003E31); font-weight: 700; }
+.ob-more__chev { flex: none; transition: transform .2s; opacity: .6; }
+.ob-more__grp.is-open .ob-more__chev { transform: rotate(180deg); }
+.ob-more__grp { border-bottom: 1px solid var(--border-faint); }
+.ob-more__grp > .ob-more__row { border-bottom: 0; }
+.ob-more__kids { display: flex; flex-direction: column; padding: 0 0 8px; }
+.ob-more__kid { min-height: 44px; padding: 0 46px 0 14px; border: 0; background: transparent; font: inherit; font-size: 14px; color: var(--ink-muted); text-align: start; }
+.ob-more__kid.is-on { color: var(--accent, #003E31); font-weight: 700; }
+[data-theme="dark"] .ob-more__row.is-on, [data-theme="dark"] .ob-more__kid.is-on { color: var(--ink-strong); }
+.ob-more__theme { margin-top: 12px; background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; }
+
+/* ★ رأس الصفحة على الموبايل: الفلاتر والأكشنز الثانوية صف واحد منظّم،
+   والإنشاء (الأساسي) شريط ثابت تحت فوق التنقّل — زي قوايم المبيعات */
+@media (max-width: 599px) {
+  .tophead { display: flex; flex-direction: column; align-items: stretch; gap: 12px; }
+  .tophead__ctrl { display: flex !important; flex-wrap: wrap; gap: 8px; width: 100%; justify-content: flex-start; margin: 0; }
+  .tophead__ctrl > .dr, .tophead__ctrl > .asof, .tophead__ctrl > .search, .tophead__ctrl > label { flex: 1 1 100%; min-width: 0; }
+  .tophead__ctrl > .fresh { flex: 1 1 100%; order: 9; }
+  .tophead__ctrl > .btn:not(.btn--primary) { flex: 1 1 auto; min-width: 0; height: 44px; justify-content: center; white-space: nowrap;
+    border: 1px solid var(--border-control) !important; background: var(--surface-raised) !important; color: var(--ink-base) !important;
+    border-radius: 8px; font-size: 14px; font-weight: 500; padding-inline: 12px; }
+  .tophead__ctrl:has(> .btn--primary)::after { content: ''; position: fixed; inset-inline: 0; bottom: var(--bnav-h); height: 68px; z-index: 79;
+    background: var(--surface-raised); border-top: 1px solid var(--border-base); }
+  .tophead__ctrl > .btn--primary { position: fixed; z-index: 80; bottom: calc(var(--bnav-h) + 12px); inset-inline: 16px; width: auto; height: 44px; justify-content: center; margin: 0; }
+  .ob-main:has(.tophead__ctrl > .btn--primary) { padding-bottom: 96px; }
+  .ob-sheet .tophead__ctrl > .btn--primary, .ob-sheet .tophead__ctrl::after { display: none; }
+}
+
+/* ★ البنود على الموبايل والتابلت: كارت لكل بند بالطول (طلب مهاب) */
+@media (max-width: 899px) {
+  .lines { overflow: visible; gap: 10px; }
+  .lines__h, .lines__h.cnlines { display: none !important; }
+  .lines__r, .lines--wide .lines__r, .lines__r.cnlines { grid-template-columns: minmax(0, 1fr) 44px !important; gap: 8px; padding: 12px;
+    background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; }
+  .lines__r > * { grid-column: 1; min-width: 0; }
+  .lines__r > .lines__i { grid-row: 1; text-align: start; font-weight: 700; color: var(--ink-strong); }
+  .lines__r > .lines__x { grid-row: 1; grid-column: 2; justify-self: end; }
+  .lines__r .fld__i { width: 100%; min-height: 44px; }
+  .lines__r > .lines__t { text-align: start; font-weight: 700; color: var(--ink-strong); }
+}
+/* الملاحظات (fnote) فيها نص وأرقام بولد — لازم تبقى سطر نص عادي مش flex */
+.fnote { display: block; }
+.fnote > svg { display: inline-block; vertical-align: -2px; margin-inline-end: 6px; }
+/* كارت «اختر فاتورة» في الإشعار الدائن كان واخد جريد .pick بتاع كمبوننت تاني */
+.fcard.pick { display: block !important; }
+@media (max-width: 599px) {
+  .pick__row { flex-direction: column; align-items: stretch; }
+  .pick__go { width: 100%; justify-content: center; }
+  .tophead__ctrl > .btn:not(.btn--primary) { flex: 1 1 calc(50% - 4px); }
+}

@@ -155,7 +155,7 @@ export function PrintPreview({ doc, onClose }) {
             <button className="gbtn2" disabled={K.qr && !zatcaOk}
               title={!K.qr || zatcaOk ? undefined : 'الـPDF المعتمد بيتولد بعد قبول الهيئة'}
               onClick={() => toast.ok(`${no}.pdf جاهز`, { sub: 'اتنزّل في مجلد التنزيلات' })}>
-              <Ico.download size={14} />PDF
+              <Ico.download size={14} />تنزيل PDF
             </button>
           </div>
         </header>

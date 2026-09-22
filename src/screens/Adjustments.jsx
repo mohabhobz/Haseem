@@ -1,3 +1,4 @@
+import { Modal } from '../components/modal.jsx'
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell, PageHeader, SummaryStrip } from '../components/layout.jsx'
@@ -65,11 +66,13 @@ function Form({ sku, onClose }) {
   }
 
   return (
-    <div className="cfm" role="dialog" aria-modal="true">
-      <div className="cfm__scrim" onClick={onClose} />
-      <div className="cfm__box cfm__box--form">
-        <h2 className="cfm__t">تسجيل تسوية</h2>
-        <p className="cfm__b">تصحيح رصيد صنف من غير فاتورة بيع أو شراء.</p>
+    <Modal title={"تسجيل تسوية"} sub="تصحيح رصيد صنف من غير فاتورة بيع أو شراء." onClose={onClose}
+      footer={<>
+          <button className="btn btn--ghost" onClick={onClose}>إلغاء</button>
+          <button className="btn btn--primary" onClick={save}>
+            <Ico.check size={16} />تسجيل التسوية
+          </button>
+      </>}>
 
         <div className="frow frow--2">
           <label className="fld">
@@ -138,14 +141,7 @@ function Form({ sku, onClose }) {
             : <em className="fld__h">بيظهر في سجل حركة الصنف — اكتبه بحيث حد تاني يفهمه بعد شهر.</em>}
         </label>
 
-        <div className="cfm__acts" style={{ marginTop: 22 }}>
-          <button className="btn btn--ghost" onClick={onClose}>إلغاء</button>
-          <button className="btn btn--primary" onClick={save}>
-            <Ico.check size={16} />تسجيل التسوية
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -203,7 +199,7 @@ export default function Adjustments() {
     const it = DATA.findItem(a.sku)
     return {
       key: a.no,
-      onOpen: () => nav(`/inventory/items/${a.sku}`),
+      openLabel: 'فتح الصنف', onOpen: () => nav(`/inventory/items/${a.sku}`),
       menu: [
         { label: 'فتح الصنف', Ic: Ico.search, onClick: () => nav(`/inventory/items/${a.sku}`) },
         { label: 'تسوية مضادة', Ic: Ico.retry, onClick: () => setForm({ sku: a.sku }) },
@@ -229,7 +225,7 @@ export default function Adjustments() {
           sub="تصحيح الرصيد من غير فاتورة — وكل تسوية ليها سبب مكتوب" />
         <div className="tophead__ctrl">
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
-          <Button label="تسوية جديدة" variant="primary" icon="＋" onClick={() => setForm({})} />
+          <Button label="إنشاء تسوية" variant="primary" icon="＋" onClick={() => setForm({})} />
         </div>
       </div>
 
@@ -274,8 +270,7 @@ export default function Adjustments() {
                 S.col('التاريخ', 'date', { width: '124px' }),
                 { label: 'بواسطة', width: '120px' },
               ]}
-              rows={tableRows} selected={selected} onSelect={toggle}
-              onSelectAll={(on) => selectAll(on, shown.map((a) => a.no))}
+              rows={tableRows}
             />
             <Pagination
               from={(cur - 1) * PER_PAGE + 1} to={(cur - 1) * PER_PAGE + shown.length}

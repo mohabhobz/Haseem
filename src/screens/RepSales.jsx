@@ -250,7 +250,7 @@ export default function RepSales() {
         ) : (
           <>
             <DataTable
-              selectable={false}
+              selectable={false} peek={false}
               columns={[
                 col('الفاتورة', 'no', { width: '132px' }),
                 col('التاريخ', 'date', { width: '118px' }),

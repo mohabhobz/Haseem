@@ -161,7 +161,7 @@ export default function Bills() {
         { label: 'تعديل', Ic: Ico.edit, onClick: () => nav(`/purchases/bills/${b.no}/edit`),
           off: b.status !== 'draft', why: 'المرحّلة مينفعش تتعدّل — تتلغي وتتعاد' },
         { sep: true },
-        { label: 'تحميل PDF', Ic: Ico.download, onClick: () => ACT.downloadPdf('bills', b) },
+        { label: 'تنزيل PDF', Ic: Ico.download, onClick: () => ACT.downloadPdf('bills', b) },
         { label: 'طباعة', Ic: Ico.print, onClick: () => ACT.printDoc('bills', b) },
         { sep: true },
         { label: 'إلغاء الفاتورة', Ic: Ico.trash, tone: 'crit',
@@ -202,7 +202,7 @@ export default function Bills() {
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
           <Button label="تصدير CSV" variant="ghost"
             onClick={() => ACT.bulkAction('تصدير CSV', 'bills', rows.map((b) => b.no))} />
-          <Button label="فاتورة مشتريات" variant="primary" icon="＋"
+          <Button label="إنشاء فاتورة مشتريات" variant="primary" icon="＋"
             onClick={() => nav('/purchases/bills/new')} />
         </div>
       </div>

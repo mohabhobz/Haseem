@@ -79,7 +79,7 @@ export default function Project() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/projects')}>
-          <Ico.back size={16} />المشاريع
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">

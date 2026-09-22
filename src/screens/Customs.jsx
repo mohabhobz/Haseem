@@ -61,7 +61,7 @@ export default function Customs() {
 
   const tableRows = rows.map((d) => ({
     key: d.no,
-    onOpen: () => setForm(d),
+    openLabel: 'تعديل', onOpen: () => setForm(d),
     action: d.status === 'draft'
       ? { label: 'ترحيل', tone: 'go', onClick: () => ACT.postCustoms(d, fmtMoney(DATA.customsVat(d))) }
       : null,
@@ -110,7 +110,7 @@ export default function Customs() {
         <div className="tophead__ctrl">
           <Button label="تصدير CSV" variant="ghost"
             onClick={() => ACT.bulkAction('تصدير CSV', 'customs', rows.map((d) => d.no))} />
-          <Button label="بيان جمركي" variant="primary" icon="＋" onClick={() => setForm('new')} />
+          <Button label="إنشاء بيان جمركي" variant="primary" icon="＋" onClick={() => setForm('new')} />
         </div>
       </div>
 
@@ -146,7 +146,6 @@ export default function Customs() {
           </div>
         ) : (
           <DataTable
-            selectable={false}
             columns={[
               { label: 'رقم البيان والمنفذ' },
               col('التاريخ', 'date', { width: '124px' }),

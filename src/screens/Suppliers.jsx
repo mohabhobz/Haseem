@@ -173,7 +173,7 @@ export default function Suppliers() {
         <div className="tophead__ctrl">
           <Button label="تصدير CSV" variant="ghost"
             onClick={() => ACT.bulkAction('تصدير CSV', 'suppliers', rows.map((s) => s.id))} />
-          <Button label="مورد جديد" variant="primary" icon="＋" onClick={() => setForm('new')} />
+          <Button label="إنشاء مورد" variant="primary" icon="＋" onClick={() => setForm('new')} />
         </div>
       </div>
 
@@ -212,7 +212,6 @@ export default function Suppliers() {
         ) : (
           <>
             <DataTable
-              selectable={false}
               columns={[
                 col('المورد', 'name'),
                 { label: 'النوع', width: '78px' },

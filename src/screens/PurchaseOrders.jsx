@@ -158,7 +158,7 @@ export default function PurchaseOrders() {
         { label: 'إرسال للمورد', Ic: Ico.send, onClick: () => ACT.sendPO(p, 'email'),
           off: p.status === 'draft' || !DATA.poLive(p), why: 'لازم يتعتمد الأول' },
         { sep: true },
-        { label: 'تحميل PDF', Ic: Ico.download, onClick: () => ACT.downloadPdf('purchaseOrders', p) },
+        { label: 'تنزيل PDF', Ic: Ico.download, onClick: () => ACT.downloadPdf('purchaseOrders', p) },
         { label: 'طباعة', Ic: Ico.print, onClick: () => ACT.printDoc('purchaseOrders', p) },
         { sep: true },
         { label: 'إقفال الأمر', Ic: Ico.ban, onClick: () => ACT.closePO(p, DATA.poOpenValue(p)),
@@ -204,7 +204,7 @@ export default function PurchaseOrders() {
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
           <Button label="تصدير CSV" variant="ghost"
             onClick={() => ACT.bulkAction('تصدير CSV', 'purchaseOrders', rows.map((p) => p.no))} />
-          <Button label="أمر شراء" variant="primary" icon="＋"
+          <Button label="إنشاء أمر شراء" variant="primary" icon="＋"
             onClick={() => nav('/purchases/orders/new')} />
         </div>
       </div>

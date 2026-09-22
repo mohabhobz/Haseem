@@ -58,8 +58,8 @@ export default function Bill() {
     b.status === 'draft'  && { id: 'post',  label: 'ترحيل الفاتورة', Ic: Ico.check },
     b.status === 'draft'  && { id: 'edit',  label: 'تعديل الفاتورة', Ic: Ico.edit },
     b.status === 'posted' && rest > 0.009 && { id: 'pay', label: 'تسجيل دفعة', Ic: Ico.wallet },
-    { id: 'pdf',   label: 'تحميل PDF', Ic: Ico.download },
-    { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print },
+    { id: 'pdf',   label: 'تنزيل PDF', Ic: Ico.download },
+    { id: 'print', label: 'طباعة', Ic: Ico.print },
     b.status === 'posted' && { id: 'cn', label: 'إشعار دائن من المورد', Ic: Ico.retry },
     b.status === 'posted' && { id: 'dn', label: 'إشعار مدين من المورد', Ic: Ico.retry },
     b.status === 'posted' && { id: 'cancel', label: 'إلغاء الفاتورة', Ic: Ico.ban, tone: 'crit' },
@@ -83,7 +83,7 @@ export default function Bill() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/purchases/bills')}>
-          <Ico.back size={16} />فواتير المشتريات
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">
@@ -111,7 +111,7 @@ export default function Bill() {
               </button>
             ) : (
               <button className="btn btn--outline" onClick={() => run('pdf')}>
-                <Ico.download size={16} />تحميل PDF
+                <Ico.download size={16} />تنزيل PDF
               </button>
             )}
           </div>

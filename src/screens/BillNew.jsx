@@ -168,7 +168,7 @@ export default function BillNew({ mode = 'bill' }) {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav(K.back)}>
-          <Ico.back size={16} />{K.backT}
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">

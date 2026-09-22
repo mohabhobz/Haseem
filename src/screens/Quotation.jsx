@@ -64,8 +64,8 @@ export default function Quotation() {
     (q.status === 'accepted' || q.status === 'sent') && {
       id: 'convert', label: prf ? 'تحويل لفاتورة ضريبية' : 'تحويل لفاتورة', Ic: Ico.invoice },
     expired && q.status !== 'converted' && { id: 'renew', label: 'تجديد بتواريخ جديدة', Ic: Ico.retry },
-    { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print },
-    { id: 'pdf',   label: 'تحميل PDF', Ic: Ico.download },
+    { id: 'print', label: 'طباعة', Ic: Ico.print },
+    { id: 'pdf',   label: 'تنزيل PDF', Ic: Ico.download },
     { id: 'wa',    label: 'إرسال واتساب', Ic: Ico.send },
     live && { id: 'cancel', label: `إلغاء ${prf ? 'المستند' : 'العرض'}`, Ic: Ico.ban, tone: 'crit' },
   ].filter(Boolean)
@@ -92,7 +92,7 @@ export default function Quotation() {
         : { id: 'accept',  label: 'تعليم كمقبول',         Ic: Ico.check })
     : q.status === 'accepted' ? { id: 'convert', label: 'تحويل لفاتورة', Ic: Ico.invoice }
     : expired                 ? { id: 'renew',   label: `تجديد ${prf ? 'المستند' : 'العرض'}`, Ic: Ico.retry }
-    :                           { id: 'pdf',     label: 'تحميل PDF',    Ic: Ico.download }
+    :                           { id: 'pdf',     label: 'تنزيل PDF',    Ic: Ico.download }
 
   return (
     <AppShell>

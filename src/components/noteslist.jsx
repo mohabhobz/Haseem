@@ -14,9 +14,9 @@ import * as ACT from '../lib/actions.js'
    ============================================================ */
 const CFG = {
   credit: { kind: 'creditNotes', title: 'إشعارات دائنة', sub: 'تقليل مبلغ مستحق على عميل — مرتجعات وخصومات لاحقة',
-    new: 'إشعار دائن جديد', to: '/sales/credit-notes/new', amt: 'المبلغ المخصوم', paper: ['إشعار دائن', 'Credit Note'] },
+    new: 'إنشاء إشعار دائن', to: '/sales/credit-notes/new', amt: 'المبلغ المخصوم', paper: ['إشعار دائن', 'Credit Note'] },
   debit:  { kind: 'debitNotes', title: 'إشعارات مدينة', sub: 'زيادة مبلغ مستحق على عميل — رسوم أو خدمات إضافية',
-    new: 'إشعار مدين جديد', to: '/sales/debit-notes/new', amt: 'المبلغ المضاف', paper: ['إشعار مدين', 'Debit Note'] },
+    new: 'إنشاء إشعار مدين', to: '/sales/debit-notes/new', amt: 'المبلغ المضاف', paper: ['إشعار مدين', 'Debit Note'] },
 }
 const dead = (n) => ['void', 'cancelled'].includes(n.status)
 function NChip({ n }) {

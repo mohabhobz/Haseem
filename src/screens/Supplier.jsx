@@ -86,7 +86,7 @@ export default function Supplier() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/purchases/suppliers')}>
-          <Ico.back size={16} />الموردون
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">
@@ -103,7 +103,7 @@ export default function Supplier() {
           </div>
           <div className="dochead__act">
             <button className="btn btn--primary" onClick={() => run('bill')}>
-              <Ico.plus size={16} />فاتورة مشتريات
+              <Ico.plus size={16} />فاتورة مشتريات جديدة
             </button>
           </div>
         </div>

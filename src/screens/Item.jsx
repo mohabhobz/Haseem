@@ -69,7 +69,7 @@ export default function Item() {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav('/inventory/items')}>
-          <Ico.back size={16} />الأصناف
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">

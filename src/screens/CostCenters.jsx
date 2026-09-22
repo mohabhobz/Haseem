@@ -48,7 +48,7 @@ export default function CostCenters() {
           sub={<>المصروف موزّع على الوحدات اللي صرفته<CurrencyNote /></>} />
         <div className="tophead__ctrl">
           <DateRange value={period} onChange={setPeriod} today={TODAY} />
-          <Button label="مركز جديد" variant="primary" icon="＋"
+          <Button label="إنشاء مركز تكلفة" variant="primary" icon="＋"
             onClick={() => setForm(true)} />
         </div>
       </div>

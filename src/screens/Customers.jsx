@@ -50,7 +50,7 @@ export default function Customers() {
     <AppShell>
       <PageHeader title="العملاء" sub="بيانات العملاء وأرصدتهم ومستحقاتهم"
         usage={<span className="ob-usage">إجمالي المستحقات <Amt v={all.reduce((a, c) => a + Math.max(0, bal(c)), 0)} className="ob-strong" /> على <span className="num">{all.filter((c) => bal(c) > 0.009).length}</span> عميل</span>}
-        actions={<button type="button" className="btn btn--primary ob-hide-sm" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />عميل جديد</button>} />
+        actions={<button type="button" className="btn btn--primary ob-hide-sm" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />إنشاء عميل</button>} />
 
       <ObList
         rows={all}
@@ -97,10 +97,10 @@ export default function Customers() {
         cardAmount={(c) => <Amt v={bal(c)} />}
         cardAmountLabel="الرصيد"
         empty={{ t: 'لا يوجد عملاء بعد', p: 'أضف أول عميل وسيظهر هنا مع رصيده.' }}
-        emptyAction={<button type="button" className="btn btn--primary" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />عميل جديد</button>}
+        emptyAction={<button type="button" className="btn btn--primary" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />إنشاء عميل</button>}
       />
       <div className="ob-stickybar">
-        <button type="button" className="btn btn--primary" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />عميل جديد</button>
+        <button type="button" className="btn btn--primary" onClick={() => nav('/sales/customers/new')}><Ico.plus size={20} />إنشاء عميل</button>
       </div>
     </AppShell>
   )

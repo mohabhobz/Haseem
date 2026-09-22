@@ -73,8 +73,8 @@ export default function Voucher({ kind = 'receipts' }) {
   const acts = [
     draft && { id: 'post', label: `ترحيل ${C.ar}`, Ic: Ico.check },
     draft && { id: 'del', label: 'حذف المسودة', Ic: Ico.trash, tone: 'crit' },
-    { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print },
-    { id: 'pdf', label: 'تحميل PDF', Ic: Ico.download },
+    { id: 'print', label: 'طباعة', Ic: Ico.print },
+    { id: 'pdf', label: 'تنزيل PDF', Ic: Ico.download },
     linked && { id: 'src', label: 'المستند الأصلي', Ic: Ico.invoice },
     !draft && !linked && { id: 'rev', label: 'عكس السند', Ic: Ico.retry, tone: 'crit' },
   ].filter(Boolean)
@@ -95,7 +95,7 @@ export default function Voucher({ kind = 'receipts' }) {
     <AppShell>
       <div className="dochead">
         <button className="dochead__back" onClick={() => nav(C.route)}>
-          <Ico.back size={16} />{C.list}
+          رجوع
         </button>
         <CurrencyNote />
         <div className="dochead__row">
@@ -115,7 +115,7 @@ export default function Voucher({ kind = 'receipts' }) {
               </button>
             ) : (
               <button className="btn btn--outline" onClick={() => run('print')}>
-                <Ico.print size={16} />معاينة وطباعة
+                <Ico.print size={16} />طباعة
               </button>
             )}
           </div>

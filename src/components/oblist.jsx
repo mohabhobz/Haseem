@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useContext } from 'react'
+import { PeekCtx } from './layout.jsx'
 import { Ico } from './icons.jsx'
 import { useSelection } from './table.jsx'
 import { QuietSelect, usePop, Check } from './ob.jsx'
@@ -80,6 +81,32 @@ export function ObList({
   const [size, setSize] = useState(perDefault)
   const { selected, toggle, selectAll, clear } = useSelection()
   const boxRef = useRef(null)
+  /* ★ الضغط على الصف = معاينة (قرار p7-208). القوايم اللي عندها معاينة
+     خاصة (preview) بتفضل زي ما هي؛ الباقي بياخد اللوحة المشتركة. */
+  const pk = useContext(PeekCtx)
+  const usePk = !preview && pk && onRow
+  const clickRow = (r) => {
+    if (!usePk) return onRow?.(r)
+    const k = rowKey(r)
+    pk.open(k, (
+      <aside className="ob-pv ob-pv--row" aria-label={String(k)} data-component="RowPeek">
+        <div className="ob-pv__hd">
+          <h2><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cardTitle ? cardTitle(r) : k}</span></h2>
+          <button type="button" className="iconbtn" onClick={pk.close} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
+        </div>
+        <div className="ob-pv__acts">
+          <button type="button" className="btn btn--primary" onClick={() => { pk.close(); onRow(r) }}>عرض التفاصيل</button>
+          {context?.(r) && <button type="button" className="btn" onClick={() => context(r).onClick()}>{context(r).label}</button>}
+          {menu && <RowMenuOb items={menu(r)} label="المزيد" />}
+        </div>
+        <div className="ob-pv__body">
+          <dl className="ob-kv">
+            {columns.map((c) => <div key={c.id} className="ob-kv__r"><dt>{c.h}</dt><dd className={c.n ? 'num' : ''}>{c.cell(r)}</dd></div>)}
+          </dl>
+        </div>
+      </aside>
+    ))
+  }
 
   const scoped = useMemo(() => rows
     .filter((r) => quiet.every((f) => !f.test || f.test(r, qv[f.id])))
@@ -180,7 +207,7 @@ export function ObList({
             return (
               <div key={k} className="ob-card" role="button" tabIndex={0}
                 style={{ padding: '12px 14px', display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0,1fr)', ...(late ? { borderInlineStart: '3px solid #EF4444', background: '#FFFAF9' } : {}) }}
-                onClick={() => onRow?.(r)} onKeyDown={(e) => { if (e.key === 'Enter') onRow?.(r) }}>
+                onClick={() => clickRow(r)} onKeyDown={(e) => { if (e.key === 'Enter') clickRow(r) }}>
                 <div className="ob-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div className="ob-row" style={{ flexWrap: 'nowrap', minWidth: 0, flex: '1 1 160px' }} onClick={(e) => e.stopPropagation()}>
                     {bulk.length > 0 && <Check on={selected.has(k)} onChange={() => toggle(k)} label={'تحديد ' + k} />}
@@ -199,7 +226,7 @@ export function ObList({
                 )}
                 <div className="ob-row" style={{ flexWrap: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                   {ctx && <div style={{ flex: 1, display: 'flex' }}><Ctx c={ctx} /></div>}
-                  <button type="button" className="btn" style={{ flex: 1 }} onClick={() => onRow?.(r)}><Ico.eye size={20} />عرض</button>
+                  <button type="button" className="btn" style={{ flex: 1 }} onClick={() => clickRow(r)}><Ico.eye size={20} />عرض</button>
                   {menu && <RowMenuOb items={menu(r)} label={'أوامر ' + k} up={i >= shown.length - 3} />}
                 </div>
               </div>
@@ -220,15 +247,15 @@ export function ObList({
               {shown.map((r, i) => {
                 const k = rowKey(r)
                 const ctx = layout === 'full' ? context?.(r) : null
-                const cls = [rowClass?.(r), (selected.has(k) || preview?.key === k) && 'is-sel'].filter(Boolean).join(' ')
+                const cls = [rowClass?.(r), (selected.has(k) || preview?.key === k || (usePk && pk.key === k)) && 'is-sel'].filter(Boolean).join(' ')
                 return (
-                  <tr key={k} data-row className={cls} onClick={() => onRow?.(r)}>
+                  <tr key={k} data-row className={cls} onClick={() => clickRow(r)}>
                     {bulk.length > 0 && <td onClick={(e) => e.stopPropagation()}><Check on={selected.has(k)} onChange={() => toggle(k)} label={'تحديد ' + k} /></td>}
                     {cols.map((c) => <td key={c.id} className={c.n ? 'n' : undefined} style={c.style}>{c.cell(r)}</td>)}
                     <td onClick={(e) => e.stopPropagation()}>
                       <div className="ob-acts">
                         {layout === 'full' && context && (ctx ? <Ctx c={ctx} icon={false} /> : <span className="ob-actph" aria-hidden="true" />)}
-                        {onRow && <button type="button" className="iconbtn" aria-label={'عرض ' + k} title="عرض" onClick={() => onRow(r)}><Ico.eye size={20} /></button>}
+                        {onRow && <button type="button" className="iconbtn" aria-label={'عرض ' + k} title="عرض" onClick={() => clickRow(r)}><Ico.eye size={20} /></button>}
                         {menu && <RowMenuOb items={menu(r)} label={'أوامر ' + k} up={i >= shown.length - 3} />}
                       </div>
                     </td>

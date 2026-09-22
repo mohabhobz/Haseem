@@ -1,3 +1,4 @@
+import { Modal } from '../components/modal.jsx'
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell, PageHeader, Tabs } from '../components/layout.jsx'
@@ -55,11 +56,13 @@ function Form({ sku, onClose }) {
   }
 
   return (
-    <div className="cfm" role="dialog" aria-modal="true">
-      <div className="cfm__scrim" onClick={onClose} />
-      <div className="cfm__box cfm__box--form">
-        <h2 className="cfm__t">نقل جديد</h2>
-        <p className="cfm__b">نقل كمية من صنف بين مستودعين.</p>
+    <Modal title={"نقل جديد"} sub="نقل كمية من صنف بين مستودعين." onClose={onClose}
+      footer={<>
+          <button className="btn btn--ghost" onClick={onClose}>إلغاء</button>
+          <button className="btn btn--primary" onClick={save}>
+            <Ico.check size={16} />حفظ كمسودة
+          </button>
+      </>}>
 
         <label className="fld">
           <span className="fld__l">الصنف</span>
@@ -121,14 +124,7 @@ function Form({ sku, onClose }) {
           </em>
         </div>
 
-        <div className="cfm__acts" style={{ marginTop: 22 }}>
-          <button className="btn btn--ghost" onClick={onClose}>إلغاء</button>
-          <button className="btn btn--primary" onClick={save}>
-            <Ico.check size={16} />حفظ كمسودة
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   )
 }
 
@@ -185,7 +181,7 @@ export default function Transfers() {
     const draft = t.status === 'draft'
     return {
       key: t.no,
-      onOpen: () => nav(`/inventory/items/${t.sku}`),
+      openLabel: 'فتح الصنف', onOpen: () => nav(`/inventory/items/${t.sku}`),
       action: draft ? { label: 'إصدار', onClick: () => ACT.issueTransfer(t) } : null,
       menu: [
         { label: 'فتح الصنف', Ic: Ico.search, onClick: () => nav(`/inventory/items/${t.sku}`) },
@@ -220,7 +216,7 @@ export default function Transfers() {
           sub="نقل الأصناف بين المستودعات — الرصيد بيتحرّك عند الإصدار" />
         <div className="tophead__ctrl">
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
-          <Button label="نقل جديد" variant="primary" icon="＋" onClick={() => setForm({})} />
+          <Button label="إنشاء نقل مخزون" variant="primary" icon="＋" onClick={() => setForm({})} />
         </div>
       </div>
 
@@ -269,8 +265,7 @@ export default function Transfers() {
                 S.col('التاريخ', 'date', { width: '124px' }),
                 { label: 'مرفقات', width: '92px' },
               ]}
-              rows={tableRows} selected={selected} onSelect={toggle}
-              onSelectAll={(on) => selectAll(on, shown.map((t) => t.no))}
+              rows={tableRows}
             />
             <Pagination
               from={(cur - 1) * PER_PAGE + 1} to={(cur - 1) * PER_PAGE + shown.length}

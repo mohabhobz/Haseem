@@ -81,15 +81,13 @@ export default function SetBranches() {
   return (
     <SettingsShell
       title="الفروع"
+      actions={<button className="btn btn--primary" onClick={() => setForm('new')}><Ico.plus size={20} />إنشاء فرع</button>}
       sub="كود الفرع بيتكتب في رأس الفاتورة وبيروح للهيئة"
       footer={null}>
 
       <section className="fcard">
         <div className="fcard__h">
           <h2 className="fcard__t">فروع المنشأة <em>{rows.length} فروع</em></h2>
-          <button className="gbtn2" onClick={() => setForm('new')}>
-            <Ico.plus size={14} />فرع جديد
-          </button>
         </div>
 
         <ul className="brlist">

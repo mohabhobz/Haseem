@@ -1,3 +1,4 @@
+import { Sheet } from './modal.jsx'
 import { useEffect, useState } from 'react'
 import { Ico } from './icons.jsx'
 
@@ -30,25 +31,10 @@ export function Drawer({ open, onClose, title, meta, footer, children, width = 4
 
   if (!mounted) return null
 
+  /* ★ نفس الدرج الموحّد (Sheet): الأكشنز فوق على الشمال والخلفية بلور */
   return (
-    <div data-component="Drawer" className={`drawer__root${closing ? ' is-closing' : ''}`}
-      role="dialog" aria-modal="true" aria-label={title}>
-      <div className="drawer__scrim" onClick={onClose} />
-      <aside className="drawer" style={{ width }}>
-        <header className="drawer__head">
-          <button className="drawer__x" onClick={onClose} aria-label="إغلاق" title="إغلاق">
-            <Ico.close size={18} />
-          </button>
-          <div className="drawer__ht">
-            <h2 className="drawer__title">{title}</h2>
-            {meta && <span className="drawer__meta">{meta}</span>}
-          </div>
-        </header>
-
-        <div className="drawer__body">{children}</div>
-
-        {footer && <footer className="drawer__foot">{footer}</footer>}
-      </aside>
-    </div>
+    <Sheet title={title} meta={meta} onClose={onClose} actions={footer} closing={closing} component="Drawer">
+      {children}
+    </Sheet>
   )
 }

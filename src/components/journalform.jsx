@@ -64,7 +64,7 @@ export function JournalForm({ onClose }) {
       return
     }
     /* API: POST /accounting/journal → { date, memo, ref, lines, post } */
-    toast.ok(post ? 'القيد اترحّل' : 'القيد اتحفظ مسودة', {
+    toast.ok(post ? 'القيد اترحّل' : 'القيد اتحفظ كمسودة', {
       sub: post ? 'مينفعش يتعدّل — التصحيح بقيد عكسي' : 'تقدر تعدّله قبل الترحيل',
     })
     onClose()
@@ -77,7 +77,7 @@ export function JournalForm({ onClose }) {
       footer={
         <>
           <button className="btn btn--quiet" onClick={onClose}>إلغاء</button>
-          <button className="btn btn--sec" onClick={() => save(false)}>حفظ مسودة</button>
+          <button className="btn btn--sec" onClick={() => save(false)}>حفظ كمسودة</button>
           <button className="btn btn--primary" onClick={() => save(true)}>حفظ وترحيل</button>
         </>
       }>

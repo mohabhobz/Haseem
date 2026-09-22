@@ -47,7 +47,7 @@ export default function Support() {
           sub="التذكرة بتروح ومعاها حالة السيستم عندك — عشان الرد ييجي من أول مرة" />
         <div className="tophead__ctrl">
           <Button label="مركز المساعدة" variant="ghost" onClick={() => nav('/help')} />
-          <Button label="تذكرة جديدة" variant="primary" icon="＋" onClick={() => setForm(true)} />
+          <Button label="إنشاء تذكرة" variant="primary" icon="＋" onClick={() => setForm(true)} />
         </div>
       </div>
 

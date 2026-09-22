@@ -7,7 +7,7 @@ export function Button({ label, variant = 'ghost', size, icon, onClick, style, c
       data-component="Button" data-variant={variant}
       className={`btn btn--${variant}${size ? ` btn--${size}` : ''}${className ? ` ${className}` : ''}`}
       onClick={onClick} style={style} {...rest}>
-      {icon && <span className="ico">{icon}</span>}
+      {icon && (icon === '＋' ? <Ico.plus size={20} /> : <span className="ico">{icon}</span>)}
       {label ?? children}
     </button>
   )

@@ -97,7 +97,7 @@ export default function ChartOfAccounts() {
         <div className="tophead__ctrl">
           <Button label="دفتر الأستاذ" variant="outline"
             onClick={() => nav('/accounting/ledger')} />
-          <Button label="حساب جديد" variant="primary" icon="＋"
+          <Button label="إنشاء حساب" variant="primary" icon="＋"
             onClick={() => setForm(true)} />
         </div>
       </div>

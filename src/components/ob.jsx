@@ -7,6 +7,7 @@ import { DateField } from './datefield.jsx'
 import { patch } from '../lib/store.js'
 import { toast } from './feedback.jsx'
 import { getBrand } from '../lib/brand.js'
+import { Sheet } from './modal.jsx'
 
 /* ============================================================
    مكوّنات Option B المشتركة (handoff §6).
@@ -168,12 +169,14 @@ export function Check({ on, onChange, label }) {
 }
 
 /* ---------- مودال Option B (480 · r16 · شيت تحت 600) ---------- */
-export function ObModal({ title, children, actions, onClose, wide }) {
+export function ObModal({ title, children, actions, onClose, wide, dialog = false }) {
   useEffect(() => {
-    const esc = (e) => { if (e.key === 'Escape') onClose() }
+    if (!dialog) return
+    const esc = (e) => { if (e.key === 'Escape') onClose?.() }
     document.addEventListener('keydown', esc)
     return () => document.removeEventListener('keydown', esc)
-  }, [onClose])
+  }, [onClose, dialog])
+  if (!dialog) return <Sheet title={title} onClose={onClose} actions={actions} size={wide ? 'wide' : undefined} component="ObModal">{children}</Sheet>
   return (
     <div className="cfm" role="dialog" aria-modal="true" aria-label={title}>
       <div className="cfm__scrim" onClick={onClose} />
@@ -297,7 +300,7 @@ export function PreviewPanel({ title, chip, doc, onClose, actions }) {
         <QuietSelect label="القالب" value={tpl} options={TPLS} onChange={setTpl} up />
         <span className="ob-sp" />
         <button type="button" className="btn" onClick={() => window.print()}><Ico.print size={20} />طباعة</button>
-        <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: `${doc.no}.pdf` })}><Ico.download size={20} />PDF</button>
+        <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: `${doc.no}.pdf` })}><Ico.download size={20} />تنزيل PDF</button>
       </div>
     </aside>
   )

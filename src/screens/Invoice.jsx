@@ -41,7 +41,7 @@ function secondaryOf(v) {
   const pay   = { id: 'pay',   label: 'نسخ لينك الدفع',    Ic: Ico.card }
   const pdf   = { id: 'pdf',   label: 'تنزيل PDF',      Ic: Ico.download }
   const xml   = { id: 'xml',   label: 'تنزيل XML',      Ic: Ico.download }
-  const print = { id: 'print', label: 'معاينة وطباعة', Ic: Ico.print }
+  const print = { id: 'print', label: 'طباعة', Ic: Ico.print }
   const dup   = { id: 'dup',   label: 'نسخة جديدة منها', Ic: Ico.copy }
   /* مش «نسخة» — دي بتلغي الأصلية وتفتح مسودة بدلها. قاعدة صريحة في البورد. */
   const fix   = { id: 'fix', label: 'نسخ للتصحيح', Ic: Ico.retry, tone: 'crit',
@@ -161,7 +161,7 @@ export default function Invoice() {
         chip={<><InvChips v={v} />{v.zatca === 'ok' && <Chip tone="zatca">الهيئة قبلتها</Chip>}</>}
         sub={<>{v.c.ar}{dueLine && <> · <span style={dueLine.cls === ' is-late' ? { color: '#B91C1C' } : undefined}>{dueLine.t}</span></>}</>}
         actions={<>
-          {v.zatca === 'ok' && <button type="button" className="btn" onClick={() => run('pdf')}><Ico.download size={20} />PDF</button>}
+          {v.zatca === 'ok' && <button type="button" className="btn" onClick={() => run('pdf')}><Ico.download size={20} />تنزيل PDF</button>}
           {prim && (
             <button type="button" className={`btn ${prim.tone === 'crit' ? 'btn--danger2' : 'btn--primary'}`} onClick={runPrimary}>
               <prim.Ic size={20} />{prim.label}

@@ -8795,7 +8795,7 @@ body[data-pp] .main{
    لما نخرج منها — فباقي الشاشات زي ما هي.
    للرجوع: امسح البلوك ده + الـuseEffect في Dashboard.jsx
    ============================================================ */
-:root[data-flip="1"]{
+:root[data-flip="1"]:not([data-theme="dark"]){
   --surface-page:   var(--w-25);
   --surface-app:    var(--w-25);
   --surface-raised: #FFFFFF;
@@ -8807,21 +8807,21 @@ body[data-pp] .main{
   --shadow-flip:    0 1px 2px rgba(28,28,28,.04), 0 6px 16px rgba(28,28,28,.05);
 }
 /* الكروت بس — مش الحقول ولا الكنترولز */
-:root[data-flip="1"] .stat,
-:root[data-flip="1"] .panel{box-shadow:var(--shadow-flip)}
+:root[data-flip="1"]:not([data-theme="dark"]) .stat,
+:root[data-flip="1"]:not([data-theme="dark"]) .panel{box-shadow:var(--shadow-flip)}
 
 /* الجراف من غير سطور — الأرقام على المحور فاضلة */
-:root[data-flip="1"] .chart__gridline{border-top:0}
+:root[data-flip="1"]:not([data-theme="dark"]) .chart__gridline{border-top:0}
 
 /* ★★ الأحمر كان مالي الشاشة فبقى بيقول «كله وحش» ومابقاش
    بيلفت لحاجة. الجملة التفسيرية تحت الرقم والتأخير في قائمة
    المستحقات رجعوا نبرة عادية — الأحمر فضل في إشعار الجرس
    وأيقونة البند المرفوض بس، يعني مكانين بدل ستة. التمييز
    بقى بالوزن مش باللون. */
-:root[data-flip="1"] .stat--alert .stat__sub{
+:root[data-flip="1"]:not([data-theme="dark"]) .stat--alert .stat__sub{
   color:var(--ink-faint);font-weight:var(--fw-medium)
 }
-:root[data-flip="1"] .distrib__m.is-late{
+:root[data-flip="1"]:not([data-theme="dark"]) .distrib__m.is-late{
   color:var(--ink-muted);font-weight:var(--fw-semi)
 }
 
@@ -8829,7 +8829,7 @@ body[data-pp] .main{
    كل كارت، وبقى تقيل على شاشة كروتها بيضا وليها ظل. البديل
    نفس لغة الحقول: تعبئة كريمية من غير برواز — بيقعد جوه الكارت
    من غير ما يزوّد خط جديد على الشاشة. */
-:root[data-flip="1"] .btn--outline{
+:root[data-flip="1"]:not([data-theme="dark"]) .btn--outline{
   background:var(--surface-field);border-color:transparent;
   color:var(--ink-strong);font-weight:var(--fw-semi)
 }
@@ -8844,7 +8844,7 @@ body[data-pp] .main{
    الألوان كلها من سلّم حسيم — نعناعي `--chart-3` من فوق،
    لمسة ليمونية، وتركوازي `--chart-2` من تحت. مفيش لون جديد.
    ============================================================ */
-:root[data-flip="1"] .shell{
+:root[data-flip="1"]:not([data-theme="dark"]) .shell{
   background:
     radial-gradient(70% 55% at 100%  0%, rgba(140,199,181,.95), transparent 70%),
     radial-gradient(55% 45% at   0%  0%, rgba(140,199,181,.65), transparent 70%),
@@ -8856,25 +8856,25 @@ body[data-pp] .main{
     var(--w-25);
   background-attachment:fixed;
 }
-:root[data-flip="1"] .main,
-:root[data-flip="1"] .content,
-:root[data-flip="1"] .topbar{background:transparent}
+:root[data-flip="1"]:not([data-theme="dark"]) .main,
+:root[data-flip="1"]:not([data-theme="dark"]) .content,
+:root[data-flip="1"]:not([data-theme="dark"]) .topbar{background:transparent}
 
 /* الكروت **والقايمة** زجاج: شفافية + بلور، فالتدرّج بيبان من وراهم.
    التدرّج اتنقل على `.shell` بدل `.main` عشان يمرّ تحت القايمة كمان —
    لو فضل على `.main` كانت القايمة هتبقى زجاج على أرضية صمّاء. */
-:root[data-flip="1"] .nav,
-:root[data-flip="1"] .stat,
-:root[data-flip="1"] .panel{
+:root[data-flip="1"]:not([data-theme="dark"]) .nav,
+:root[data-flip="1"]:not([data-theme="dark"]) .stat,
+:root[data-flip="1"]:not([data-theme="dark"]) .panel{
   background:rgba(255,255,255,.60);
   -webkit-backdrop-filter:blur(18px) saturate(150%);
   backdrop-filter:blur(18px) saturate(150%);
   border-color:rgba(255,255,255,.72)
 }
 /* الحقول والأزرار جوه الكارت الزجاجي — نبرة أفتح عشان تفضل بايِنة */
-:root[data-flip="1"] .btn--outline,
-:root[data-flip="1"] .needs__ic,
-:root[data-flip="1"] .recent__ic{background:rgba(255,255,255,.72)}
+:root[data-flip="1"]:not([data-theme="dark"]) .btn--outline,
+:root[data-flip="1"]:not([data-theme="dark"]) .needs__ic,
+:root[data-flip="1"]:not([data-theme="dark"]) .recent__ic{background:rgba(255,255,255,.72)}
 
 /* ============================================================
    الصفحة تملا الشاشة — الصف التالت بياخد الفاضي
@@ -8883,8 +8883,8 @@ body[data-pp] .main{
    الشاشة بدل ما يسيب فراغ تحته. الحد الأدنى بيمنعه ينكمش لما
    المحتوى يزيد ويرجع يسكرول عادي.
    ============================================================ */
-:root[data-flip="1"] .content{display:flex;flex-direction:column}
-:root[data-flip="1"] .row3{flex:1 0 auto;min-height:320px}
+:root[data-flip="1"]:not([data-theme="dark"]) .content{display:flex;flex-direction:column}
+:root[data-flip="1"]:not([data-theme="dark"]) .row3{flex:1 0 auto;min-height:320px}
 
 /* ------------------------------------------------------------
    كنترولز الهيدر بنفس زجاج الكروت
@@ -8893,9 +8893,9 @@ body[data-pp] .main{
    نفس الوصفة بالحرف: ٦٠٪ أبيض + نفس البلور + حدّ أبيض شفاف.
    عدّاد الإشعارات الأحمر بيفضل صمّم — هو إشارة مش سطح.
    ------------------------------------------------------------ */
-:root[data-flip="1"] .tophead__ctrl .select--pill,
-:root[data-flip="1"] .tophead__ctrl .search,
-:root[data-flip="1"] .tophead__ctrl .bellbtn{
+:root[data-flip="1"]:not([data-theme="dark"]) .tophead__ctrl .select--pill,
+:root[data-flip="1"]:not([data-theme="dark"]) .tophead__ctrl .search,
+:root[data-flip="1"]:not([data-theme="dark"]) .tophead__ctrl .bellbtn{
   background:rgba(255,255,255,.60);
   -webkit-backdrop-filter:blur(18px) saturate(150%);
   backdrop-filter:blur(18px) saturate(150%);
@@ -8936,7 +8936,7 @@ body[data-pp] .main{
 
 /* بلوك «آخر موعد للتقديم» — كان رمادي صمّم على كارت زجاجي فبان
    زي رقعة. بقى بنفس لغة الأسطح الجوّانية: أبيض شفاف من غير برواز. */
-:root[data-flip="1"] .vat__due{
+:root[data-flip="1"]:not([data-theme="dark"]) .vat__due{
   background:rgba(255,255,255,.55);
   border:1px solid rgba(255,255,255,.7)
 }

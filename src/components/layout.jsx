@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, createContext, useContext, useLayoutEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
+import { motion } from 'motion/react'
 import { Button, IconButton, SearchField } from './primitives.jsx'
 import { Ico, Riyal } from './icons.jsx'
 import { Toaster, ConfirmHost, toast } from './feedback.jsx'
-import { Modal } from './modal.jsx'
+import { Modal, Sheet } from './modal.jsx'
 import { fmtMoney } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
 import { getTheme, setTheme } from '../lib/theme.js'
@@ -244,7 +245,7 @@ const UP_PERKS = [
 ]
 function UpgradeModal({ onClose }) {
   return (
-    <Modal title="افتح كل مزايا حسيم" sub="اختار الباقة المناسبة لمنشأتك — تقدر تغيّرها أو تلغيها في أي وقت."
+    <Modal dialog title="افتح كل مزايا حسيم" sub="اختار الباقة المناسبة لمنشأتك — تقدر تغيّرها أو تلغيها في أي وقت."
       onClose={onClose}
       footer={<>
         <button type="button" className="btn btn--primary" onClick={() => { onClose(); toast.info('صفحة الباقات — جاية قريب') }}>عرض الباقات</button>
@@ -383,6 +384,122 @@ function TopBar({ onMenu }) {
   )
 }
 
+/* ============================================================
+   ★ الموبايل (طلب مهاب ٢٢ سبتمبر): تنقّل تحت + «المزيد».
+   الهيدر فوق فيه اللوجو (يمين) والإشعارات والحساب (شمال) بس،
+   وكل الباقي (إضافة سريعة، الترقية، باقي الموديولز، الوضع الداكن)
+   جوّه «المزيد».
+   ============================================================ */
+const BNAV = [
+  { Ic: Ico.home, label: 'الرئيسية', to: '/dashboard', match: ['/dashboard'] },
+  { Ic: Ico.dollar, label: 'المبيعات', to: '/sales/invoices', match: ['/sales/invoices', '/sales/quotations', '/sales/credit-notes', '/sales/debit-notes'] },
+  { Ic: Ico.customers, label: 'العملاء', to: '/sales/customers', match: ['/sales/customers'] },
+  { Ic: Ico.purchases, label: 'المشتريات', to: '/purchases/bills', match: ['/purchases'] },
+]
+const inBnav = (pathname) => BNAV.findIndex((b) => b.match.some((m) => hitsPath(pathname, m)))
+
+function BottomNav() {
+  const { pathname } = useLocation()
+  const nav = useNavigate()
+  const [more, setMore] = useState(false)
+  useEffect(() => { setMore(false) }, [pathname])
+  const on = inBnav(pathname)
+  return (
+    <>
+      <nav className="ob-bnav" aria-label="التنقّل الرئيسي" data-component="BottomNav">
+        {BNAV.map((b, i) => (
+          <button key={b.to} type="button" className={`ob-bnav__i${on === i ? ' is-on' : ''}`} aria-current={on === i ? 'page' : undefined}
+            onClick={() => nav(b.to)}>
+            <b.Ic size={22} /><span>{b.label}</span>
+          </button>
+        ))}
+        <button type="button" className={`ob-bnav__i${on < 0 || more ? ' is-on' : ''}`} aria-haspopup="dialog" aria-expanded={more}
+          onClick={() => setMore(true)}>
+          <Ico.grid size={22} /><span>المزيد</span>
+        </button>
+      </nav>
+      {more && <MoreSheet onClose={() => setMore(false)} />}
+    </>
+  )
+}
+
+function MoreSheet({ onClose }) {
+  const { pathname } = useLocation()
+  const nav = useNavigate()
+  const [theme, setTh] = useState(getTheme)
+  const [up, setUp] = useState(false)
+  const [open, setOpen] = useState(() => {
+    const o = {}
+    NAV.forEach((it) => { if (it.children && activeIn(pathname, it.children)) o[it.label] = true })
+    return o
+  })
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', esc)
+    return () => document.removeEventListener('keydown', esc)
+  }, [onClose])
+  const go = (to) => { onClose(); nav(to) }
+  /* الموديولز اللي مش في الشريط التحتاني */
+  const rest = NAV.filter((it) => !(it.to && BNAV.some((b) => b.to === it.to)))
+  return (
+    <div className="ob-more" role="dialog" aria-modal="true" aria-label="المزيد">
+      <motion.div className="ob-more__scrim" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} />
+      <motion.div className="ob-more__panel" initial={{ y: '100%' }} animate={{ y: 0 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+        <span className="ob-more__grab" aria-hidden="true" />
+        <div className="ob-more__hd">
+          <h2>المزيد</h2>
+          <button type="button" className="iconbtn" onClick={onClose} aria-label="إغلاق"><Ico.close size={20} /></button>
+        </div>
+        <div className="ob-more__body">
+          <div className="ob-more__sec">إضافة سريعة</div>
+          <div className="ob-more__quick">
+            {QUICK.map((q) => (
+              <button key={q.t} type="button" className="ob-more__q" onClick={() => go(q.to)}>
+                <span className="ob-more__qi"><q.Ic size={20} /></span><span>{q.t}</span>
+              </button>
+            ))}
+          </div>
+
+          <button type="button" className="ob-more__up" onClick={() => setUp(true)}>
+            <Ico.sparkle size={20} /><span><b>افتح كل مزايا حسيم</b><small>الربط بمنصة فاتورة وكل الموديولز</small></span>
+            <Ico.chevron size={16} className="ob-more__chev" />
+          </button>
+
+          <div className="ob-more__sec">الموديولز</div>
+          <div className="ob-more__list">
+            {rest.map((it) => it.children ? (
+              <div key={it.label} className={`ob-more__grp${open[it.label] ? ' is-open' : ''}`}>
+                <button type="button" className="ob-more__row" aria-expanded={!!open[it.label]}
+                  onClick={() => setOpen((o) => ({ ...o, [it.label]: !o[it.label] }))}>
+                  <it.Ic size={20} /><span>{it.label}</span><Ico.chevron size={16} className="ob-more__chev" />
+                </button>
+                {open[it.label] && (
+                  <div className="ob-more__kids">
+                    {it.children.map((c) => (
+                      <button key={c.to} type="button" className={`ob-more__kid${activeIn(pathname, it.children) === c.to ? ' is-on' : ''}`} onClick={() => go(c.to)}>{c.label}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button key={it.to} type="button" className={`ob-more__row${hitsPath(pathname, it.to) ? ' is-on' : ''}`} onClick={() => go(it.to)}>
+                <it.Ic size={20} /><span>{it.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <button type="button" className="ob-more__row ob-more__theme"
+            onClick={() => { const t = theme === 'dark' ? 'light' : 'dark'; setTheme(t); setTh(t) }}>
+            {theme === 'dark' ? <Ico.sun size={20} /> : <Ico.moon size={20} />}
+            <span>{theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}</span>
+          </button>
+        </div>
+      </motion.div>
+      {up && <UpgradeModal onClose={() => setUp(false)} />}
+    </div>
+  )
+}
+
 /* `aside`: لوحة جانبية على inline-end (المعاينة) — المحتوى يفضل شغّال جنبها */
 /* ★ أكشنز الجداول (طلب مهاب ٢٠ سبتمبر): كل زرار على قد الكلمة + ١٦ بادنج،
    وفي كل جدول، كل الأزرار السياقية (المختلفة) بتاخد عرض أطول واحد فيهم —
@@ -412,8 +529,27 @@ function labelTableCells(t) {
     })
   }))
 }
+/* ★ محرّر البنود على الموبايل/التابلت بيبقى كروت من غير رؤوس أعمدة —
+   فكل حقل بياخد اسم عموده كـplaceholder وaria-label عشان يفضل مفهوم. */
+function labelLineInputs(root) {
+  root.querySelectorAll('.lines').forEach((ln) => {
+    const heads = [...(ln.querySelector('.lines__h')?.children || [])].map((h) => (h.innerText || '').trim())
+    ln.querySelectorAll('.lines__r').forEach((r) => [...r.children].forEach((c, i) => {
+      const lbl = heads[i]; if (!lbl) return
+      c.querySelectorAll('input, select, textarea').forEach((f) => {
+        if (!f.getAttribute('aria-label')) f.setAttribute('aria-label', lbl)
+        if (f.tagName === 'INPUT' && !f.getAttribute('placeholder')) f.setAttribute('placeholder', lbl)
+      })
+      if (c.matches('input, select')) {
+        if (!c.getAttribute('aria-label')) c.setAttribute('aria-label', lbl)
+        if (c.tagName === 'INPUT' && !c.getAttribute('placeholder')) c.setAttribute('placeholder', lbl)
+      }
+    }))
+  })
+}
 function equalizeRowActions(root) {
   if (!root) return
+  labelLineInputs(root)
   root.querySelectorAll('table').forEach((t) => {
     labelTableCells(t)
     const btns = [...t.querySelectorAll(ACT_SEL)]
@@ -427,12 +563,24 @@ function equalizeRowActions(root) {
     phs.forEach((p) => { p.style.display = '' })
   })
 }
+/* ★ صفحات التفاصيل (p7-186): الأكشن اللي في رأس الصفحة مايتكررش في
+   الشريط الجانبي. الرأس = رجوع + الأساسي، والشريط = الباقي. */
+const normAct = (t) => (t || '').split('\n')[0].replace(/\s+/g, ' ').trim()
+function dedupeRail(root) {
+  const head = new Set([...root.querySelectorAll('.ob-ph__acts button, .dochead__act button, .dochead__act a')].map((b) => normAct(b.innerText)).filter(Boolean))
+  root.querySelectorAll('.rail__acts .ract').forEach((b) => {
+    const t = normAct((b.querySelector('.ract__t') || b).innerText)
+    const dup = head.has(t)
+    if (dup !== (b.dataset.dup === '1')) { if (dup) b.dataset.dup = '1'; else delete b.dataset.dup }
+  })
+}
+
 function useEqualActions(ref) {
   useEffect(() => {
     const el = ref.current
     if (!el) return
     let raf = 0
-    const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => equalizeRowActions(el)) }
+    const run = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { equalizeRowActions(el); dedupeRail(el) }) }
     run()
     const mo = new MutationObserver((muts) => {
       if (muts.every((m) => m.type === 'attributes')) return
@@ -444,7 +592,50 @@ function useEqualActions(ref) {
   }, [ref])
 }
 
+/* ★ شاشات الإنشاء/التعديل كدرج فوق القايمة (قرار مهاب ٢٢ سبتمبر) */
+export const SheetCtx = createContext(null)
+/* ★ لوحة المعاينة المشتركة (قرار p7-208): الضغط على أي صف في أي قايمة يفتح معاينة جنب الجدول */
+export const PeekCtx = createContext(null)
+
 export function AppShell({ children, aside }) {
+  const inSheet = useContext(SheetCtx)
+  if (inSheet) return <>{children}{aside}</>
+  return <AppShellFrame aside={aside}>{children}</AppShellFrame>
+}
+
+/* القايمة (أو صفحة التفاصيل) ورا، والفورم في درج فوقها.
+   رأس الفورم (PageHeader) بيترسم جوّه رأس الدرج بـportal، والشاشات
+   القديمة (dochead) بياخد عنوانها ويستخبى رأسها. */
+export function SheetRoute({ behind, form, back, size = 'xl', title }) {
+  const nav = useNavigate()
+  const [slots, setSlots] = useState({})
+  const [hasHead, setHasHead] = useState(false)
+  const [legacyTitle, setLegacyTitle] = useState(null)
+  const bodyRef = useRef(null)
+  const setSlot = (k) => (el) => { if (el && slots[k] !== el) setSlots((x) => (x[k] === el ? x : { ...x, [k]: el })) }
+  useEffect(() => {
+    if (hasHead) return
+    const t = bodyRef.current?.querySelector('.dochead__no')
+    const txt = t ? t.textContent.trim() : null
+    if (txt && txt !== legacyTitle) setLegacyTitle(txt)
+  })
+  return (
+    <>
+      {behind}
+      <SheetCtx.Provider value={{ slots, markHead: () => setHasHead(true) }}>
+        <Sheet onClose={() => nav(back)} size={size} component="SheetRoute"
+          title={<><span ref={setSlot('title')} className="ob-sheet__slot" />{!hasHead && (legacyTitle || title)}</>}
+          sub={<span ref={setSlot('sub')} className="ob-sheet__slot" />}
+          actions={<span ref={setSlot('acts')} className="ob-sheet__slot" />}
+          mbar={<span ref={setSlot('mbar')} className="ob-sheet__slot" />}>
+          <div ref={bodyRef} className="ob-sheet__route">{form}</div>
+        </Sheet>
+      </SheetCtx.Provider>
+    </>
+  )
+}
+
+function AppShellFrame({ children, aside }) {
   const [col, setCol] = useState(() => {
     try { const v = localStorage.getItem('ob:navcol'); return v == null ? true : v === '1' } catch { return true }
   })
@@ -453,7 +644,9 @@ export function AppShell({ children, aside }) {
   const mainRef = useRef(null)
   useEqualActions(mainRef)
   const { pathname } = useLocation()
-  useEffect(() => { setDrawer(false) }, [pathname])
+  const [peek, setPeek] = useState(null)
+  useEffect(() => { setDrawer(false); setPeek(null) }, [pathname])
+  const side = aside || peek?.node
   useEffect(() => {
     if (!drawer) return
     const esc = (e) => { if (e.key === 'Escape') setDrawer(false) }
@@ -466,10 +659,14 @@ export function AppShell({ children, aside }) {
       <TopBar onMenu={() => setDrawer(true)} />
       <div className="ob-body">
         <SideNav col={col} onToggle={toggle} />
-        <main ref={mainRef} className={`ob-main${aside ? ' has-pv' : ''}`}>
-          {aside ? <><div className="ob-main__c">{children}</div>{aside}</> : children}
+        <main ref={mainRef} className={`ob-main${side ? ' has-pv' : ''}`}>
+          <PeekCtx.Provider value={{ key: aside ? null : peek?.key, open: (key, node) => setPeek({ key, node }), close: () => setPeek(null) }}>
+            <div className="ob-main__c">{children}</div>
+          </PeekCtx.Provider>
+          {side}
         </main>
       </div>
+      <BottomNav />
       {drawer && (
         <div className="ob-navdrawer" onClick={(e) => { if (e.target === e.currentTarget) setDrawer(false) }}>
           <SideNav col={false} onNavigate={() => setDrawer(false)} />
@@ -494,6 +691,21 @@ export function CurrencyNote() {
    h1 22/700 + شارة الحالة + سطر الاستخدام … الأزرار.
    «رجوع» زرار ghost أول الأزرار (زي Create §3). */
 export function PageHeader({ title, sub, actions, back, chip, usage }) {
+  const sheet = useContext(SheetCtx)
+  if (sheet) return <SheetHead sheet={sheet} title={title} sub={sub} actions={actions} chip={chip} />
+  return <PageHeaderFrame title={title} sub={sub} actions={actions} back={back} chip={chip} usage={usage} />
+}
+function SheetHead({ sheet, title, sub, actions, chip }) {
+  useEffect(() => { sheet.markHead() }, [])
+  const { slots } = sheet
+  return <>
+    {slots.title && createPortal(<>{title}{chip && <span className="ob-sheet__chip">{chip}</span>}</>, slots.title)}
+    {slots.sub && sub && createPortal(sub, slots.sub)}
+    {slots.acts && actions && createPortal(actions, slots.acts)}
+    {slots.mbar && actions && createPortal(actions, slots.mbar)}
+  </>
+}
+function PageHeaderFrame({ title, sub, actions, back, chip, usage }) {
   const nav = useNavigate()
   const goBack = () => (typeof back === 'function' ? back() : nav(back))
   return (

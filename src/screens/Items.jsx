@@ -200,7 +200,7 @@ export default function Items() {
           <Button label="استيراد" variant="ghost"
             onClick={() => toast.info('الاستيراد بيتم من ملف Excel أو CSV',
               { sub: 'الشاشة دي جاية مع موديول الاستيراد' })} />
-          <Button label="صنف جديد" variant="primary" icon="＋"
+          <Button label="إنشاء صنف" variant="primary" icon="＋"
             onClick={() => nav('/inventory/items/new')} />
         </div>
       </div>

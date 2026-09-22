@@ -74,29 +74,29 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
     return () => clearTimeout(t)
   }, [])
 
-  const max = Math.max(...data.map((d) => d.v))
+  const vals = data.map((d) => d.v).filter((v) => v != null)
+  const max = Math.max(1, ...vals)
   const ticks = [1, 0.75, 0.5, 0.25, 0]
   const padT = 18
-  /* ★ مساحة تحت خط الصفر بقدر نص سُمك الخط + شوية.
-     من غيرها الخط بيتركن على حافة الرسم بالظبط، ونص سُمكه
-     بيقع بره صندوق الـSVG فيتقصّ — وشهر الصفر بيبان نص خط. */
   const padB = 4
   const n = data.length
   const w = box.w
   const H = height ?? box.h
 
-  /* عربي: يناير على اليمين — فالمحور مقلوب */
-  const pts = data.map((d, i) => ({
-    ...d,
-    i,
-    x: w - (i / (n - 1)) * w,
-    y: padT + (1 - d.v / max) * (H - padT - padB),
+  /* ★ كل نقطة في نص خانتها — نفس خانات أسماء الشهور تحت بالظبط،
+     فالخط بيبدأ وبيخلص جوّه الرسم ومش بيدخل على أرقام المحور.
+     عربي: الأقدم على اليمين. القيم الفاضية (null) = فترة لسه ماجتش. */
+  const all = data.map((d, i) => ({
+    ...d, i,
+    x: w - ((i + 0.5) / n) * w,
+    y: d.v == null ? null : padT + (1 - Math.max(0, d.v) / max) * (H - padT - padB),
   }))
+  const pts = all.filter((p) => p.y != null)
 
   const line = smoothPath(pts)
-  const area = w ? `${line} L ${pts[n - 1].x} ${H} L ${pts[0].x} ${H} Z` : ''
+  const area = w && pts.length > 1 ? `${line} L ${pts[pts.length - 1].x} ${H} L ${pts[0].x} ${H} Z` : ''
   const act = hover ?? highlightIndex
-  const A = ready ? pts[act] : null
+  const A = ready && all[act]?.y != null ? all[act] : null
 
   return (
     <div data-component="AreaChart" className="chart">
@@ -109,7 +109,7 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
           ))}
         </div>
 
-        <div className="area__box" ref={wrapRef} style={{ marginRight: yInset }}>
+        <div className="area__box" ref={wrapRef} style={{ marginLeft: yInset, marginRight: 0 }}>
           {w > 0 && H > 0 && (
             <svg className="area__svg" width={w} height={H} aria-label="المبيعات الشهرية">
               <defs>
@@ -117,9 +117,9 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
                     الهوية نفسه. الليموني بيفضل في المساحة المفرودة بس،
                     عمره ما بيلمس النص ولا الخط. */}
                 <linearGradient id={`g${uid}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"  stopColor="var(--lime)"    stopOpacity=".55" />
-                  <stop offset="38%" stopColor="var(--chart-3)" stopOpacity=".34" />
-                  <stop offset="72%" stopColor="var(--chart-2)" stopOpacity=".16" />
+                  <stop offset="0%"  stopColor="var(--chart-3)" stopOpacity=".62" />
+                  <stop offset="45%" stopColor="var(--chart-3)" stopOpacity=".30" />
+                  <stop offset="78%" stopColor="var(--chart-2)" stopOpacity=".10" />
                   <stop offset="100%" stopColor="var(--chart-1)" stopOpacity="0" />
                 </linearGradient>
                 {/* الخط نفسه بيمشي من الأخضر الغامق للتركوازي — الليموني
@@ -152,22 +152,22 @@ export function AreaChart({ data, height, highlightIndex, yInset = 34 }) {
           )}
 
           {A && (
-            <div className="area__tip" key={act} style={{ left: A.x, top: A.y }}>
+            <div className={`area__tip${A.y < 48 ? ' is-below' : ''}`} key={act} style={{ left: A.x, top: A.y }}>
               <b>{A.l}</b><span className="num">{fmtMoney(A.v).split('.')[0]}</span>
             </div>
           )}
 
           <div className="area__hit">
             {data.map((d, i) => (
-              <span key={d.l} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />
+              <span key={d.l} onMouseEnter={() => d.v != null && setHover(i)} onMouseLeave={() => setHover(null)} style={d.v == null ? { cursor: 'default' } : undefined} />
             ))}
           </div>
         </div>
       </div>
 
-      <div className="chart__xaxis" style={{ paddingRight: yInset }}>
+      <div className="chart__xaxis" style={{ paddingLeft: yInset, paddingRight: 0, gap: 0 }}>
         {data.map((d, i) => (
-          <span key={d.l} className={i === act ? 'on' : ''}>{d.l}</span>
+          <span key={d.l} className={`${i === act ? 'on' : ''}${d.v == null ? ' is-future' : ''}`}>{d.l}</span>
         ))}
       </div>
     </div>

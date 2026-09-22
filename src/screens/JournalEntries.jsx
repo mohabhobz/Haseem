@@ -157,7 +157,7 @@ export default function JournalEntries() {
         <div className="tophead__ctrl">
           <DateRange value={period} onChange={reset(setPeriod)} today={TODAY} />
           <Button label="دفتر الأستاذ" variant="ghost" onClick={() => nav('/accounting/ledger')} />
-          <Button label="قيد يدوي جديد" variant="primary" icon="＋" onClick={() => setForm(true)} />
+          <Button label="إنشاء قيد يدوي" variant="primary" icon="＋" onClick={() => setForm(true)} />
         </div>
       </div>
 
@@ -196,7 +196,6 @@ export default function JournalEntries() {
         ) : (
           <>
             <DataTable
-              selectable={false}
               columns={[
                 col('رقم القيد', 'no', { width: '134px' }),
                 col('التاريخ', 'date', { width: '120px' }),

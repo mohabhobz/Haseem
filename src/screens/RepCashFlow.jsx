@@ -132,7 +132,7 @@ export default function RepCashFlow() {
           </div>
         ) : (
           <DataTable
-            selectable={false}
+            selectable={false} peek={false}
             columns={[
               { label: 'الحساب' },
               { label: 'افتتاحي', num: true, width: '132px' },

@@ -71,7 +71,7 @@ export default function Projects() {
           sub={<>ربحية كل مشروع محسوبة من قيوده — مش من تقدير<CurrencyNote /></>} />
         <div className="tophead__ctrl">
           <DateRange value={period} onChange={setPeriod} today={TODAY} />
-          <Button label="مشروع جديد" variant="primary" icon="＋"
+          <Button label="إنشاء مشروع" variant="primary" icon="＋"
             onClick={() => setForm(true)} />
         </div>
       </div>
