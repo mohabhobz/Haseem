@@ -1307,3 +1307,10 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .ob-menu__h { font-size: 13px; font-weight: 700; color: var(--ink-muted); padding: 4px 14px 8px; }
   .ob-menu hr, .rmenu__sep { margin: 6px 0 !important; }
 }
+/* ★ صف الحالات: سكرول بالعرض بس (مش فوق وتحت)، ومحاذي لحافة البحث */
+.ob-pills { overflow-y: hidden !important; overscroll-behavior-y: none; touch-action: pan-x; padding-block: 2px; flex-shrink: 0; }
+.ob-pills > button::before { content: none !important; }
+.tabs, .ob-tabs { touch-action: pan-x; }
+@media (max-width: 599px) {
+  .ob-fbar > .ob-pills { margin-inline: 0 !important; padding-inline: 0 !important; min-height: 40px; }
+}
