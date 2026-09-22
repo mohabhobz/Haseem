@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { motion } from 'motion/react'
 import { Ico, Riyal } from './icons.jsx'
 import { fmtMoney, fmtDate, daysFrom } from '../lib/format.js'
 import * as DATA from '../data/mock.js'
@@ -371,4 +372,90 @@ export function paperOfInvoice(v) {
   const sub = lines.reduce((a, l) => a + l.qty * l.price, 0)
   const vat = +(sub * 0.15).toFixed(2)
   return { no: v.no, date: v.date, due: v.due, party: v.c, lines, sub, disc: 0, vat, total: v.total, zatcaOk: v.zatca === 'ok' }
+}
+
+/* ============================================================
+   ★ كارت القوايم على الموبايل (طلب مهاب ٢٢ سبتمبر) — شكل واحد:
+   سطر فوق: تحديد · الرقم/الاسم وتحته الطرف · المبلغ وتحته وصفه
+   سطر تحت: الحالات · معلومة التاريخ … والأكشنز على الطرف.
+   الضغط على الكارت = معاينة (زي الضغط على الصف في الديسكتوب).
+   ============================================================ */
+export function MCard({ sel, onSel, selLabel, title, sub, chips, amount, amountSub, meta, actions, onOpen, on }) {
+  return (
+    <div className={`ob-mcard${sel ? ' is-sel' : ''}${on ? ' is-on' : ''}`} role="button" tabIndex={0}
+      onClick={onOpen} onKeyDown={(e) => { if (e.key === 'Enter') onOpen?.() }}>
+      <div className="ob-mcard__top">
+        {onSel && <span className="ob-mcard__chk" onClick={(e) => e.stopPropagation()}><Check on={sel} onChange={onSel} label={selLabel} /></span>}
+        <div className="ob-mcard__id"><b>{title}</b>{sub && <span>{sub}</span>}</div>
+        {amount != null && <div className="ob-mcard__amt">{amount}{amountSub && <small>{amountSub}</small>}</div>}
+      </div>
+      {(chips || meta || actions) && (
+        <div className="ob-mcard__bot">
+          <div className="ob-mcard__info">
+            {chips && <span className="ob-mcard__chips">{chips}</span>}
+            {meta && <span className="ob-mcard__meta">{meta}</span>}
+          </div>
+          {actions && <div className="ob-mcard__acts" onClick={(e) => e.stopPropagation()}>{actions}</div>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/* ★ فلاتر الموبايل: أيقونة جنب البحث بتفتح كل الفلاتر في شيت من تحت */
+export function FilterBtn({ n = 0, onClick }) {
+  return (
+    <button type="button" className="ob-fbtn" onClick={onClick} aria-label={n ? `الفلاتر (${n} شغّالة)` : 'الفلاتر'} title="الفلاتر">
+      <Ico.filter size={20} />{n > 0 && <span className="ob-fbtn__n num">{n}</span>}
+    </button>
+  )
+}
+export function FilterSheet({ onClose, onReset, count, children }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', esc)
+    return () => document.removeEventListener('keydown', esc)
+  }, [onClose])
+  return (
+    <div className="ob-more ob-fsheet" role="dialog" aria-modal="true" aria-label="الفلاتر">
+      <motion.div className="ob-more__scrim" onClick={onClose} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} />
+      <motion.div className="ob-more__panel" initial={{ y: '100%' }} animate={{ y: 0 }} transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}>
+        <span className="ob-more__grab" aria-hidden="true" />
+        <div className="ob-more__hd">
+          <h2>الفلاتر</h2>
+          <button type="button" className="iconbtn" onClick={onClose} aria-label="إغلاق"><Ico.close size={20} /></button>
+        </div>
+        <div className="ob-more__body ob-fsheet__body">{children}</div>
+        <div className="ob-fsheet__ft">
+          <button type="button" className="btn" disabled={!count} onClick={onReset}>مسح الفلاتر</button>
+          <button type="button" className="btn btn--primary" onClick={onClose}>عرض النتائج</button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+/* ★ الترتيب على الموبايل: أيقونة جنب البحث بتفتح الاختيارات (درج من تحت) */
+export function SortBtn({ value, options, onChange, def }) {
+  const p = usePop()
+  const changed = def != null && value !== def
+  return (
+    <span className="ob-picker ob-sortbtn" ref={p.ref}>
+      <button type="button" className={`ob-fbtn${changed ? ' is-on' : ''}`} aria-haspopup="listbox" aria-expanded={p.open}
+        onClick={p.toggle} aria-label="الترتيب" title="الترتيب">
+        <Ico.sort size={20} />{changed && <span className="ob-fbtn__dot" />}
+      </button>
+      {p.open && (
+        <div className="ob-menu is-end" role="listbox" aria-label="الترتيب">
+          <div className="ob-menu__h">الترتيب</div>
+          {options.map((o) => (
+            <button key={o.id} type="button" role="option" aria-selected={o.id === value} className="ob-menu__i"
+              onClick={() => { onChange(o.id); p.setOpen(false) }}>
+              <span style={{ flex: 1 }}>{o.label}</span>{o.id === value && <Ico.check size={16} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  )
 }

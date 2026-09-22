@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef, useContext } from 'react'
 import { PeekCtx } from './layout.jsx'
 import { Ico } from './icons.jsx'
 import { useSelection } from './table.jsx'
-import { QuietSelect, usePop, Check } from './ob.jsx'
+import { QuietSelect, QuietSelectBox, usePop, Check, MCard, FilterBtn, FilterSheet, SortBtn } from './ob.jsx'
 
 /* ============================================================
    ObList — نمط قايمة المستندات في Option B (List §3–§6)،
@@ -81,6 +81,7 @@ export function ObList({
   const [size, setSize] = useState(perDefault)
   const { selected, toggle, selectAll, clear } = useSelection()
   const boxRef = useRef(null)
+  const [fOpen, setFOpen] = useState(false)
   /* ★ الضغط على الصف = معاينة (قرار p7-208). القوايم اللي عندها معاينة
      خاصة (preview) بتفضل زي ما هي؛ الباقي بياخد اللوحة المشتركة. */
   const pk = useContext(PeekCtx)
@@ -129,15 +130,20 @@ export function ObList({
   const cols = layout === 'compact' && compactCols ? columns.filter((c) => compactCols.includes(c.id)) : columns
   const reset = () => { setPill(pills[0]?.id); setQv(Object.fromEntries(quiet.map((f) => [f.id, f.def ?? f.options[0].id]))); setQ(''); setPage(1) }
   const ids = [...selected]
+  const hasF = quiet.length > 0 || sorts.length > 0 || !!children
+  const fCount = quiet.filter((f) => qv[f.id] !== (f.def ?? f.options[0].id)).length
+  const resetF = () => { setQv(Object.fromEntries(quiet.map((f) => [f.id, f.def ?? f.options[0].id]))); setPage(1) }
 
   return (
-    <div className="ob-card" data-component="ObList" ref={boxRef}>
+    <div className={`ob-card${layout === 'cards' ? ' is-cards' : ''}`} data-component="ObList" ref={boxRef}>
       <div className="ob-fbar">
         <label className="search">
           <Ico.search size={20} />
           <input value={q} placeholder={searchPh} aria-label="بحث" onChange={(e) => { setQ(e.target.value); setPage(1) }} />
           {q && <button type="button" className="search__x" aria-label="مسح البحث" onClick={() => setQ('')}><Ico.close size={16} /></button>}
         </label>
+        {sorts.length > 0 && <span className="ob-show-sm"><SortBtn value={sort} options={sorts} onChange={setSort} def={sorts[0]?.id} /></span>}
+        {(quiet.length > 0 || children) && <span className="ob-show-sm"><FilterBtn n={fCount} onClick={() => setFOpen(true)} /></span>}
         {pills.length > 0 && (
           <div className="ob-pills" role="group" aria-label="الحالة">
             {pills.map((p) => (
@@ -149,7 +155,7 @@ export function ObList({
         )}
       </div>
       {(quiet.length > 0 || sorts.length > 0 || children) && (
-        <div className="ob-fbar" style={{ marginTop: -4 }}>
+        <div className="ob-fbar ob-hide-sm" style={{ marginTop: -4 }}>
           {quiet.map((f) => (
             <QuietSelect key={f.id} label={f.label} value={qv[f.id]} options={f.options}
               onChange={(v) => { setQv((a) => ({ ...a, [f.id]: v })); setPage(1) }} />
@@ -158,6 +164,17 @@ export function ObList({
           <span className="ob-sp" />
           {children}
         </div>
+      )}
+
+      {fOpen && (
+        <FilterSheet onClose={() => setFOpen(false)} onReset={resetF} count={fCount}>
+          {quiet.map((f) => (
+            <div key={f.id} className="ob-fsheet__f"><span>{f.label}</span>
+              <QuietSelectBox label={f.label} value={qv[f.id]} options={f.options}
+                onChange={(v) => { setQv((a) => ({ ...a, [f.id]: v })); setPage(1) }} /></div>
+          ))}
+          {children && <div className="ob-fsheet__x">{children}</div>}
+        </FilterSheet>
       )}
 
       {selected.size > 0 && bulk.length > 0 && (
@@ -202,34 +219,18 @@ export function ObList({
           )}
           {shown.map((r, i) => {
             const k = rowKey(r)
-            const late = rowClass?.(r)?.includes('is-late')
             const ctx = context?.(r)
             return (
-              <div key={k} className="ob-card" role="button" tabIndex={0}
-                style={{ padding: '12px 14px', display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0,1fr)', ...(late ? { borderInlineStart: '3px solid #EF4444', background: '#FFFAF9' } : {}) }}
-                onClick={() => clickRow(r)} onKeyDown={(e) => { if (e.key === 'Enter') clickRow(r) }}>
-                <div className="ob-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div className="ob-row" style={{ flexWrap: 'nowrap', minWidth: 0, flex: '1 1 160px' }} onClick={(e) => e.stopPropagation()}>
-                    {bulk.length > 0 && <Check on={selected.has(k)} onChange={() => toggle(k)} label={'تحديد ' + k} />}
-                    <div style={{ minWidth: 0 }}>
-                      <div className="ob-strong">{cardTitle(r)}</div>
-                      <div className="ob-muted" style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cardSub?.(r)}</div>
-                    </div>
-                  </div>
-                  {cardChips?.(r)}
-                </div>
-                {cardAmount && (
-                  <div className="ob-row" style={{ justifyContent: 'space-between', fontSize: 13 }}>
-                    <span className="ob-muted">{typeof cardAmountLabel === 'function' ? cardAmountLabel(r) : cardAmountLabel}</span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--ink-strong)' }}>{cardAmount(r)}</span>
-                  </div>
-                )}
-                <div className="ob-row" style={{ flexWrap: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
-                  {ctx && <div style={{ flex: 1, display: 'flex' }}><Ctx c={ctx} /></div>}
-                  <button type="button" className="btn" style={{ flex: 1 }} onClick={() => clickRow(r)}><Ico.eye size={20} />عرض</button>
+              <MCard key={k} sel={bulk.length > 0 ? selected.has(k) : undefined} onSel={bulk.length > 0 ? () => toggle(k) : undefined}
+                selLabel={'تحديد ' + k} on={usePk && pk.key === k}
+                title={cardTitle(r)} sub={cardSub?.(r)} chips={cardChips?.(r)}
+                amount={cardAmount ? cardAmount(r) : null}
+                amountSub={typeof cardAmountLabel === 'function' ? cardAmountLabel(r) : cardAmountLabel}
+                onOpen={() => clickRow(r)}
+                actions={(ctx || menu) ? <>
+                  {ctx && <Ctx c={ctx} icon={false} />}
                   {menu && <RowMenuOb items={menu(r)} label={'أوامر ' + k} up={i >= shown.length - 3} />}
-                </div>
-              </div>
+                </> : null} />
             )
           })}
         </div>

@@ -1170,3 +1170,140 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .pick__go { width: 100%; justify-content: center; }
   .tophead__ctrl > .btn:not(.btn--primary) { flex: 1 1 calc(50% - 4px); }
 }
+
+/* ============================================================
+   ★ الفلاتر (طلب مهاب ٢٢ سبتمبر): الحالات/التابات صف واحد بالعرض
+   وبيسكرول في كل السيستم. على الموبايل: البحث بعرض الشاشة وجنبه
+   أيقونة الفلاتر (بتفتح كل الفلاتر في شيت)، والحالات تحت بسكرول.
+   ============================================================ */
+.ob-show-sm { display: none; }
+.ob-pills { flex-wrap: nowrap !important; overflow-x: auto; min-width: 0; max-width: 100%; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+.ob-pills > button { flex: none; white-space: nowrap; scroll-snap-align: start; }
+.ob-fbar > .ob-pills { flex: 1 1 auto; }
+.tabs, .ob-tabs { flex-wrap: nowrap !important; overflow-x: auto; overflow-y: hidden; }
+.tabs > *, .ob-tabs > * { flex: none; white-space: nowrap; }
+.ob-fbtn { position: relative; flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 8px;
+  border: 1px solid var(--border-control); background: var(--surface-raised); color: var(--ink-base); }
+.ob-fbtn__n { position: absolute; top: -6px; inset-inline-end: -6px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+  background: var(--accent, #003E31); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.ob-fsheet__body { display: grid; gap: 14px; padding-top: 8px; }
+.ob-fsheet__f { display: grid; gap: 6px; }
+.ob-fsheet__f > span { font-size: 13px; font-weight: 600; color: var(--ink-base); }
+.ob-fsheet__adv { background: var(--surface-raised); border: 1px solid var(--border-base) !important; border-radius: 12px; }
+.ob-fsheet__ft { display: flex; gap: 8px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border-base); background: var(--surface-raised); }
+.ob-fsheet__ft .btn { flex: 1; height: 44px; justify-content: center; }
+.ob-fsheet__ft .btn--primary { order: 9; }
+
+@media (max-width: 599px) {
+  .ob-show-sm { display: contents; }
+  /* صف البحث + الأيقونة، والحالات تحته */
+  .ob-fbar { flex-wrap: wrap; }
+  .ob-fbar > .search { flex: 1 1 0; min-width: 0; max-width: none; width: auto !important; }
+  .ob-fbar > .ob-pills { flex: 1 1 100%; order: 3; margin-inline: -16px; padding-inline: 16px; }
+  /* القوايم القديمة: البحث بعرض الشاشة وزرار «فلترة» أيقونة بس جنبه */
+  .sect__h { flex-wrap: wrap; }
+  .sect__ctrl { flex: 1 1 100% !important; flex-wrap: nowrap !important; width: 100%; }
+  .sect__ctrl > .search, .sect__ctrl .search { flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; max-width: none !important; }
+  .pfilter__btn { width: 44px; height: 44px; min-height: 44px; padding: 0 !important; justify-content: center; position: relative; }
+  .pfilter__btn > span:not(.pfilter__n) { display: none; }
+  .pfilter__btn .pfilter__n { position: absolute; top: -6px; inset-inline-end: -6px; }
+  .pfilter__pop { position: fixed !important; inset: auto 0 0 0 !important; width: 100% !important; max-height: 82dvh; overflow-y: auto; z-index: 125;
+    border-radius: 16px 16px 0 0 !important; box-shadow: 0 -12px 32px rgba(0,0,0,.14) !important; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .tabs, .ob-tabs { margin-inline: -16px; padding-inline: 16px; }
+}
+
+/* ============================================================
+   ★ كارت القوايم على الموبايل (MCard) + كروت الجداول القديمة
+   ============================================================ */
+.ob-mcard { display: grid; gap: 10px; padding: 14px 16px; background: var(--surface-raised); border: 1px solid var(--border-base); border-radius: 12px; min-width: 0; cursor: pointer; }
+.ob-mcard.is-sel, .ob-mcard.is-on { border-color: var(--accent, #003E31); box-shadow: inset 0 0 0 1px var(--accent, #003E31); }
+.ob-mcard__top { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.ob-mcard__chk { flex: none; margin-top: -8px; margin-inline-start: -8px; }
+.ob-mcard__id { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.ob-mcard__id > b { font-size: 15px; font-weight: 700; color: var(--ink-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ob-mcard__id > span { font-size: 13px; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ob-mcard__amt { flex: none; display: grid; justify-items: end; gap: 2px; font-size: 15px; font-weight: 700; color: var(--ink-strong); text-align: end; }
+.ob-mcard__amt small { font-size: 12px; font-weight: 500; color: var(--ink-muted); }
+.ob-mcard__bot { display: flex; align-items: center; gap: 10px; min-width: 0; padding-top: 10px; border-top: 1px solid var(--border-faint); }
+.ob-mcard__info { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ob-mcard__chips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.ob-mcard__meta { font-size: 12.5px; color: var(--ink-muted); display: inline-flex; gap: 4px; align-items: baseline; white-space: nowrap; }
+.ob-mcard__acts { flex: none; display: flex; align-items: center; gap: 4px; }
+.ob-mcard__acts .btn { height: 36px; min-height: 36px; padding-inline: 12px; font-size: 13px; }
+.ob-mcard__acts .btn svg { display: none; }
+@media (max-width: 599px) {
+  /* القايمة نفسها من غير كارت حواليها — الكروت على خلفية الصفحة */
+  .ob-card.is-cards { background: transparent !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; }
+  .ob-main .sect:has(table.dt) { background: transparent !important; border: 0 !important; padding: 0 !important; box-shadow: none !important; }
+
+  /* كروت الجداول القديمة: تحديد + عنوان فوق، القيم سطرين مضغوطين، الأكشنز تحت على الطرف */
+  .ob-main table.dt tbody { gap: 10px; }
+  .ob-main table.dt tr { display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; padding: 14px 16px !important; position: relative; }
+  .ob-main table.dt tr > td { grid-column: 1 / -1; min-height: 28px; padding: 3px 0 !important; font-size: 13.5px; }
+  .ob-main table.dt tr > td::before { font-size: 12.5px; }
+  .ob-main table.dt tr td.dt-m-chk { position: static !important; grid-column: 1; grid-row: 1; align-self: start; margin: -8px 0 0 !important; margin-inline-start: -8px !important; }
+  .ob-main table.dt tr td.dt-m-title { grid-column: 2; grid-row: 1; padding: 0 0 10px !important; margin-bottom: 6px; font-size: 15px; font-weight: 700; }
+  .ob-main table.dt tr:not(:has(> td.dt-m-chk)) td.dt-m-title { grid-column: 1 / -1; }
+  .ob-main table.dt tr:has(> td.dt-m-chk) td.dt-m-title { padding-inline-end: 0 !important; }
+  .ob-main table.dt tr td.dt-m-title + td, .ob-main table.dt tr td.dt-m-chk + td.dt-m-title + td { border-top: 1px solid var(--border-faint) !important; padding-top: 8px !important; }
+  .ob-main table.dt tr td.dt-m-act { justify-content: flex-end; margin-top: 8px; padding-top: 10px !important; }
+  .ob-main table.dt tr td.dt-m-act .rowacts { display: flex; gap: 6px; justify-content: flex-end; width: 100%; }
+  .ob-main table.dt tr td.dt-m-act .act { flex: none; height: 36px; min-height: 36px; padding-inline: 14px; }
+}
+/* ★ كروت الجداول القديمة — عمودين: كل قيمة تحت اسمها، عشان الكارت يقصر */
+@media (max-width: 599px) {
+  .ob-main table.dt tr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: 16px; row-gap: 10px; }
+  .ob-main table.dt tr > td { grid-column: auto; display: flex !important; flex-direction: column; align-items: flex-start !important; justify-content: flex-start !important;
+    gap: 2px; text-align: start !important; min-height: 0; padding: 0 !important; }
+  .ob-main table.dt tr > td::before { max-width: none; font-size: 12px; }
+  .ob-main table.dt tr > td > * { max-width: 100%; }
+  .ob-main table.dt tr td.dt-m-chk { position: absolute !important; top: 8px; inset-inline-start: 6px; margin: 0 !important; }
+  .ob-main table.dt tr td.dt-m-title { grid-column: 1 / -1 !important; grid-row: auto; padding: 0 0 10px !important; margin: 0 !important; border-bottom: 1px solid var(--border-faint) !important; }
+  .ob-main table.dt tr:has(> td.dt-m-chk) td.dt-m-title { padding-inline-start: 34px !important; }
+  .ob-main table.dt tr td.dt-m-title + td, .ob-main table.dt tr td.dt-m-chk + td.dt-m-title + td { border-top: 0 !important; padding-top: 0 !important; }
+  .ob-main table.dt tr td.dt-m-act { grid-column: 1 / -1 !important; flex-direction: row; justify-content: flex-end !important; align-items: center !important;
+    margin-top: 0; padding-top: 10px !important; border-top: 1px solid var(--border-faint) !important; }
+  .ob-main table.dt tr td[colspan]:not([colspan="1"]) { grid-column: 1 / -1 !important; }
+}
+@media (max-width: 599px) { .pfilter__pop { box-shadow: 0 0 0 100vmax rgba(28,24,20,.32), 0 -12px 32px rgba(0,0,0,.14) !important; } }
+
+.ob-fbtn.is-on { border-color: var(--accent, #003E31); color: var(--accent, #003E31); }
+[data-theme="dark"] .ob-fbtn.is-on { color: var(--ink-strong); }
+.ob-fbtn__dot { position: absolute; top: 6px; inset-inline-end: 6px; width: 8px; height: 8px; border-radius: 99px; background: var(--accent, #003E31); }
+.ob-sortbtn { flex: none; }
+@media (max-width: 599px) {
+  /* ترتيب صف البحث: البحث · الترتيب · الفلتر */
+  .sect__ctrl > .search, .sect__ctrl > label { order: 1; }
+  .sect__ctrl > .ob-sortslot { order: 2; display: flex; }
+  .sect__ctrl > .pfilter { order: 3; }
+}
+
+/* ============================================================
+   ★ أي قايمة منسدلة على الموبايل = درج من تحت (طلب مهاب ٢٢ سبتمبر)
+   القوايم (ob-menu)، أوامر الصف (rmenu)، الفترة، عدد الصفوف،
+   الاختيار (selx)، والتقويم — كلها بتطلع من تحت بعرض الشاشة
+   وخلفية معتّمة، والضغط برّه بيقفلها.
+   ============================================================ */
+@keyframes obDropUp { from { transform: translateY(100%); } to { transform: none; } }
+@media (max-width: 599px) {
+  .ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep {
+    position: fixed !important; top: auto !important; bottom: 0 !important; left: 0 !important; right: 0 !important; inset-inline: 0 !important;
+    width: 100% !important; min-width: 0 !important; max-width: none !important; max-height: 72dvh !important; overflow-y: auto !important;
+    margin: 0 !important; border: 0 !important; border-radius: 16px 16px 0 0 !important; z-index: 140 !important;
+    padding: 22px 12px calc(14px + env(safe-area-inset-bottom, 0px)) !important; background: var(--surface-raised) !important;
+    box-shadow: 0 0 0 100vmax rgba(28, 24, 20, .32), 0 -12px 32px rgba(0, 0, 0, .14) !important;
+    display: flex !important; flex-direction: column; gap: 2px;
+  }
+  .datep { display: block !important; }
+  .ob-menu::before, .rmenu__p::before, .perpage__p::before, .dr__pop::before, .selx__p::before, .datep::before {
+    content: ""; position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; border-radius: 4px; background: var(--border-strong, #D9D3CE);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep { animation: obDropUp .28s cubic-bezier(.22, 1, .36, 1) both !important; }
+  }
+  .ob-menu__i, .rmenu__p > button, .rmenu__p [role="menuitem"], .dr__i, .perpage__p > button, .selx__p [role="option"] {
+    min-height: 50px !important; font-size: 15px !important; padding-inline: 14px !important; border-radius: 10px; width: 100%;
+  }
+  .ob-menu__h { font-size: 13px; font-weight: 700; color: var(--ink-muted); padding: 4px 14px 8px; }
+  .ob-menu hr, .rmenu__sep { margin: 6px 0 !important; }
+}

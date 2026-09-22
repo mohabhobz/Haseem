@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef, useContext } from 'react'
+import { useState, useEffect, useRef, useContext, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { SortBtn } from './ob.jsx'
 import { PeekCtx } from './layout.jsx'
 import { bulkAction } from '../lib/actions.js'
 import { Ico } from './icons.jsx'
@@ -43,13 +45,23 @@ export function DataTable({ columns, rows, selectable = true, selected: selIn, o
   const onSelect = onSelIn ?? own.toggle
   const onSelectAll = onAllIn ?? ((on) => own.selectAll(on, rows.map((r, i) => r.key ?? i)))
   const pk = useContext(PeekCtx)
+  /* ★ الترتيب على الموبايل: رؤوس الأعمدة مخفية في الكروت، فالأعمدة القابلة
+     للترتيب بتطلع أيقونة جنب البحث في رأس القسم (sect__ctrl). */
+  const wrapRef = useRef(null)
+  const [sortSlot, setSortSlot] = useState(null)
+  useLayoutEffect(() => { setSortSlot(wrapRef.current?.closest('.sect')?.querySelector('.sect__ctrl') || null) }, [])
+  const sortCols = columns.filter((c) => c.sortable && typeof c.onSort === 'function')
+  const sortOpts = sortCols.map((c, i) => ({ id: String(i), label: c.label + (c.sorted ? (c.sorted === 'asc' ? ' ↑' : ' ↓') : '') }))
+  const sortCur = String(sortCols.findIndex((c) => c.sorted))
   const openRow = (r) => {
     if (peek && pk) pk.open(r.key, <RowPeek r={r} columns={columns} onClose={pk.close} />)
     else r.onOpen?.()
   }
   const allOn = selectable && rows.length > 0 && selected.size === rows.length
   return (
-    <div data-component="DataTable" className="tablewrap">
+    <div data-component="DataTable" className="tablewrap" ref={wrapRef}>
+      {sortSlot && sortCols.length > 0 && createPortal(
+        <span className="ob-show-sm ob-sortslot"><SortBtn value={sortCur} options={sortOpts} onChange={(id) => sortCols[+id]?.onSort()} /></span>, sortSlot)}
       <table className="dt">
         <thead>
           <tr>

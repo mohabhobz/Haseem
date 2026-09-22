@@ -13,7 +13,7 @@ import { Drawer } from '../components/drawer.jsx'
 import { SelectField } from '../components/selectfield.jsx'
 import {
   Amt, Chip, InvChips, invKey, invNet, invRemaining, invLateDays, INV_LIVE,
-  QuietSelect, usePop, Check, Alert, PaymentModal, PreviewPanel, paperOfInvoice,
+  QuietSelect, QuietSelectBox, usePop, Check, Alert, PaymentModal, PreviewPanel, paperOfInvoice, MCard, FilterBtn, FilterSheet, SortBtn,
 } from '../components/ob.jsx'
 
 /* ============================================================
@@ -112,6 +112,9 @@ export default function Invoices() {
   const [advOpen, setAdvOpen] = useState(false)
   const [adv, setAdv] = useState({})
   const advN = ADV.filter((f) => adv[f.id]).length
+  const [fOpen, setFOpen] = useState(false)
+  const fCount = (per !== 'y' ? 1 : 0) + (cust !== 'all' ? 1 : 0) + advN
+  const resetF = () => { setPer('y'); setCust('all'); setPage(1) }
 
   const CUSTS = [{ id: 'all', label: 'كل العملاء' }, ...DATA.customers.map((c) => ({ id: c.id, label: c.ar }))]
 
@@ -203,7 +206,7 @@ export default function Invoices() {
       </div>
 
       {tab === 'sch' ? <Scheduled nav={nav} /> : (
-        <div className="ob-card" data-component="InvoiceList" ref={boxRef}>
+        <div className={`ob-card${layout === 'cards' ? ' is-cards' : ''}`} data-component="InvoiceList" ref={boxRef}>
           {/* ---------- الفلاتر (List §3) ---------- */}
           <div className="ob-fbar">
             <label className="search">
@@ -212,6 +215,8 @@ export default function Invoices() {
                 onChange={(e) => { setQ(e.target.value); setPage(1) }} />
               {q && <button type="button" className="search__x" aria-label="مسح البحث" onClick={() => setQ('')}><Ico.close size={16} /></button>}
             </label>
+            <span className="ob-show-sm"><SortBtn value={sort} options={SORTS} onChange={setSort} def="date-desc" /></span>
+            <span className="ob-show-sm"><FilterBtn n={fCount} onClick={() => setFOpen(true)} /></span>
             <div className="ob-pills" role="group" aria-label="الحالة">
               {PILLS.map((p) => (
                 <button key={p.id} type="button" aria-pressed={pill === p.id} onClick={() => { setPill(p.id); setPage(1) }}>
@@ -220,7 +225,16 @@ export default function Invoices() {
               ))}
             </div>
           </div>
-          <div className="ob-fbar" style={{ marginTop: -4 }}>
+          {fOpen && (
+            <FilterSheet onClose={() => setFOpen(false)} onReset={resetF} count={fCount}>
+              <div className="ob-fsheet__f"><span>الفترة</span><QuietSelectBox label="الفترة" value={per} options={PERIODS} onChange={(v) => { setPer(v); setPage(1) }} /></div>
+              <div className="ob-fsheet__f"><span>العميل</span><QuietSelectBox label="العميل" value={cust} options={CUSTS} onChange={(v) => { setCust(v); setPage(1) }} /></div>
+              <button type="button" className="ob-more__row ob-fsheet__adv" onClick={() => { setFOpen(false); setAdvOpen(true) }}>
+                <Ico.columns size={20} /><span>فلاتر إضافية (الفرع · المندوب · المستودع)</span>{advN > 0 && <Chip tone="info">{advN}</Chip>}
+              </button>
+            </FilterSheet>
+          )}
+          <div className="ob-fbar ob-hide-sm" style={{ marginTop: -4 }}>
             <QuietSelect label="الفترة" value={per} options={PERIODS} onChange={(v) => { setPer(v); setPage(1) }} />
             <QuietSelect label="العميل" value={cust} options={CUSTS} onChange={(v) => { setCust(v); setPage(1) }} />
             <QuietSelect label="الترتيب" value={sort} options={SORTS} onChange={setSort} />
@@ -445,32 +459,20 @@ function InvRow({ v, run, compact, sel, onSel, on, up }) {
 
 /* ---------- كارت < 640px (List §4) ---------- */
 function InvCard({ v, run, sel, onSel, up }) {
-  const late = invLateDays(v) > 0
+  const live = INV_LIVE.includes(v.status)
+  const rem = invRemaining(v)
   return (
-    <div className="ob-card" style={{ padding: '12px 14px', display: 'grid', gap: 8, gridTemplateColumns: 'minmax(0,1fr)', minWidth: 0,
-      ...(late ? { borderInlineStart: '3px solid #EF4444', background: '#FFFAF9' } : {}) }}
-      onClick={() => run('view', v)} role="button" tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') run('view', v) }}>
-      <div className="ob-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div className="ob-row" style={{ flexWrap: 'nowrap', minWidth: 0, flex: '1 1 160px' }} onClick={(e) => e.stopPropagation()}>
-          <Check on={sel} onChange={onSel} label={'تحديد ' + v.no} />
-          <div style={{ minWidth: 0 }}>
-            <div className="ob-strong num">{v.no}</div>
-            <div className="ob-muted" style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.c?.ar}</div>
-          </div>
-        </div>
-        <InvChips v={v} />
-      </div>
-      <div className="ob-row" style={{ justifyContent: 'space-between', fontSize: 13 }}>
-        <span className="ob-muted ob-row" style={{ gap: 6, alignItems: 'baseline' }}>الاستحقاق <Due v={v} /></span>
-        {INV_LIVE.includes(v.status) ? <Amt v={invRemaining(v)} className="ob-strong" /> : <span className="ob-muted">—</span>}
-      </div>
-      <div className="ob-row" style={{ flexWrap: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
-        {(v.status === 'draft' || invRemaining(v) > 0.009) && <div style={{ flex: 1, display: 'flex' }}><ContextBtn v={v} run={run} icon /></div>}
-        <button type="button" className="btn" style={{ flex: 1 }} onClick={() => run('view', v)}><Ico.eye size={20} />عرض</button>
+    <MCard sel={sel} onSel={onSel} selLabel={'تحديد ' + v.no}
+      title={<span className="num">{v.no}</span>} sub={v.c?.ar}
+      amount={<Amt v={live && rem > 0.009 ? rem : v.total} />}
+      amountSub={live && rem > 0.009 ? 'متبقّي' : 'الإجمالي'}
+      chips={<InvChips v={v} />}
+      meta={<>الاستحقاق <Due v={v} /></>}
+      onOpen={() => run('view', v)}
+      actions={<>
+        {(v.status === 'draft' || rem > 0.009) && <ContextBtn v={v} run={run} />}
         <RowMenu v={v} run={run} up={up} />
-      </div>
-    </div>
+      </>} />
   )
 }
 
