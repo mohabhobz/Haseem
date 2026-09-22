@@ -1327,3 +1327,30 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 /* ★ شارات الحالة من غير النقطة اللي قبل الكلمة — في الجداول والكروت والسيستم كله */
 .ob-chip::before, .status__doc::before, .st::before { content: none !important; display: none !important; }
 .status__dot, .status__doc > .dot { display: none !important; }
+
+/* ============================================================
+   ★ لوحة المعاينة (طلب مهاب): الإغلاق في أول الرأس زي الأدراج،
+   الرقم وتحته الحالات، الأكشنز صف واحد بعرض متساوي، ونوع الطباعة
+   جوّه الجسم فوق الورقة، والقالب + طباعة/PDF تحت منظّمين.
+   ============================================================ */
+.ob-pv__hd { flex-wrap: nowrap !important; align-items: flex-start !important; gap: 10px !important; padding: 12px 16px !important; }
+.ob-pv__hd .iconbtn { order: -1; flex: none; width: 44px; height: 44px; margin: -4px 0; }
+.ob-pv__ttl { flex: 1; min-width: 0; display: grid; gap: 6px; padding-top: 6px; }
+.ob-pv__ttl h2, .ob-pv__hd h2 { flex: 1 1 auto; min-width: 0; font-size: 16px; font-weight: 700; line-height: 1.4; margin: 0; flex-wrap: nowrap; }
+.ob-pv__ttl h2 > span, .ob-pv__hd h2 > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ob-pv__hd h2 { padding-top: 10px; }
+.ob-pv__chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.ob-pv__acts { flex-wrap: nowrap !important; padding: 12px 16px !important; }
+.ob-pv__acts > .btn, .ob-pv__acts > .ob-picker, .ob-pv__acts > span > .btn { flex: 1 1 0; min-width: 0; justify-content: center; height: 44px !important; }
+.ob-pv__acts > .ob-picker > button { width: 100%; }
+.ob-pv__tools { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+.ob-pv__ft { flex-wrap: nowrap !important; padding: 12px 16px !important; gap: 12px !important; }
+.ob-pv__tpl { flex: 1; min-width: 0; }
+.ob-pv__ftb { display: flex; gap: 8px; flex: none; }
+.ob-pv__ftb .btn { height: 44px; justify-content: center; }
+@media (max-width: 599px) {
+  .ob-pv__ft { display: grid !important; grid-template-columns: 1fr; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; }
+  .ob-pv__ftb { display: grid; grid-template-columns: 1fr 1fr; }
+  .ob-pv__body { padding: 16px; }
+}
+@media (max-width: 599px) { .ob-pv__acts .btn svg { display: none; } .ob-pv__acts .btn { padding-inline: 8px; font-size: 14px; } }

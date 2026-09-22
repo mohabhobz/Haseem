@@ -284,24 +284,31 @@ export function PreviewPanel({ title, chip, doc, onClose, actions }) {
   }, [onClose])
   return (
     <aside className="ob-pv" aria-label={title} data-component="PreviewPanel">
+      {/* ★ الرأس: الإغلاق في البداية (زي الأدراج) · الرقم وتحته الحالات */}
       <div className="ob-pv__hd">
-        <h2><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</span>{chip}</h2>
-        <Seg value={mode} onChange={setMode} label="نوع الطباعة"
-          options={[{ id: 'full', label: 'فاتورة كاملة' }, { id: 'th', label: 'فاتورة حرارية' }]} />
-        <button type="button" className="iconbtn" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
+        <button type="button" className="iconbtn ob-pv__x" onClick={onClose} aria-label="غلق المعاينة" title="غلق المعاينة"><Ico.close size={20} /></button>
+        <div className="ob-pv__ttl">
+          <h2><span>{title}</span></h2>
+          {chip && <div className="ob-pv__chips">{chip}</div>}
+        </div>
       </div>
       {actions && <div className="ob-pv__acts">{actions}</div>}
       <div className="ob-pv__body">
-        {mode === 'th' && (
-          <Seg value={w} onChange={setW} label="عرض الورق" options={[{ id: '58', label: '58 مم' }, { id: '80', label: '80 مم' }]} />
-        )}
+        <div className="ob-pv__tools">
+          <Seg value={mode} onChange={setMode} label="نوع الطباعة"
+            options={[{ id: 'full', label: 'فاتورة كاملة' }, { id: 'th', label: 'فاتورة حرارية' }]} />
+          {mode === 'th' && (
+            <Seg value={w} onChange={setW} label="عرض الورق" options={[{ id: '58', label: '58 مم' }, { id: '80', label: '80 مم' }]} />
+          )}
+        </div>
         <Paper doc={doc} thermal={mode === 'th'} w={w} tpl={tpl} />
       </div>
       <div className="ob-pv__ft">
-        <QuietSelect label="القالب" value={tpl} options={TPLS} onChange={setTpl} up />
-        <span className="ob-sp" />
-        <button type="button" className="btn" onClick={() => window.print()}><Ico.print size={20} />طباعة</button>
-        <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: `${doc.no}.pdf` })}><Ico.download size={20} />تنزيل PDF</button>
+        <QuietSelect label="القالب" value={tpl} options={TPLS} onChange={setTpl} up className="ob-pv__tpl" />
+        <div className="ob-pv__ftb">
+          <button type="button" className="btn" onClick={() => window.print()}><Ico.print size={20} />طباعة</button>
+          <button type="button" className="btn" onClick={() => toast.ok('الملف اتنزّل', { sub: `${doc.no}.pdf` })}><Ico.download size={20} />تنزيل PDF</button>
+        </div>
       </div>
     </aside>
   )
