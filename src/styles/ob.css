@@ -1354,3 +1354,5 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .ob-pv__body { padding: 16px; }
 }
 @media (max-width: 599px) { .ob-pv__acts .btn svg { display: none; } .ob-pv__acts .btn { padding-inline: 8px; font-size: 14px; } }
+/* ★ إجماليات ورقة الفاتورة بعرض الورقة كلها */
+.ob-paper .p-tot { width: 100% !important; margin-inline-start: 0 !important; }
