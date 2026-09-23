@@ -1482,3 +1482,22 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
 }
 .bellbtn__n { top: -7px; inset-inline-start: -7px; border: 2px solid var(--surface-page); }
 .ob-fbtn__n, .pfilter__n { top: -7px; inset-inline-end: -7px; }
+
+/* ★ على الموبايل: «رجوع» يبقى زرار دايري بهوية المنتج والسهم
+   ناحية اليمين (اتجاه الرجوع في RTL)، وياخد أول الصف على اليمين،
+   وباقي الأوامر تروح على الشمال. */
+@media (max-width: 599px) {
+  .dochead__back, .ob-back, .ob-ph__acts > .ob-back, .tophead__ctrl > .ob-back {
+    width: 40px !important; height: 40px !important; min-height: 40px !important; flex: none !important;
+    padding: 0 !important; border: 0 !important; border-radius: 999px !important; gap: 0 !important;
+    background-color: var(--accent, #003E31) !important; color: transparent !important;
+    font-size: 0 !important; overflow: hidden; order: -1; margin-inline-end: auto;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m12 19 7-7-7-7'/%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important; background-position: center !important; background-size: 22px 22px !important;
+    box-shadow: none !important;
+  }
+  .dochead__back svg, .ob-back svg { display: none !important; }
+  .dochead__row, .ob-ph__acts, .tophead__ctrl { align-items: center; }
+  /* الأوامر على الشمال */
+  .ob-ph__acts > .btn:not(.ob-back), .dochead__act > * { order: 1; }
+}

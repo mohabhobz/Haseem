@@ -715,7 +715,7 @@ function PageHeaderFrame({ title, sub, actions, back, chip, usage }) {
         {(sub || usage) && <div className="ob-ph__sub">{sub && <span>{sub}</span>}{usage}</div>}
       </div>
       <div className="ob-ph__acts">
-        {back && <button type="button" className="btn btn--ghost" onClick={goBack}>رجوع</button>}
+        {back && <button type="button" className="btn btn--ghost ob-back" onClick={goBack} aria-label="رجوع">رجوع</button>}
         {actions}
       </div>
     </div>
