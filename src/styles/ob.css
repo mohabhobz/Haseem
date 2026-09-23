@@ -1511,3 +1511,28 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   /* أوامر صفحة المستند: كل زرار بعرض الشاشة */
   .dochead__act > .btn, .ob-ph__acts > .btn:not(.ob-back) { flex: 1 1 100%; width: 100%; justify-content: center; }
 }
+
+/* ★ صفحات المستند على الموبايل: الأمر الأساسي في شريط ثابت تحت
+   (أقرب للإبهام وبيفضل باين وانت بتقرا)، والثانوي فوق جنب الرجوع. */
+@media (max-width: 599px) {
+  .dochead__act:has(> .btn--primary)::after, .dochead__act:has(> .btn--danger2)::after,
+  .ob-ph__acts:has(> .btn--primary)::after, .ob-ph__acts:has(> .btn--danger2)::after {
+    content: ''; position: fixed; inset-inline: 0; bottom: var(--bnav-h); height: 68px; z-index: 79;
+    background: var(--surface-raised); border-top: 1px solid var(--border-base);
+  }
+  .dochead__act > .btn--primary, .dochead__act > .btn--danger2,
+  .ob-ph__acts > .btn--primary, .ob-ph__acts > .btn--danger2 {
+    position: fixed; z-index: 80; bottom: calc(var(--bnav-h) + 12px); inset-inline: 16px;
+    width: auto !important; flex: none !important; height: 44px; justify-content: center; margin: 0;
+  }
+  .ob-main:has(.dochead__act > .btn--primary), .ob-main:has(.dochead__act > .btn--danger2),
+  .ob-main:has(.ob-ph__acts > .btn--primary), .ob-main:has(.ob-ph__acts > .btn--danger2) { padding-bottom: 96px; }
+  .ob-sheet .dochead__act > .btn--primary, .ob-sheet .dochead__act::after,
+  .ob-sheet .ob-ph__acts > .btn--primary, .ob-sheet .ob-ph__acts::after { display: none; }
+  /* لو الدرج مفتوح الشريط يختفي زي باقي الأشرطة الثابتة */
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .dochead__act > .btn--primary,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .dochead__act > .btn--danger2,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .ob-ph__acts > .btn--primary,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .dochead__act::after,
+  body:has(.ob-menu, .rmenu__p, .perpage__p, .dr__pop, .selx__p, .datep, .ob-more, .pfilter__pop, .ob-sheet, .ob-pv, .cfm, .pp) .ob-ph__acts::after { display: none !important; }
+}
