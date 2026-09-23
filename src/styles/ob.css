@@ -1471,3 +1471,14 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
    الديسكتوب وتحتها على الموبايل بس). */
 .ob-fbar > .ob-pills { flex: 1 1 100% !important; order: 3; min-width: 0; }
 .ob-fbar > .search { max-width: 360px; }
+
+/* ★ عدّادات التنبيه (جرس الإشعارات، عدّاد الفلاتر…) — دايرة مظبوطة
+   والرقم في نصّها تمامًا، ومقاس أكبر شوية. */
+.bellbtn__n, .ob-fbtn__n, .pfilter__n {
+  box-sizing: border-box; min-width: 22px; height: 22px; padding: 0 4px;
+  border-radius: 999px; display: inline-flex !important; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums;
+  letter-spacing: 0; text-align: center;
+}
+.bellbtn__n { top: -7px; inset-inline-start: -7px; border: 2px solid var(--surface-page); }
+.ob-fbtn__n, .pfilter__n { top: -7px; inset-inline-end: -7px; }
