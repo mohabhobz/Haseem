@@ -1508,4 +1508,6 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
   .dochead__act, .ob-ph__acts { flex-wrap: wrap; }
   .dochead__row { flex-direction: column; align-items: stretch; gap: 10px; }
   .dochead__row > .dochead__act { padding-inline-start: 0; margin-inline-start: -52px; }
+  /* أوامر صفحة المستند: كل زرار بعرض الشاشة */
+  .dochead__act > .btn, .ob-ph__acts > .btn:not(.ob-back) { flex: 1 1 100%; width: 100%; justify-content: center; }
 }
