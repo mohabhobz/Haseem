@@ -1497,7 +1497,15 @@ td.n :is(div, p, b, strong).num, th.n :is(div, p).num { text-align: start; }
     box-shadow: none !important;
   }
   .dochead__back svg, .ob-back svg { display: none !important; }
-  .dochead__row, .ob-ph__acts, .tophead__ctrl { align-items: center; }
-  /* الأوامر على الشمال */
-  .ob-ph__acts > .btn:not(.ob-back), .dochead__act > * { order: 1; }
+  /* الزرار فوق جنب عنوان الصفحة، والأوامر كلها في سطر تحت على الشمال */
+  .dochead, .ob-ph, .tophead { position: relative; }
+  .dochead__back, .ob-ph__acts > .ob-back, .tophead__ctrl > .ob-back, .dochead > .ob-back {
+    position: absolute !important; top: 0; inset-inline-start: 0; margin: 0 !important; z-index: 2;
+  }
+  .dochead__row, .ob-ph__l, .tophead > .ob-ph, .tophead__ctrl { padding-inline-start: 52px; }
+  .dochead > .curnote { padding-inline-start: 52px; }
+  .dochead__act, .ob-ph__acts, .tophead__ctrl { width: 100%; justify-content: flex-end; }
+  .dochead__act, .ob-ph__acts { flex-wrap: wrap; }
+  .dochead__row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .dochead__row > .dochead__act { padding-inline-start: 0; margin-inline-start: -52px; }
 }
